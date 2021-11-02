@@ -1,0 +1,62 @@
+&spaceIn
+NkxG    = 40 40 1
+kxMin   = 0.12566 0.12566 1.0
+kMaxDyn = 0., 0., 0.
+dt      = 1.0e-3
+endTime = 1000.0
+nFrames = 1000
+xyProcs = 2, 2
+/
+
+&physIn
+numSpecies = 2
+omSte      = 1.0
+omde       = 0.4545
+deltae     = 2.0
+deltaPerpe = 1.0
+eta_e      = 3.105
+deltai     = 2.0
+deltaPerpi = 1.0
+eta_i      = 3.105
+alpha_e    = 0.035, 0.0
+alpha_i    = 0.035, 0.0
+nu_e       = 0.0001, 0.0
+nu_i       = 0.0001, 0.0
+delta0     = 0.0
+lambdaD    = 0.0
+tau        = 1.0
+muMass     = 60.59
+/
+
+&diffIn
+hDiffOrder = 6
+hDiffne    = 10.00
+hDiffTe    = 10.00
+hDiffni    = 10.00
+hDiffTi    = 10.00
+kDiffMin   = 0.0, 0.0
+/
+
+&icsIn
+initialOp  =  1
+initAuxX   = -3
+initAuxY   = -3
+initA      = 2.5e-2
+noiseA     = 1e-14
+/
+
+&arkodeIn
+kySplit      = 0
+fastTableExp = 8
+fastTableImp = -1
+slowTable    = 12
+dtFast       = 0.0
+rtol         = 1.0e-2
+atol         = 1.0e-6
+ewtScaling   = 0
+arkKxc       = 38,  25
+arkKyc       = 38,  25
+arkKxOrd     = 2.5, 1.5
+arkKyOrd     = 2.5, 1.5
+outputStats  = 1
+/
