@@ -6,6 +6,7 @@
 #define DATA_MUGY
 
 #include <complex.h>  /* For complex data types. */
+#include <stdbool.h>  // e.g. for bool, true, false.
 
 #if USE_SINGLE_PRECISION > 0
 typedef float real;
@@ -14,6 +15,15 @@ typedef float complex fourier;
 typedef double real;
 typedef double complex fourier;
 #endif
+
+// Container for IO instructions
+struct ioSetup {
+  char *inputFile;           // Name of input file.
+  char *outputDir;           // Address of output directory.
+  char *restartDir;          // Address of restart directory.
+  bool isRestart;            // Is this simulation a restart of a previous one?
+  bool outToOldDir;          // If restart, output to directory of previous run?
+};
 
 // Flags for differentiating between operations done on device
 // or on host, or both.

@@ -4,7 +4,7 @@
 */
 #include "initialization.h"
 
-void read_inputs(const char *fileNameIn, int *NkxG, real *kxMin) {
+void read_inputFile(const char *fileNameIn, int *NkxG, real *kxMin) {
   // Read input values from input file.
   int nFrames, mpiProcs[3];
   real kxMaxDyn[3], dt, endTime;
@@ -31,6 +31,38 @@ void read_inputs(const char *fileNameIn, int *NkxG, real *kxMin) {
   fscanf(file_p, "%*s %*s %d %d %d", &mpiProcs[0], &mpiProcs[1], &mpiProcs[2]);
 
   fclose(file_p);
+}
+
+void read_inputs(int argc, char *argv[], struct ioSetup *ioSet, struct gridType *grid) {
+  // Read inputs from command line arguments and input file.
+
+  // Check for commandline arguments.
+  // Currently we expect two arguments in this order:
+  //   1) name of the input file.
+  //   2) absolute address of the output directory.
+  // For restarts add the restart directory as a 3rd argument.
+  if (argc < 3) {
+    printf("\n --> Not enough inputs. Need input file and output directory as command line arguments.\n");
+    abortSimulation(" TERMINATING ");
+  } else {
+    ioSet->inputFile = argv[1];
+    ioSet->outputDir = argv[2];
+    ioSet->isRestart   = false;
+    ioSet->outToOldDir = false;
+    if (argc > 3) {  // Simulation is a restart of a previous one.
+      ioSet->restartDir = argv[3];
+      ioSet->isRestart  = true;
+      // Output to the same directory as the previous run?
+      char *checkFile = malloc(strlen(ioSet->outputDir)+strlen("phik.bp"));
+      checkFile[0] = '\0';
+      strcat(strcat(checkFile,ioSet->outputDir),"phik.bp");
+      ioSet->outToOldDir = fileExists(checkFile);
+      free(checkFile);
+    }
+  }
+
+  read_inputFile(ioSet->inputFile, grid->NkxG, grid->kxMin);
+
 }
 
 void init_gridsG(const int *userNkxG, struct gridType *grid) {
