@@ -1,8 +1,13 @@
 /* 
    mugy (header file)
    A reduced gyrofluid code for ITG-ETG multiscale simulations.
+
+   This file contains global macros and inclusion of various header files.
 */
 
+/* .................. GLOBAL MACROS ..................... */
+
+/* ............... END OF GLOBAL MACROS ................. */
 
 // Pre-processor flags.
 #include "mugyFLAGS.h"

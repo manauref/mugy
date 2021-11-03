@@ -13,6 +13,6 @@
 void read_inputs(const char *fileNameIn, int *NkxG, real *kxMin);
 
 // Set number of cells in de-aliased, aliased and real space global grids.
-void init_gridsG(int *NkxGIn, struct gridType grid);
+void init_gridsG(const int *userNkxG, struct gridType *grid);
 
 #endif

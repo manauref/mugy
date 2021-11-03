@@ -10,28 +10,48 @@
 #include "utilities.h"
 #include <stdlib.h>  // e.g. for calloc.
 
-/* Allocate a vector of real-space moments.
-     ns: number of species.
-     nmom: number of moments per species.
-     grodIn: grid on which to allocate the vector of moments. */
-real* allocRealMoments(int ns, int nmom, struct gridType gridIn);
+// Wrappers to basic functions that allocate plain arrays.
+//   numElements: number of elements in the array.
+real* alloc_realArray(int numElements);
+fourier *alloc_fourierArray(int numElements);
 
-/* Allocate a vector of Fourier-space moments.
+/* Allocate real-space moment vectors, on host and/or device.
      ns: number of species.
      nmom: number of moments per species.
-     grodIn: grid on which to allocate the vector of moments. */
-fourier *allocFourierMoments(int ns, int nmom, struct gridType gridIn);
+     grid: grid on which to allocate the vector of moments.
+     res: resource on which to allocate (host, device or both).
+     mom: struct holding the vector of moments. */
+void alloc_realMoments(const int ns, const int nmom, const struct gridType grid, const resource res, struct realMoments *mom);
 
-/* Allocate a vector of aliased real-space moments.
+/* Allocate Fourier-space moment vectors, on host and/or device.
      ns: number of species.
      nmom: number of moments per species.
-     grodIn: grid on which to allocate the vector of moments. */
-real* allocAliasedRealMoments(int ns, int nmom, struct gridType gridIn);
+     grid: grid on which to allocate the vector of moments.
+     res: resource on which to allocate (host, device or both).
+     momk: struct holding the vector of moments. */
+void alloc_fourierMoments(const int ns, const int nmom, const struct gridType grid, const resource res, struct fourierMoments *momk);
 
-/* Allocate a vector of aliased Fourier-space moments.
+/* Allocate aliased real-space moment vectors, on host and/or device.
      ns: number of species.
      nmom: number of moments per species.
-     grodIn: grid on which to allocate the vector of moments. */
-fourier *allocAliasedFourierMoments(int ns, int nmom, struct gridType gridIn);
+     grid: grid on which to allocate the vector of moments.
+     res: resource on which to allocate (host, device or both).
+     mom: struct holding the vector of moments. */
+void alloc_aliasedRealMoments(const int ns, const int nmom, const struct gridType grid, const resource res, struct realMoments *mom);
+
+/* Allocate aliased Fourier-space moment vectors, on host and/or device.
+     ns: number of species.
+     nmom: number of moments per species.
+     grid: grid on which to allocate the vector of moments.
+     res: resource on which to allocate (host, device or both).
+     momk: struct holding the vector of moments. */
+void alloc_aliasedFourierMoments(const int ns, const int nmom, const struct gridType grid, const resource res, struct fourierMoments *momk);
+
+
+/* Functions to free memory associated used for moment vector. 
+     mom: vector of moments to free.
+     res: resource where memory needs to be freed (host, device or both). */
+void free_realMoments(struct realMoments *mom, const resource res);
+void free_fourierMoments(struct fourierMoments *momk, const resource res);
 
 #endif

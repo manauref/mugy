@@ -4,7 +4,7 @@
 */
 #include "utilities.h"
 
-int prod(int *arrIn) {
+int prod(const int *arrIn) {
   /* Compute the product of the elements in an array. */
   int pOut = 1;
   int num = sizeof(&arrIn)/sizeof(int);
@@ -12,7 +12,7 @@ int prod(int *arrIn) {
   return pOut;
 }
 
-int closest_power_of_two(int aIn) {
+int closest_power_of_two(const int aIn) {
   /* Find the closest power of 2. */
   int lc = 0;
   while ((pow(2,lc) < aIn) && (lc < 1000000)) {lc += 1;}

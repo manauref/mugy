@@ -12,10 +12,10 @@
 #include <stdio.h>    // e.g. for fopen.
 
 // Product of the elements in array.
-int prod(int *arrIn);
+int prod(const int *arrIn);
 
 // Obtain the power of 2 closest to aIn.
-int closest_power_of_two(int aIn);
+int closest_power_of_two(const int aIn);
 
 // Check if a file exists.
 int fileExists(const char *fileNameIn);

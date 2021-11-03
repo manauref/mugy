@@ -15,6 +15,10 @@ typedef double real;
 typedef double complex fourier;
 #endif
 
+// Flags for differentiating between operations done on device
+// or on host, or both.
+typedef enum {hostOnly, deviceOnly, hostAndDevice} resource;
+
 struct gridType {
   int NxaG[3];    // Number of cells in aliased configuration space.
   int NkxaG[3];   // Number of distinct (absolute) aliased wavenumbers.
@@ -23,6 +27,16 @@ struct gridType {
   int NekxG[3];   // Number of elements in a de-aliased k-space array.
   int NxG[3];     // Number of cells in de-aliased configuration space.
   real kxMin[3];  // Minimum finite absolute amplitude wavenumbers.
+};
+
+// Structures storing host and device pointers to vector field.
+struct realMoments {
+  real *ho;
+  real *dev;
+};
+struct fourierMoments {
+  fourier *ho;
+  fourier *dev;
 };
 
 #endif

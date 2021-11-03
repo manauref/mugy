@@ -18,8 +18,8 @@ int main(int argc, char *argv[]) {
   bool outToOldDir;          // If restart, output to directory of previous run?
   char *checkFile;
 
-  real *mom, *mom_a;
-  fourier *momk, *momk_a;
+  struct realMoments mom, moma;
+  struct fourierMoments momk, momka;
 
   // Check for commandline arguments.
   // Currently we expect two arguments in this order:
@@ -49,17 +49,18 @@ int main(int argc, char *argv[]) {
   read_inputs(inputFile, grid.NkxG, grid.kxMin);
 
   // Set the number of cells in Fourier space and aliased real space.
-  init_gridsG(grid.NkxG, grid);
+  init_gridsG(grid.NkxG, &grid);
 
-  mom  = allocRealMoments(numSpecies, numMoments, grid);
-  momk = allocFourierMoments(numSpecies, numMoments, grid);
-  mom_a  = allocAliasedRealMoments(numSpecies, numMoments, grid);
-  momk_a = allocAliasedFourierMoments(numSpecies, numMoments, grid);
+  resource onResource = hostOnly;
+  alloc_realMoments(numSpecies, numMoments, grid, onResource, &mom);
+  alloc_fourierMoments(numSpecies, numMoments, grid, onResource, &momk);
+  alloc_aliasedRealMoments(numSpecies, numMoments, grid, onResource, &moma);
+  alloc_aliasedFourierMoments(numSpecies, numMoments, grid, onResource, &momka);
 
-  free(mom);
-  free(momk);
-  free(mom_a);
-  free(momk_a);
+  free_realMoments(&mom, onResource);
+  free_fourierMoments(&momk, onResource);
+  free_realMoments(&moma, onResource);
+  free_fourierMoments(&momka, onResource);
 
   return 0;
 }
