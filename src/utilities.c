@@ -4,11 +4,10 @@
 */
 #include "utilities.h"
 
-int prod(const int *arrIn) {
+int prod_int(const int *arrIn, const int numElements) {
   /* Compute the product of the elements in an array. */
   int pOut = 1;
-  int num = sizeof(&arrIn)/sizeof(int);
-  for (int i=0; i<num; i++) {pOut *= arrIn[i];}
+  for (int i=0; i<numElements; i++) {pOut *= arrIn[i];}
   return pOut;
 }
 
@@ -43,3 +42,17 @@ void abortSimulation(const char *errorString) {
   printf("%s\n\n",errorString);
   exit(0);
 }
+
+// Turn elements in an array into a string, separated by a space.
+void arr2str_int(char *str, const int *arr, const int numElements, const char *preStr, const char *postStr) {
+  str += sprintf(str, preStr);
+  for (int i=0; i<numElements; i++) str += sprintf(str, " %d", arr[i]);
+  str += sprintf(str, postStr);
+}
+void arr2str_real(char *str, const real *arr, const int numElements, const char *preStr, const char *postStr) {
+  str += sprintf(str, preStr);
+  for (int i=0; i<numElements; i++) str += sprintf(str, " %"SCNfREAL, arr[i]);
+  str += sprintf(str, postStr);
+}
+
+

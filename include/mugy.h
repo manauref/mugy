@@ -9,6 +9,7 @@
 
 /* ............... END OF GLOBAL MACROS ................. */
 
+
 // Pre-processor flags.
 #include "mugyFLAGS.h"
 
@@ -18,10 +19,16 @@
 // Generic utility functions (with few or no dependencies).
 #include "utilities.h"
 
+// MPI-related infrastructure.
+#include "mpi_tools.h"
+
+// IO module.
+#include "io_tools.h"
+
 // Data structures specific to mugy.
 #include "data_mugy.h"
 
-// Functions that allocate mugy data.
+//// Functions that allocate mugy data.
 #include "alloc_mugy.h"
 
 // Functions used to initialize the simulation.

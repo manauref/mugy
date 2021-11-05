@@ -8,7 +8,7 @@
 
 #include "data_mugy.h"
 
-extern int nFrames, mpiProcs[3];
-extern real kxMaxDyn[3], dt, endTime;
+extern int nFrames, mpiProcs[nDim];
+extern real kxMaxDyn[nDim], dt, endTime;
 
 #endif
