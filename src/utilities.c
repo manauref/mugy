@@ -10,6 +10,13 @@ int prod_int(const int *arrIn, const int numElements) {
   for (int i=0; i<numElements; i++) {pOut *= arrIn[i];}
   return pOut;
 }
+int sum_int(const int *arrIn, const int numElements) {
+  /* Compute the sum of the elements in an array. */
+  int pOut = 0;
+  for (int i=0; i<numElements; i++) {pOut += arrIn[i];}
+  return pOut;
+}
+
 
 int closest_power_of_two(const int aIn) {
   /* Find the closest power of 2. */

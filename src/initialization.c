@@ -132,7 +132,7 @@ void read_inputs(int argc, char *argv[], struct ioSetup *ioSet, struct grid *gri
 
 }
 
-void init_grids(struct grid *grid) {
+void init_global_grids(struct grid *grid) {
   // Set number of cells in de-aliased, aliased and real space global grids.
 
   /* Given user-input number of distinct dealised wavenumbers, Nkx,
@@ -166,6 +166,68 @@ void init_grids(struct grid *grid) {
   grid->fG.dual.Nx[1] = 2*(grid->fG.Nkx[1]-1);
   grid->fG.dual.Nx[2] = 1;
 
+  real Lx[3] = {2.0*M_PI/grid->fG.kxMin[0], 2.0*M_PI/grid->fG.kxMin[1], 2.0*M_PI/grid->fG.kxMin[2]};
+
+  // Length of dealised and aliased real-space cell.
+  for (int d=0; d<nDim; d++) {
+    grid->fG.dual.dx[d]  = Lx[d]/(real)(grid->fG.dual.Nx[d]-grid->fG.dual.Nx[d] % 2);
+    grid->fGa.dual.dx[d] = Lx[d]/(real)(grid->fGa.dual.Nx[d]-grid->fGa.dual.Nx[d] % 2);
+  }
+
+  // Global de-aliased real-space grids
+  grid->fG.dual.x = alloc_realArray(sum_int(grid->fG.dual.Nx, 3));
+  real *dx = grid->fG.dual.dx;
+  int *Nx = grid->fG.dual.Nx; 
+  int xOff = 0;
+  for (int d=0; d<nDim; d++) {
+    for (int i=0; i<Nx[d]; i++)
+      grid->fG.dual.x[i+xOff] = (real)(i)*dx[d]+(real)(1-Nx[d] % 2-1)*0.5*dx[d]-0.5*Lx[d];
+    grid->fG.dual.xMin[d] = grid->fG.dual.x[0+xOff];
+    grid->fG.dual.xMax[d] = grid->fG.dual.x[Nx[d]-1+xOff];
+    xOff += Nx[d];
+  }
+  // Global aliased real-space grids (may not be needed).
+  grid->fGa.dual.x = alloc_realArray(sum_int(grid->fGa.dual.Nx, 3));
+  real *dxa = grid->fGa.dual.dx;
+  int *Nxa = grid->fGa.dual.Nx; 
+  int xaOff = 0;
+  for (int d=0; d<nDim; d++) {
+    for (int i=0; i<Nxa[d]; i++)
+      grid->fGa.dual.x[i+xaOff] = (real)(i)*dxa[d]+(real)(1-Nxa[d] % 2-1)*0.5*dxa[d]-0.5*Lx[d];
+    grid->fGa.dual.xMin[d] = grid->fGa.dual.x[0+xaOff];
+    grid->fGa.dual.xMax[d] = grid->fGa.dual.x[Nxa[d]-1+xaOff];
+    xaOff += Nxa[d];
+  }
+
+  // Global dealiased k-space grids.
+  for (int d=0; d<nDim; d++) grid->fGa.kxMin[d] = grid->fG.kxMin[d];
+  grid->fG.kx  = alloc_realArray(sum_int(grid->fG.Nekx, 3));
+  real *kxMin = grid->fG.kxMin;
+  int *Nkx = grid->fG.Nkx; 
+  int kxOff = 0;
+  for (int d=0; d<nDim; d++) {
+    for (int i=0; i<Nkx[d]; i++)
+      grid->fG.kx[i+kxOff] = (real)(i)*kxMin[d];
+    kxOff += grid->fG.Nekx[d];
+  }
+  // Negative kx modes in increasing order.
+  for (int i=Nkx[0]; i<grid->fG.Nekx[0]; i++)
+    grid->fG.kx[i] = -(real)(Nkx[0]-1-(i-Nkx[0]))*kxMin[0];
+
+  // Global aliased k-space grids.
+  grid->fGa.kx = alloc_realArray(sum_int(grid->fGa.Nekx, 3));
+  real *kxaMin = grid->fGa.kxMin;
+  int *Nkxa = grid->fGa.Nkx; 
+  int kxaOff = 0;
+  for (int d=0; d<nDim; d++) {
+    for (int i=0; i<Nkxa[d]; i++)
+      grid->fGa.kx[i+kxaOff] = (real)(i)*kxaMin[d];
+    kxaOff += grid->fGa.Nekx[d];
+  }
+  // Negative kx modes in increasing order.
+  for (int i=Nkxa[0]; i<grid->fGa.Nekx[0]; i++)
+    grid->fGa.kx[i] = -(real)(Nkxa[0]-1-(i-Nkxa[0]))*kxaMin[0];
+
   r0printf("\n Proceeding with :\n");
   arrPrint_int(grid->fG.Nkx,      nDim, " Number of distinct de-aliased absolute wavenumbers: NkxG   =", "\n");
   arrPrint_int(grid->fG.Nekx,     nDim, " Length of de-aliased k-space arrays:                NekxG  =", "\n");
@@ -177,6 +239,14 @@ void init_grids(struct grid *grid) {
   arrPrint_real(grid->fG.kxMin,    nDim, " Minimum absolute magnitude of wavenumbers: kxMin    =", "\n");
   arrPrint_real(grid->fG.kxMaxDyn, nDim, " Largest wavenumbers evolved:               kxMaxDyn =", "\n");
 
+}
+
+void free_grid(struct grid *grid) {
+  // Deallocate memory used by grids.
+  free(grid->fG.dual.x);
+  free(grid->fG.kx);
+  free(grid->fGa.dual.x);
+  free(grid->fGa.kx);
 }
 
 void free_speciesPars(struct speciesParameters *spec) {

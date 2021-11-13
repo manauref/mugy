@@ -12,8 +12,8 @@
 #include <stdio.h>    // e.g. for fopen.
 #include "data_mugy.h"
 
-// Product of the elements in array.
-int prod_int(const int *arrIn, int numElements);
+int prod_int(const int *arrIn, int numElements);  // Product of the elements in array.
+int sum_int(const int *arrIn, int numElements);  // Sum of the elements in array.
 
 // Obtain the power of 2 closest to aIn.
 int closest_power_of_two(const int aIn);

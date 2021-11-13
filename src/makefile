@@ -61,7 +61,7 @@ MAIN = mugy.x
 .PHONY: depend clean
 
 all:    $(MAIN)
-	@echo  Simple compiler named mugy.x has been compiled
+	@echo  Source mugy.c has been compiled into executable: mugy.x
 
 $(MAIN): $(OBJS)
 	$(CC) $(CFLAGS) $(INCLUDES) -o $(MAIN) $(OBJS) $(LFLAGS) $(LIBS)

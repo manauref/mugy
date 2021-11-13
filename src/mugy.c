@@ -7,7 +7,7 @@
 
 int main(int argc, char *argv[]) {
 
-  struct grid gridG;
+  struct grid gridG, gridL;
   struct timeSetup timePars;
   struct speciesParameters specParsG;
   struct ioSetup myIO;
@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     //  init_comms(gridG, specParsG);
 
   // Set the number of cells in Fourier space and aliased real space.
-  init_grids(&gridG);
+  init_global_grids(&gridG);
 
   printf(" Number of time steps and frames:           Nt       =%8d   |  nFrames  =%6d\n", 1000, timePars.nFrames);
 
@@ -40,6 +40,7 @@ int main(int argc, char *argv[]) {
   free_fourierMoments(&momk, onResource);
   free_fourierMoments(&momka, onResource);
 
+  free_grid(&gridG);
   free_speciesPars(&specParsG);
 
   terminate_mpi();  // Finalize MPI.
