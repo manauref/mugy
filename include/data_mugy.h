@@ -36,26 +36,28 @@ struct ioSetup {
 typedef enum {hostOnly, deviceOnly, hostAndDevice} resource;
 
 struct realGrid {
-  int Nx[3];     // Number of cells.
-  real xMin[3];  // Minimum coordinates.
-  real xMax[3];  // Maximum coordinates.
-  real dx[3];    // Cell length.
-  real *x;       // Coordinates in each direction.
+  int Nx[nDim];         // Number of cells.
+  real xMin[nDim];      // Minimum coordinates.
+  real xMax[nDim];      // Maximum coordinates.
+  real dx[nDim];        // Cell length.
+  real *x;              // Coordinates in each direction.
+  int globalOff[nDim];  // Offset of first element in this process within the global domain.
 };
 
 struct fourierGrid {
-  int Nkx[3];           // Number of distinct absolute amplitude wavenumbers (counting k=0).
-  int Nekx[3];          // Number of elements in a k-space array (counting k=0 and negative k's).
-  real kxMin[3];        // Minimum finite absolute amplitude wavenumbers.
-  real *kx;             // Coordinates along each direction.
-  struct realGrid dual; // Real grid dual to this Fourier grid.
-  real kxMaxDyn[3];     // Maximum k evolved. Above this we multiply time rates of change by zero.
+  int Nkx[nDim];         // Number of distinct absolute amplitude wavenumbers (counting k=0).
+  int Nekx[nDim];        // Number of elements in a k-space array (counting k=0 and negative k's).
+  real kxMin[nDim];      // Minimum finite absolute amplitude wavenumbers.
+  real *kx;              // Coordinates along each direction.
+  struct realGrid dual;  // Real grid dual to this Fourier grid.
+  real kxMaxDyn[nDim];   // Maximum k evolved. Above this we multiply time rates of change by zero.
+  int globalOff[nDim];   // Offset of first element in this process within the global domain.
 };
 
 struct grid {
   struct fourierGrid fG;  // this grid's (dealised) Fourier grid.
   struct fourierGrid fGa; // this grid's aliased Fourier grid.
-  int mpiProcs[3];        // Number of MPI processes along each direction.
+  int mpiProcs[nDim];     // Number of MPI processes along each direction.
 };
 
 struct timeSetup {
@@ -76,6 +78,7 @@ struct speciesParameters {
   int numSpecies;    // Number of species.
   int numMoments;    // Number of moments.
   int mpiProcs;      // MPI decomposition of the species.
+  int globalOff;     // Offset of first element in this process within the global domain.
   real *qCharge;     // Charge.
   real *muMass;      // sqrt of the mass.
   real *tau;         // Temperature. 
@@ -92,7 +95,7 @@ struct speciesParameters {
   real *kDiffMin;    // Minimum k at which to apply HD.
   // The following are used by initial conditions.
   int *icOp;         // IC option.
-  real *initAux;  // Auxiliary parameters for ICs.
+  real *initAux;     // Auxiliary parameters for ICs.
   real *initA;       // Initial amplitude.
   real *noiseA;      // Initial noise amplitude.
 };

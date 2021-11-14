@@ -32,7 +32,6 @@ void read_inputs(int argc, char *argv[], struct ioSetup *ioSet, struct grid *gri
 // Set number of cells in de-aliased, aliased and real space global grids.
 void init_global_grids(struct grid *grid);
 
-
 void free_grid(struct grid *grid); // Free arrays in grids.
 void free_speciesPars(struct speciesParameters *spec);  // Free arrays in species parameters.
 #endif

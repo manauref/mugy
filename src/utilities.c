@@ -62,4 +62,19 @@ void arr2str_real(char *str, const real *arr, const int numElements, const char 
   str += sprintf(str, postStr);
 }
 
+// Function to obtain a pointer to the i-th array in an flat array of
+// multiple arrays, each array with numElem elements.
+int* getArray_int(int *arr, const int *numElem, const int i) {
+  int *newPtr = arr;
+  int off = 0;
+  for (int d=0; d<i; d++) off += numElem[d];
+  return newPtr+off;
+}
+real* getArray_real(real *arr, const int *numElem, const int i) {
+  real *newPtr = arr;
+  int off = 0;
+  for (int d=0; d<i; d++) off += numElem[d];
+  return newPtr+off;
+}
+
 

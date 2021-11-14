@@ -28,4 +28,9 @@ void abortSimulation(const char *errorString);
 void arr2str_int(char *str, const int *arr, const int numElements, const char *preStr, const char *postStr);
 void arr2str_real(char *str, const real *arr, const int numElements, const char *preStr, const char *postStr);
 
+// Function to obtain a pointer to the i-th array in an flat array of
+// multiple arrays, each array with numElem elements.
+int* getArray_int(int *arr, const int *numElem, const int i);
+real* getArray_real(real *arr, const int *numElem, const int i);
+
 #endif

@@ -81,10 +81,10 @@ void read_inputFile(const char *fileNameIn, struct grid *grid, struct timeSetup 
   allocAndReadFileVar_real(file_p, spec->numMoments*spec->numSpecies,         &spec->nu);
   allocAndReadFileVar_real(file_p,                  spec->numSpecies,     &spec->delta0);
   allocAndReadFileVar_real(file_p,                  spec->numSpecies, &spec->hDiffOrder);
-  allocAndReadFileVar_real(file_p,                3*spec->numSpecies,      &spec->hDiff);
-  allocAndReadFileVar_real(file_p,                3*spec->numSpecies,   &spec->kDiffMin);
+  allocAndReadFileVar_real(file_p,             nDim*spec->numSpecies,      &spec->hDiff);
+  allocAndReadFileVar_real(file_p,             nDim*spec->numSpecies,   &spec->kDiffMin);
   allocAndReadFileVar_int( file_p,                  spec->numSpecies,       &spec->icOp);
-  allocAndReadFileVar_real(file_p,                3*spec->numSpecies,    &spec->initAux);
+  allocAndReadFileVar_real(file_p,             nDim*spec->numSpecies,    &spec->initAux);
   allocAndReadFileVar_real(file_p,                  spec->numSpecies,      &spec->initA);
   allocAndReadFileVar_real(file_p,                  spec->numSpecies,     &spec->noiseA);
   fscanf(file_p, "%*s");  // /.
@@ -138,7 +138,7 @@ void init_global_grids(struct grid *grid) {
   /* Given user-input number of distinct dealised wavenumbers, Nkx,
      the number of real-space cells is Nx = 3*(Nkx-1). We prefer this
      to be a power of 2, so we may need to adjust Nkx. */
-  arrPrint_int(grid->fG.Nkx, nDim, " User requested  NkxG=(",") distinct wavenumbers (absolute magnitude)\n");
+  arrPrint_int(grid->fG.Nkx, nDim, " User requested  NkxG=("," ) distinct wavenumbers (absolute magnitude)\n");
   grid->fGa.dual.Nx[0] = closest_power_of_two(3*(grid->fG.Nkx[0]-1));
   grid->fGa.dual.Nx[1] = closest_power_of_two(3*(grid->fG.Nkx[1]-1));
   grid->fGa.dual.Nx[2] = 1;
@@ -166,12 +166,12 @@ void init_global_grids(struct grid *grid) {
   grid->fG.dual.Nx[1] = 2*(grid->fG.Nkx[1]-1);
   grid->fG.dual.Nx[2] = 1;
 
-  real Lx[3] = {2.0*M_PI/grid->fG.kxMin[0], 2.0*M_PI/grid->fG.kxMin[1], 2.0*M_PI/grid->fG.kxMin[2]};
+  real Lx[nDim] = {2.0*M_PI/grid->fG.kxMin[0], 2.0*M_PI/grid->fG.kxMin[1], 2.0*M_PI/grid->fG.kxMin[2]};
 
   // Length of dealised and aliased real-space cell.
   for (int d=0; d<nDim; d++) {
-    grid->fG.dual.dx[d]  = Lx[d]/(real)(grid->fG.dual.Nx[d]-grid->fG.dual.Nx[d] % 2);
-    grid->fGa.dual.dx[d] = Lx[d]/(real)(grid->fGa.dual.Nx[d]-grid->fGa.dual.Nx[d] % 2);
+    grid->fG.dual.dx[d]  = Lx[d]/fmax(1.,(real)(grid->fG.dual.Nx[d]-grid->fG.dual.Nx[d] % 2));
+    grid->fGa.dual.dx[d] = Lx[d]/fmax(1.,(real)(grid->fGa.dual.Nx[d]-grid->fGa.dual.Nx[d] % 2));
   }
 
   // Global de-aliased real-space grids
