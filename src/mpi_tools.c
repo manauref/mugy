@@ -31,12 +31,12 @@ void init_comms(struct grid grid, struct speciesParameters spec) {
     abortSimulation(" Terminating...\n");
   }
 
-  // Number of MPI processes along spec,Z,X,Y.
-  numProcs[0] = spec.mpiProcs;
-  numProcs[1] = grid.mpiProcs[2];
-  numProcs[2] = grid.mpiProcs[0];
-  numProcs[3] = grid.mpiProcs[1];
-  arrPrint_int(numProcs,nDim+1, " MPI processes along spec,Z,X,Y: ", "\n");
+  // Number of MPI processes along X,Y,Z,s.
+  numProcs[0] = grid.mpiProcs[0];
+  numProcs[1] = grid.mpiProcs[1];
+  numProcs[2] = grid.mpiProcs[2];
+  numProcs[3] = spec.mpiProcs;
+  arrPrint_int(numProcs,nDim+1, " MPI processes along X,Y,Z,s: ", "\n");
   r0printf("\n");
 
   // MPI_CART boundary conditions. True=periodic.
@@ -45,25 +45,33 @@ void init_comms(struct grid grid, struct speciesParameters spec) {
   int reorder = true;
 
   // Create a 4D Cartesian communicator (3D space + species).
-  MPI_Cart_create(MPI_COMM_WORLD, nDim+1, numProcs, cartCommBCs, reorder, &cartComm);
+  // Re-organize the dimensions in s,Z,X,Y order..
+  int commOrg[nDim+1] = {2,3,1,0};
+  int numProcsOrg[nDim+1], cartCommBCsOrg[nDim+1];
+  for (int d=0; d<nDim+1; d++) {
+    numProcsOrg[commOrg[d]] = numProcs[d];
+    cartCommBCsOrg[commOrg[d]] = cartCommBCs[d];
+  }
+  MPI_Cart_create(MPI_COMM_WORLD, nDim+1, numProcsOrg, cartCommBCsOrg, reorder, &cartComm);
 
   // Find my coordinate parameters in the Cartesial topology.
   MPI_Comm_rank(cartComm, &cartRank);
   int cartCoords[nDim+1];
   MPI_Cart_coords(cartComm, myRank, nDim+1, &cartCoords[0]);
 
-  // spec,Z,X,Y SUBCOMMUNICATORS.
+  // 1D subcommunicators. Organize them in s,Z,X,Y, order so processes of a
+  // single X-Y plane of a single species are contiguous.
   sub1dComm = (MPI_Comm *) calloc(nDim+1, sizeof(MPI_Comm));
   for (int d=0; d<nDim+1; d++) {
     int remain[nDim+1] = {false,false,false,false};
-    remain[d] = true;     // Keep lc direction.
+    remain[commOrg[d]] = true;
     MPI_Cart_sub(cartComm, remain, &sub1dComm[d]);
     MPI_Comm_rank(sub1dComm[d], &sub1dRank[d]);
   }
-  sComm = &sub1dComm[0];  zComm = &sub1dComm[1];
-  xComm = &sub1dComm[2];  yComm = &sub1dComm[3];
-  sRank = sub1dRank[0];  zRank = sub1dRank[1];
-  xRank = sub1dRank[2];  yRank = sub1dRank[3];
+  xComm = &sub1dComm[0];  yComm = &sub1dComm[1];
+  zComm = &sub1dComm[2];  sComm = &sub1dComm[3];
+  xRank = sub1dRank[0];  yRank = sub1dRank[1];
+  zRank = sub1dRank[2];  sRank = sub1dRank[3];
 
 }
 
@@ -95,14 +103,12 @@ void distribute1dDOFs(const int procs, const int procID, const int globalDOFs, i
 
 }
 
+// Allocate array var and copy numE elements to it from src.
 void allocAndCopyVar_int(int **var, int *src, const int numE) {
-  // Allocate int array var and copy numE elements to it from src.
   *var = alloc_intArray(numE);
   memcpy(&(*var)[0], src, numE*sizeof(int));
 }
-
 void allocAndCopyVar_real(real **var, real *src, const int numE) {
-  // Allocate real array var and copy numE elements to it from src.
   *var = alloc_realArray(numE);
   memcpy(&(*var)[0], src, numE*sizeof(real));
 }
@@ -127,21 +133,20 @@ void distributeDOFs(struct grid globalGrid, struct speciesParameters globalSpec,
   allocAndCopyVar_real(&localSpec->hDiffOrder,globalSpec.hDiffOrder+                      localSpec->globalOff,                      localSpec->numSpecies);
   allocAndCopyVar_real(&localSpec->hDiff     ,globalSpec.hDiff     +                 nDim*localSpec->globalOff,                 nDim*localSpec->numSpecies);
   allocAndCopyVar_real(&localSpec->kDiffMin  ,globalSpec.kDiffMin  +                 nDim*localSpec->globalOff,                 nDim*localSpec->numSpecies);
-  allocAndCopyVar_int(&localSpec->icOp      ,globalSpec.icOp      +                      localSpec->globalOff,                      localSpec->numSpecies);
+  allocAndCopyVar_int( &localSpec->icOp      ,globalSpec.icOp      +                      localSpec->globalOff,                      localSpec->numSpecies);
   allocAndCopyVar_real(&localSpec->initAux   ,globalSpec.initAux   +                 nDim*localSpec->globalOff,                 nDim*localSpec->numSpecies);
   allocAndCopyVar_real(&localSpec->initA     ,globalSpec.initA     +                      localSpec->globalOff,                      localSpec->numSpecies);
   allocAndCopyVar_real(&localSpec->noiseA    ,globalSpec.noiseA    +                      localSpec->globalOff,                      localSpec->numSpecies);
 
   // Distribute the real-space and Fourier-space points. 
-  int dualD[nDim] = {2,3,1};
   for (int d=0; d<nDim; d++) {
-    distribute1dDOFs(globalGrid.mpiProcs[d], sub1dRank[dualD[d]], globalGrid.fG.Nekx[d],
+    distribute1dDOFs(globalGrid.mpiProcs[d], sub1dRank[d], globalGrid.fG.Nekx[d],
                      &localGrid->fG.Nekx[d], &localGrid->fG.globalOff[d]);
-    distribute1dDOFs(globalGrid.mpiProcs[d], sub1dRank[dualD[d]], globalGrid.fG.dual.Nx[d],
+    distribute1dDOFs(globalGrid.mpiProcs[d], sub1dRank[d], globalGrid.fG.dual.Nx[d],
                      &localGrid->fG.dual.Nx[d], &localGrid->fG.dual.globalOff[d]);
-    distribute1dDOFs(globalGrid.mpiProcs[d], sub1dRank[dualD[d]], globalGrid.fGa.Nekx[d],
+    distribute1dDOFs(globalGrid.mpiProcs[d], sub1dRank[d], globalGrid.fGa.Nekx[d],
                      &localGrid->fGa.Nekx[d], &localGrid->fGa.globalOff[d]);
-    distribute1dDOFs(globalGrid.mpiProcs[d], sub1dRank[dualD[d]], globalGrid.fGa.dual.Nx[d],
+    distribute1dDOFs(globalGrid.mpiProcs[d], sub1dRank[d], globalGrid.fGa.dual.Nx[d],
                      &localGrid->fGa.dual.Nx[d], &localGrid->fGa.dual.globalOff[d]);
   }
 
@@ -160,18 +165,6 @@ void distributeDOFs(struct grid globalGrid, struct speciesParameters globalSpec,
     memcpy(getArray_real(localGrid->fGa.dual.x,localGrid->fGa.dual.Nx,d),
            getArray_real(globalGrid.fGa.dual.x,globalGrid.fGa.dual.Nx,d)+localGrid->fGa.dual.globalOff[d], localGrid->fGa.dual.Nx[d]*sizeof(real));
   }
-
-//  int dO = 2;
-//  arrPrint_real(getArray_real(globalGrid.fG.kx,globalGrid.fG.Nekx,dO),globalGrid.fG.Nekx[dO], " kxG = ", "\n");
-//  r0printf("\n");
-//  int maxCharacters = 9999;
-//  char strOut[maxCharacters];
-//  arr2str_real(strOut, getArray_real(localGrid->fG.kx,localGrid->fG.Nekx,dO), localGrid->fG.Nekx[dO], "kxL = ", "\n");
-//  MPI_Barrier(MPI_COMM_WORLD); // To avoid premature deallocations.
-//  if (myRank==0) { printf("r0 : \n"); printf(strOut); }
-//  MPI_Barrier(MPI_COMM_WORLD); // To avoid premature deallocations.
-//  if (myRank==1) { printf("r1 : \n"); printf(strOut); }
-//  MPI_Barrier(MPI_COMM_WORLD); // To avoid premature deallocations.
 
 }
 
