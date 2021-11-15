@@ -26,8 +26,8 @@ void init_comms(struct grid grid, struct speciesParameters spec) {
   
   // Check the number of MPI processes is correct.
   if (prod_int(grid.mpiProcs,nDim)*spec.mpiProcs != totNumProcs) {
-    printf(" Number of MPI processes in input file (%d %d) differs from that in mpirun (%d).\n",
-           prod_int(grid.mpiProcs,nDim),spec.mpiProcs, totNumProcs);
+    printf(" Number of MPI processes in input file (%d) differs from that in mpirun (%d).\n",
+           prod_int(grid.mpiProcs,nDim)*spec.mpiProcs, totNumProcs);
     abortSimulation(" Terminating...\n");
   }
 
@@ -149,6 +149,10 @@ void distributeDOFs(struct grid globalGrid, struct speciesParameters globalSpec,
     distribute1dDOFs(globalGrid.mpiProcs[d], sub1dRank[d], globalGrid.fGa.dual.Nx[d],
                      &localGrid->fGa.dual.Nx[d], &localGrid->fGa.dual.globalOff[d]);
   }
+  localGrid->fG.NekxTot     = prod_int(localGrid->fG.Nekx,nDim);
+  localGrid->fG.dual.NxTot  = prod_int(localGrid->fG.dual.Nx,nDim);
+  localGrid->fGa.NekxTot    = prod_int(localGrid->fGa.Nekx,nDim);
+  localGrid->fGa.dual.NxTot = prod_int(localGrid->fGa.dual.Nx,nDim);
 
   // Create local real-space and Fourier-space coordinate arrays.
   localGrid->fG.kx     = alloc_realArray(sum_int(localGrid->fG.Nekx, nDim));

@@ -22,6 +22,10 @@ typedef double complex fourier;
 #define SCNfREAL "lf"
 #endif
 
+// Moment indices.
+#define denIdx 0 
+#define tempIdx 1
+
 // Container for IO instructions
 struct ioSetup {
   char *inputFile;           // Name of input file.
@@ -37,6 +41,8 @@ typedef enum {hostOnly, deviceOnly, hostAndDevice} resource;
 
 struct realGrid {
   int Nx[nDim];         // Number of cells.
+  int NxTot;            // Total number of cells.
+  int NxyTot;           // Total number of cells in an x-y plane.
   real xMin[nDim];      // Minimum coordinates.
   real xMax[nDim];      // Maximum coordinates.
   real dx[nDim];        // Cell length.
@@ -47,6 +53,8 @@ struct realGrid {
 struct fourierGrid {
   int Nkx[nDim];         // Number of distinct absolute amplitude wavenumbers (counting k=0).
   int Nekx[nDim];        // Number of elements in a k-space array (counting k=0 and negative k's).
+  int NekxTot;           // Total number of elements.
+  int NekxyTot;          // Total number of cells in an kx-ky plane.
   real kxMin[nDim];      // Minimum finite absolute amplitude wavenumbers.
   real *kx;              // Coordinates along each direction.
   struct realGrid dual;  // Real grid dual to this Fourier grid.
@@ -120,5 +128,17 @@ struct fourierMoments {
 // Define the various fields and moments needed.
 extern struct realMoments mom, moma;
 extern struct fourierMoments momk, momka;
+
+// Return a pointer to the momIdx-th moment of the sIdx-th species in momk.
+fourier* getMoment_fourier(struct fourierGrid grid, struct speciesParameters spec, const int sIdx, const int momIdx, fourier *momkIn);
+
+// Linear index given the nDim-dimensional subscript in a Fourier grid.
+int sub2lin_fourier(const int *kxI, const struct fourierGrid grid);
+
+// nDim-dimensional subscript given the linear index in a Fourier grid.
+void lin2sub_fourier(int *kxI, int lin, const struct fourierGrid grid);
+
+// (kx,ky,kz) coordinates given the multidimensional kxI index.
+void get_kx(real *kx, int *kxI, const struct fourierGrid grid);
 
 #endif

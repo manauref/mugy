@@ -32,6 +32,15 @@ void read_inputs(int argc, char *argv[], struct ioSetup *ioSet, struct grid *gri
 // Set number of cells in de-aliased, aliased and real space global grids.
 void init_global_grids(struct grid *grid);
 
+// Allocate various fields needed.
+void allocate_fields(struct grid localGrid, struct speciesParameters localSpec);
+
+// Impose the initial conditions on the moments and the electrostatic potential.
+void set_initialCondition(struct grid localGrid, struct speciesParameters localSpec);
+
+// Deallocate fields.
+void free_fields();
+
 void free_grid(struct grid *grid); // Free arrays in grids.
 void free_speciesPars(struct speciesParameters *spec);  // Free arrays in species parameters.
 #endif

@@ -139,32 +139,40 @@ void init_global_grids(struct grid *grid) {
      the number of real-space cells is Nx = 3*(Nkx-1). We prefer this
      to be a power of 2, so we may need to adjust Nkx. */
   arrPrint_int(grid->fG.Nkx, nDim, " User requested  NkxG=("," ) distinct wavenumbers (absolute magnitude)\n");
-  grid->fGa.dual.Nx[0] = closest_power_of_two(3*(grid->fG.Nkx[0]-1));
-  grid->fGa.dual.Nx[1] = closest_power_of_two(3*(grid->fG.Nkx[1]-1));
-  grid->fGa.dual.Nx[2] = 1;
+  grid->fGa.dual.Nx[0]  = closest_power_of_two(3*(grid->fG.Nkx[0]-1));
+  grid->fGa.dual.Nx[1]  = closest_power_of_two(3*(grid->fG.Nkx[1]-1));
+  grid->fGa.dual.Nx[2]  = 1;
+  grid->fGa.dual.NxTot  = prod_int(grid->fGa.dual.Nx,nDim);
+  grid->fGa.dual.NxyTot = prod_int(grid->fGa.dual.Nx,2);
 
   // Number of distinct aliased (absolute) wavenumbers.
   grid->fGa.Nkx[0] = grid->fGa.dual.Nx[0]/2+1;
   grid->fGa.Nkx[1] = grid->fGa.dual.Nx[1]/2+1;
   grid->fGa.Nkx[2] = grid->fGa.dual.Nx[2]/2+1;
   // Length of aliased arrays along kx and ky.
-  grid->fGa.Nekx[0] = grid->fGa.dual.Nx[0];
-  grid->fGa.Nekx[1] = grid->fGa.Nkx[1];
-  grid->fGa.Nekx[2] = grid->fGa.Nkx[2];
+  grid->fGa.Nekx[0]  = grid->fGa.dual.Nx[0];
+  grid->fGa.Nekx[1]  = grid->fGa.Nkx[1];
+  grid->fGa.Nekx[2]  = grid->fGa.Nkx[2];
+  grid->fGa.NekxTot  = prod_int(grid->fGa.Nekx,nDim);
+  grid->fGa.NekxyTot = prod_int(grid->fGa.Nekx,2);
 
   // Recompute the number of distinct de-aliased (absolute) wavenumbers.
   grid->fG.Nkx[0] = 2*(grid->fGa.Nkx[0]-1)/3+1;
   grid->fG.Nkx[1] = 2*(grid->fGa.Nkx[1]-1)/3+1;
   grid->fG.Nkx[2] = 1;
   // Length of de-aliased arrays along kx and ky.
-  grid->fG.Nekx[0] = 2*(grid->fG.Nkx[0]-1)+1;
-  grid->fG.Nekx[1] = grid->fG.Nkx[1];
-  grid->fG.Nekx[2] = grid->fG.Nkx[2];
+  grid->fG.Nekx[0]  = 2*(grid->fG.Nkx[0]-1)+1;
+  grid->fG.Nekx[1]  = grid->fG.Nkx[1];
+  grid->fG.Nekx[2]  = grid->fG.Nkx[2];
+  grid->fG.NekxTot  = prod_int(grid->fG.Nekx,nDim);
+  grid->fG.NekxyTot = prod_int(grid->fG.Nekx,2);
 
   // Number of cells in de-aliased real-space.
-  grid->fG.dual.Nx[0] = 2*(grid->fG.Nkx[0]-1)+1;
-  grid->fG.dual.Nx[1] = 2*(grid->fG.Nkx[1]-1);
-  grid->fG.dual.Nx[2] = 1;
+  grid->fG.dual.Nx[0]  = 2*(grid->fG.Nkx[0]-1)+1;
+  grid->fG.dual.Nx[1]  = 2*(grid->fG.Nkx[1]-1);
+  grid->fG.dual.Nx[2]  = 1;
+  grid->fG.dual.NxTot  = prod_int(grid->fG.dual.Nx,nDim);
+  grid->fG.dual.NxyTot = prod_int(grid->fG.dual.Nx,2);
 
   real Lx[nDim] = {2.0*M_PI/grid->fG.kxMin[0], 2.0*M_PI/grid->fG.kxMin[1], 2.0*M_PI/grid->fG.kxMin[2]};
 
@@ -239,6 +247,50 @@ void init_global_grids(struct grid *grid) {
   arrPrint_real(grid->fG.kxMin,    nDim, " Minimum absolute magnitude of wavenumbers: kxMin    =", "\n");
   arrPrint_real(grid->fG.kxMaxDyn, nDim, " Largest wavenumbers evolved:               kxMaxDyn =", "\n");
 
+}
+
+void allocate_fields(struct grid localGrid, struct speciesParameters localSpec) {
+  // Allocate various fields needed.
+  resource onResource = hostOnly;
+  alloc_fourierMoments( localGrid.fG, localSpec, onResource, &momk);
+}
+
+void set_initialCondition(struct grid localGrid, struct speciesParameters localSpec) {
+  // Impose the initial conditions on the moments and thoe potential.
+  // denElck[] = initA*(((kxMin+abs(kx(lckx)))/kxMin)**initAuxX)*(((kyMin+abs(ky(lcky)))/kyMin)**initAuxY)
+  //int mdIdx[4] = {0,0,0,0}
+  //fourier *nElck;
+
+  int sOff = 0;
+  real initA = 2.5e-2;
+  real initAux = -3.;
+  real *kxMin = &localGrid.fG.kxMin[0];
+  for (int s=0; s<localSpec.numSpecies; s++) {
+    fourier *den_p = getMoment_fourier(localGrid.fG, localSpec, s, denIdx, momk.ho);  // Get the density of species s.
+    fourier *temp_p = getMoment_fourier(localGrid.fG, localSpec, s, tempIdx, momk.ho);  // Get the density of species s.
+    for (int linIdx=0; linIdx<localGrid.fG.NekxTot; linIdx++) {
+      int kxIdx[nDim];
+      lin2sub_fourier(&kxIdx[0], linIdx, localGrid.fG);  // Convert linear index to multidimensional kx index.
+      real kx[nDim];
+      get_kx(&kx[0], kxIdx, localGrid.fG);
+
+      // Set density to a power-law in k-space.
+      den_p += linIdx;
+      den_p[0] = initA*(pow((kxMin[0]+abs(kx[0]))/kxMin[0],initAux))
+                      *(pow((kxMin[1]+abs(kx[1]))/kxMin[1],initAux));
+
+      // Set the initial temperature (fluctuations) to zero.
+      temp_p += linIdx;
+      temp_p[0] = CMPLX(0.0, 0.0);
+    };
+
+  }
+}
+
+void free_fields() {
+  // Deallocate fields.
+  resource onResource = hostOnly;
+  free_fourierMoments(&momk, onResource);
 }
 
 void free_grid(struct grid *grid) {
