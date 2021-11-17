@@ -12,24 +12,14 @@ int main(int argc, char *argv[]) {
   struct population popG, popL;
   struct ioSetup myIO;
   struct fieldParameters fieldPars; 
+  struct timeState tState;
 
   init_mpi(argc, argv);  // Initialize MPI interface.
 
   r0printf("\n     --> Welcome to mugy <--    \n\n" );
 
-  // Read inputs (from command line arguments and input file).
-  read_inputs(argc, argv, &myIO, &gridG, &timePars, &popG, &fieldPars);
-  init_comms(gridG, popG);
-
-  // Set the number of cells in Fourier space and aliased real space.
-  init_global_grids(&gridG);
-  distributeDOFs(gridG, popG, &gridL, &popL);
-
-  allocate_fields(gridL, popL);
-
-  set_initialCondition(gridL, popL);
-
-//  printf(" Number of time steps and frames:           Nt       =%8d   |  nFrames  =%6d\n", 1000, timePars.nFrames);
+  // Run the full initialization.
+  init_all(argc, argv, &myIO, &gridG, &gridL, &timePars, &popG, &popL, &fieldPars);
 
   MPI_Barrier(MPI_COMM_WORLD); // To avoid premature deallocations.
 
@@ -39,7 +29,7 @@ int main(int argc, char *argv[]) {
   free_grid(&gridG);
   free_population(&popG);
 
-  terminate_mpi();  // Finalize MPI.
+  terminate_all();  // Call termination of all parts of mugy.
 
   return 0;
 }

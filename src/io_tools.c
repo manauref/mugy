@@ -11,14 +11,14 @@ void r0printf(char *str) {
 }
 
 // Print out elements in an array consecutively, separated by a space.
-void arrPrint_int(const int *arr, const int numElements, const char *preStr, const char *postStr) {
-  int maxCharacters = 9999;
+void arrPrint_mint(const mint *arr, const mint numElements, const char *preStr, const char *postStr) {
+  mint maxCharacters = 9999;
   char strOut[maxCharacters];
-  arr2str_int(strOut, arr, numElements, preStr, postStr);
+  arr2str_mint(strOut, arr, numElements, preStr, postStr);
   r0printf(strOut);
 }
-void arrPrint_real(const real *arr, const int numElements, const char *preStr, const char *postStr) {
-  int maxCharacters = 9999;
+void arrPrint_real(const real *arr, const mint numElements, const char *preStr, const char *postStr) {
+  mint maxCharacters = 9999;
   char strOut[maxCharacters];
   arr2str_real(strOut, arr, numElements, preStr, postStr);
   r0printf(strOut);

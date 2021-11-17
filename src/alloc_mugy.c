@@ -5,26 +5,26 @@
 #include "alloc_mugy.h"
 
 // Wrappers to basic functions that allocate memory.
-int* alloc_intArray(const int numElements) {
-  int *out_p;
-  out_p = (int *) calloc(numElements, sizeof(int));
-  if (out_p == NULL) abortSimulation(" alloc_intArray: calloc failed! Terminating...\n");
+mint* alloc_mintArray(const mint numElements) {
+  mint *out_p;
+  out_p = (mint *) calloc(numElements, sizeof(mint));
+  if (out_p == NULL) abortSimulation(" alloc_mintArray: calloc failed! Terminating...\n");
   return out_p;
 }
-char* alloc_charArray(const int numElements) {
+char* alloc_charArray(const mint numElements) {
   char *out_p;
   out_p = (char *) calloc(numElements, sizeof(char));
   if (out_p == NULL) abortSimulation(" alloc_charArray: calloc failed! Terminating...\n");
   return out_p;
 }
-real* alloc_realArray(const int numElements) {
+real* alloc_realArray(const mint numElements) {
   real *out_p;
   out_p = (real *) calloc(numElements, sizeof(real));
   if (out_p == NULL)
     abortSimulation(" alloc_realArray: calloc failed! Terminating...\n");
   return out_p;
 }
-fourier *alloc_fourierArray(const int numElements) {
+fourier *alloc_fourierArray(const mint numElements) {
   fourier *out_p;
   out_p = (fourier *) calloc(numElements, sizeof(fourier));
   if (out_p == NULL)
@@ -34,19 +34,19 @@ fourier *alloc_fourierArray(const int numElements) {
 
 // Functions that allocate moment vectors, on host and/or device.
 void alloc_realMoments(const struct realGrid grid, const struct population pop, const resource res, struct realMoments *mom) {
-  int numMomentsTot = 1;
-  for (int s=0; s<pop.numSpecies; s++) numMomentsTot += pop.spec[s].numMoments;
+  mint numMomentsTot = 1;
+  for (mint s=0; s<pop.numSpecies; s++) numMomentsTot += pop.spec[s].numMoments;
 
   if ((res == hostOnly) || (res == hostAndDevice))
-    mom->ho = alloc_realArray(numMomentsTot*prod_int(grid.Nx,nDim));  // Allocate on host.
+    mom->ho = alloc_realArray(numMomentsTot*prod_mint(grid.Nx,nDim));  // Allocate on host.
 }
 
 void alloc_fourierMoments(const struct fourierGrid grid, const struct population pop, const resource res, struct fourierMoments *momk) {
-  int numMomentsTot = 1;
-  for (int s=0; s<pop.numSpecies; s++) numMomentsTot += pop.spec[s].numMoments;
+  mint numMomentsTot = 1;
+  for (mint s=0; s<pop.numSpecies; s++) numMomentsTot += pop.spec[s].numMoments;
 
   if ((res == hostOnly) || (res == hostAndDevice))
-    momk->ho = alloc_fourierArray(numMomentsTot*prod_int(grid.Nekx,nDim));  // Allocate on host.
+    momk->ho = alloc_fourierArray(numMomentsTot*prod_mint(grid.Nekx,nDim));  // Allocate on host.
 }
 
 // Functions to free memory associated used for moment vector. 

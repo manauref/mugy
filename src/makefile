@@ -41,7 +41,7 @@ LFLAGS = -L../lib $(ADIOS_LIB)
 LIBS = 
 
 #[ Define the C source files.
-SRCS = alloc_mugy.c initialization.c io_tools.c mpi_tools.c mugy.c utilities.c data_mugy.c 
+SRCS = alloc_mugy.c initialization.c io_adios.c io_tools.c mpi_tools.c mugy.c utilities.c data_mugy.c finalize.c
 
 #[ Define the C object files.
 #[ Uses Suffix Replacement within a macro:

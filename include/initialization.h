@@ -1,4 +1,4 @@
-/* A mugy header file:
+/* mugy: initialization.h
 
    Utility functions used in mugy.
 */
@@ -16,20 +16,18 @@
 
 // Read a real variable from input file. Need this function to support
 // reading floats and doubles with the same function call.
-void readFileVar_real(FILE *fp, const int numElements, real *var);
-void readFileVar_int(FILE *fp, const int numElements, int *var);
-void allocAndReadFileVar_real(FILE *fp, const int numElements, real **var);
-void allocAndReadFileVar_int(FILE *fp, const int numElements, int **var);
+void readFileVar_real(FILE *fp, const mint numElements, real *var);
+void readFileVar_mint(FILE *fp, const mint numElements, mint *var);
 // Read species parameter composed of numElements[s] for the s-th species.
-void readFileSpeciesPar_int(int **var, FILE *fp, const int sIdx, const int *numElements);
-void readFileSpeciesPar_real(real **var, FILE *fp, const int sIdx, const int *numElements);
+void readFileSpeciesPar_mint(mint **var, FILE *fp, const mint sIdx, const mint *numElements);
+void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint *numElements);
 
 // Read input values from input file.
 void read_inputFile(const char *fileNameIn, struct grid *grid, struct timeSetup *time,
                     struct population *pop, struct fieldParameters *field);
 
 // Read command line arguments and input file.
-void read_inputs(int argc, char *argv[], struct ioSetup *ioSet, struct grid *grid, struct timeSetup *time,
+void read_inputs(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *grid, struct timeSetup *time,
                  struct population *pop, struct fieldParameters *field);
 
 // Set number of cells in de-aliased, aliased and real space global grids.
@@ -40,6 +38,10 @@ void allocate_fields(struct grid localGrid, struct population localPop);
 
 // Impose the initial conditions on the moments and the electrostatic potential.
 void set_initialCondition(struct grid localGrid, struct population localPop);
+
+// Run the full initialization.
+void init_all(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gridG, struct grid *gridL, struct timeSetup *timePars,
+              struct population *popG, struct population *popL, struct fieldParameters *fieldPars);
 
 // Deallocate fields.
 void free_fields();

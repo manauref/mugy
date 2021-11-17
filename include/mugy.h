@@ -5,13 +5,11 @@
    This file contains global macros and inclusion of various header files.
 */
 
-/* .................. GLOBAL MACROS ..................... */
-
-/* ............... END OF GLOBAL MACROS ................. */
-
-
 // Pre-processor flags.
 #include "mugyFLAGS.h"
+
+// Global macros.
+#include "macros.h"
 
 // Global parameters.
 #include "parameters.h"
@@ -28,8 +26,11 @@
 // Data structures specific to mugy.
 #include "data_mugy.h"
 
-//// Functions that allocate mugy data.
+// Functions that allocate mugy data.
 #include "alloc_mugy.h"
 
 // Functions used to initialize the simulation.
 #include "initialization.h"
+
+// Module in charge of closing mugy sim.
+#include "finalize.h"

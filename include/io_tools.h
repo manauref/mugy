@@ -1,6 +1,6 @@
-/* mugy: io_tools header file.
+/* mugy: io_tools.h
 
-   IO module.
+   IO module header file.
 */
 
 #ifndef IO_TOOLS 
@@ -10,12 +10,15 @@
 #include "utilities.h"
 #include "data_mugy.h"
 #include "mpi_tools.h"
+#include "io_adios.h"
 
 // Print string out if this is the zeroth rank.
 void r0printf(char *str);
 
 // Print out elements in an array consecutively, separated by a space.
-void arrPrint_int(const int *arr, const int numElements, const char *preStr, const char *postStr);
-void arrPrint_real(const real *arr, const int numElements, const char *preStr, const char *postStr);
+void arrPrint_mint(const mint *arr, const mint numElements, const char *preStr, const char *postStr);
+void arrPrint_real(const real *arr, const mint numElements, const char *preStr, const char *postStr);
+
+//void writeFields(); 
 
 #endif

@@ -12,10 +12,10 @@
 
 // Wrappers to basic functions that allocate plain arrays.
 //   numElements: number of elements in the array.
-int* alloc_intArray(int numElements);
-char* alloc_charArray(int numElements);
-real* alloc_realArray(int numElements);
-fourier *alloc_fourierArray(int numElements);
+mint* alloc_mintArray(mint numElements);
+char* alloc_charArray(mint numElements);
+real* alloc_realArray(mint numElements);
+fourier *alloc_fourierArray(mint numElements);
 
 /* Allocate real-space moment vectors, on host and/or device.
      grid: grid on which to allocate the vector of moments.

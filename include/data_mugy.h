@@ -15,18 +15,21 @@
 #if USE_SINGLE_PRECISION > 0
 typedef float real;
 typedef float complex fourier;
-#define mugyMPI_REAL MPI_FLOAT
-#define mugyMPI_FOURIER MPI_C_COMPLEX
-#define SCNfREAL "f"
+#define mpi_real MPI_FLOAT
+#define mpi_fourier MPI_C_COMPLEX
+#define fmt_real "f"
 #else
 typedef double real;
 typedef double complex fourier;
-#define SCNfREAL "lf"
-#define mugyMPI_REAL MPI_DOUBLE
-#define mugyMPI_FOURIER MPI_C_DOUBLE_COMPLEX
+#define fmt_real "lf"
+#define mpi_real MPI_DOUBLE
+#define mpi_fourier MPI_C_DOUBLE_COMPLEX
 #endif
 
-#define mugyMPI_INT MPI_INT
+// Define our own int in case we wish to change to long.
+typedef int mint;
+#define mpi_mint MPI_INT
+#define fmt_mint "d"
 
 // ID of rank that does simpe I/O:
 #define ioRank 0
@@ -49,50 +52,50 @@ struct ioSetup {
 typedef enum {hostOnly, deviceOnly, hostAndDevice} resource;
 
 struct realGrid {
-  int Nx[nDim];         // Number of cells.
-  int NxTot;            // Total number of cells.
-  int NxyTot;           // Total number of cells in an x-y plane.
+  mint Nx[nDim];        // Number of cells.
+  mint NxTot;           // Total number of cells.
+  mint NxyTot;          // Total number of cells in an x-y plane.
   real xMin[nDim];      // Minimum coordinates.
   real xMax[nDim];      // Maximum coordinates.
   real dx[nDim];        // Cell length.
   real *x;              // Coordinates in each direction.
-  int globalOff[nDim];  // Offset of first element in this process within the global domain.
+  mint globalOff[nDim]; // Offset of first element in this process within the global domain.
 };
 
 struct fourierGrid {
-  int Nkx[nDim];         // Number of distinct absolute amplitude wavenumbers (counting k=0).
-  int Nekx[nDim];        // Number of elements in a k-space array (counting k=0 and negative k's).
-  int NekxTot;           // Total number of elements.
-  int NekxyTot;          // Total number of cells in an kx-ky plane.
+  mint Nkx[nDim];        // Number of distinct absolute amplitude wavenumbers (counting k=0).
+  mint Nekx[nDim];       // Number of elements in a k-space array (counting k=0 and negative k's).
+  mint NekxTot;          // Total number of elements.
+  mint NekxyTot;         // Total number of cells in an kx-ky plane.
   real kxMin[nDim];      // Minimum finite absolute amplitude wavenumbers.
   real *kx;              // Coordinates along each direction.
   struct realGrid dual;  // Real grid dual to this Fourier grid.
   real kxMaxDyn[nDim];   // Maximum k evolved. Above this we multiply time rates of change by zero.
-  int globalOff[nDim];   // Offset of first element in this process within the global domain.
+  mint globalOff[nDim];  // Offset of first element in this process within the global domain.
 };
 
 struct grid {
   struct fourierGrid fG;  // This grid's (dealised) Fourier grid.
   struct fourierGrid fGa; // This grid's aliased Fourier grid.
-  int mpiProcs[nDim];     // Number of MPI processes along each direction.
+  mint mpiProcs[nDim];    // Number of MPI processes along each direction.
 };
 
 struct timeSetup {
   real dt;               // Time step.
   real endTime;          // Absolute end time (from t=0 of first simulation).
-  int nFrames;           // Absolute frames to output (from t=0 of first simulation).
-  int ark_kySplit;       // multirate splitting index: highest "slow" wavenumber (higher are "fast").
-  int ark_fastTableExp;  // Butcher table index for fast explicit method.
-  int ark_fastTableImp;  // Butcher table index for fast implicit method.
-  int ark_slowTable;     // Butcher table index for slow method.
+  mint nFrames;          // Absolute frames to output (from t=0 of first simulation).
+  mint ark_kySplit;      // multirate splitting index: highest "slow" wavenumber (higher are "fast").
+  mint ark_fastTableExp; // Butcher table index for fast explicit method.
+  mint ark_fastTableImp; // Butcher table index for fast implicit method.
+  mint ark_slowTable;    // Butcher table index for slow method.
   real ark_dtFast;       // fixed 'fast' time step to use.
   real ark_rtol;         // relative solution tolerance for temporal adaptivity.
   real ark_atol;         // absolute solution tolerance for temporal adaptivity
-  int ark_ewtScaling;    // which error weight scaling to use.
+  mint ark_ewtScaling;   // which error weight scaling to use.
 };
 
 struct species {
-  int numMoments;    // Number of moments.
+  mint numMoments;   // Number of moments.
   real qCharge;      // Charge.
   real muMass;       // sqrt of the mass.
   real tau;          // Temperature. 
@@ -108,24 +111,35 @@ struct species {
   real *hDiff;       // Hyperdiffusion coefficient.
   real *kDiffMin;    // Minimum k at which to apply HD.
   // The following are used by initial conditions.
-  int icOp;          // IC option.
+  mint icOp;         // IC option.
   real *initAux;     // Auxiliary parameters for ICs.
   real initA;        // Initial amplitude.
-  real noiseA;      // Initial noise amplitude.
+  real noiseA;       // Initial noise amplitude.
 };
 
 struct population {
-  int numSpecies;        // Number of species.
-  int mpiProcs;          // MPI decomposition of the species.
-  int globalOff;         // Offset of first element in this process within the global domain.
+  mint numSpecies;       // Number of species.
+  mint mpiProcs;         // MPI decomposition of the species.
+  mint globalSpecOff;    // Offset of first species in this process within the global population.
+  mint globalMomOff;     // Offset of first moment in this process within global number of moments.
   struct species *spec;  // Pointer to array of species.
+  mint numMomentsTot;    // Total number of moments across all species.
 };
 
 struct fieldParameters {
   real lambdaD;  // Debye shielding parameter (normalized Debye length).
-  int pade;      // Option to use Pade approximations.
+  mint pade;      // Option to use Pade approximations.
   // The following are used by initial conditions.
-  int icOp;      // IC option.
+  mint icOp;      // IC option.
+};
+
+struct timeState {
+  real simTime;
+  mint time;
+  mint framesOut;
+  mint hdAdjusts;
+  mint dtAdjusts;
+  real dt;
 };
 
 // Structures storing host and device pointers to vector field.
@@ -143,15 +157,15 @@ extern struct realMoments mom, moma;
 extern struct fourierMoments momk, momka;
 
 // Return a pointer to the momIdx-th moment of the sIdx-th species in momk.
-fourier* getMoment_fourier(struct fourierGrid grid, struct population pop, const int sIdx, const int momIdx, fourier *momkIn);
+fourier* getMoment_fourier(struct fourierGrid grid, struct population pop, const mint sIdx, const mint momIdx, fourier *momkIn);
 
 // Linear index given the nDim-dimensional subscript in a Fourier grid.
-int sub2lin_fourier(const int *kxI, const struct fourierGrid grid);
+mint sub2lin_fourier(const mint *kxI, const struct fourierGrid grid);
 
 // nDim-dimensional subscript given the linear index in a Fourier grid.
-void lin2sub_fourier(int *kxI, int lin, const struct fourierGrid grid);
+void lin2sub_fourier(mint *kxI, mint lin, const struct fourierGrid grid);
 
 // (kx,ky,kz) coordinates given the multidimensional kxI index.
-void get_kx(real *kx, int *kxI, const struct fourierGrid grid);
+void get_kx(real *kx, mint *kxI, const struct fourierGrid grid);
 
 #endif

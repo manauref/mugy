@@ -14,24 +14,20 @@
 #include "alloc_mugy.h"
 #include "io_tools.h"
 
-extern int myRank, totNumProcs;  // Rank of this process & total number of processes.
-extern int numProcs[nDim+1];     // Processes along x,y,z and species.
+extern mint myRank, totNumProcs;  // Rank of this process & total number of processes.
+extern mint numProcs[nDim+1];     // Processes along x,y,z and species.
 extern MPI_Comm cartComm;        // Cartesian communicator.
-extern int cartRank;             // Rank in cartCOMM.
+extern mint cartRank;             // Rank in cartCOMM.
 extern MPI_Comm *sub1dComm;      // 1D subcommunicators along each direction.
-extern int sub1dRank[nDim+1];    // ID (rank) in the 1D xpec,Z,X,Y subcommunicators.
+extern mint sub1dRank[nDim+1];    // ID (rank) in the 1D xpec,Z,X,Y subcommunicators.
 
-void init_mpi(int argc, char *argv[]);  // Initialize MPI.
+void init_mpi(mint argc, char *argv[]);  // Initialize MPI.
 
 // Initialize sub-communicators.
 void init_comms(struct grid grid, struct population pop);
 
-// Allocate array var and copy numE elements to it from src.
-void allocAndCopyVar_int(int **var, int *src, const int numE);
-void allocAndCopyVar_real(real **var, real *src, const int numE);
-
 // Distribute degrees of freedom amongst MPI processes in 1D.
-void distribute1dDOFs(const int procs, const int procID, const int globalDOFs, int *localDOFs, int *firstDOF);
+void distribute1dDOFs(const mint procs, const mint procID, const mint globalDOFs, mint *localDOFs, mint *firstDOF);
 
 // Distribute s,Z,X,Y degrees of freedom amongst MPI processes.
 void distributeDOFs(struct grid globalGrid, struct population globalPop, struct grid *localGrid, struct population *localPop);
