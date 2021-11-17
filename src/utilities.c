@@ -17,7 +17,6 @@ int sum_int(const int *arrIn, const int numElements) {
   return pOut;
 }
 
-
 int closest_power_of_two(const int aIn) {
   /* Find the closest power of 2. */
   int lc = 0;

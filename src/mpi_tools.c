@@ -21,13 +21,14 @@ void init_mpi(int argc, char *argv[]) {
   MPI_Comm_size(MPI_COMM_WORLD, &totNumProcs);  // Number of MPI processes.
 }
 
-void init_comms(struct grid grid, struct speciesParameters spec) {
+void init_comms(struct grid grid, struct population pop) {
   // Initialize the various sub-communicators needed.
   
   // Check the number of MPI processes is correct.
-  if (prod_int(grid.mpiProcs,nDim)*spec.mpiProcs != totNumProcs) {
+  if (prod_int(grid.mpiProcs,nDim)*pop.mpiProcs != totNumProcs) {
+    printf(" mpiProcs = %d %d %d %d\n",grid.mpiProcs[0],grid.mpiProcs[1],grid.mpiProcs[2],pop.mpiProcs);
     printf(" Number of MPI processes in input file (%d) differs from that in mpirun (%d).\n",
-           prod_int(grid.mpiProcs,nDim)*spec.mpiProcs, totNumProcs);
+           prod_int(grid.mpiProcs,nDim)*pop.mpiProcs, totNumProcs);
     abortSimulation(" Terminating...\n");
   }
 
@@ -35,7 +36,7 @@ void init_comms(struct grid grid, struct speciesParameters spec) {
   numProcs[0] = grid.mpiProcs[0];
   numProcs[1] = grid.mpiProcs[1];
   numProcs[2] = grid.mpiProcs[2];
-  numProcs[3] = spec.mpiProcs;
+  numProcs[3] = pop.mpiProcs;
   arrPrint_int(numProcs,nDim+1, " MPI processes along X,Y,Z,s: ", "\n");
   r0printf("\n");
 
@@ -45,7 +46,7 @@ void init_comms(struct grid grid, struct speciesParameters spec) {
   int reorder = true;
 
   // Create a 4D Cartesian communicator (3D space + species).
-  // Re-organize the dimensions in s,Z,X,Y order..
+  // Re-organize the dimensions in s,Z,X,Y order.
   int commOrg[nDim+1] = {2,3,1,0};
   int numProcsOrg[nDim+1], cartCommBCsOrg[nDim+1];
   for (int d=0; d<nDim+1; d++) {
@@ -113,30 +114,40 @@ void allocAndCopyVar_real(real **var, real *src, const int numE) {
   memcpy(&(*var)[0], src, numE*sizeof(real));
 }
 
-void distributeDOFs(struct grid globalGrid, struct speciesParameters globalSpec, struct grid *localGrid, struct speciesParameters *localSpec) {
+void distributeDOFs(struct grid globalGrid, struct population globalPop, struct grid *localGrid, struct population *localPop) {
   // Distribute s,Z,X,Y amongst MPI processes.
   
   // Distribute the species.
-  distribute1dDOFs(globalSpec.mpiProcs, sRank, globalSpec.numSpecies, &localSpec->numSpecies, &localSpec->globalOff);
-  localSpec->numMoments = globalSpec.numMoments;
-  allocAndCopyVar_real(&localSpec->qCharge   ,globalSpec.qCharge   +                      localSpec->globalOff,                      localSpec->numSpecies);
-  allocAndCopyVar_real(&localSpec->muMass    ,globalSpec.muMass    +                      localSpec->globalOff,                      localSpec->numSpecies);
-  allocAndCopyVar_real(&localSpec->tau       ,globalSpec.tau       +                      localSpec->globalOff,                      localSpec->numSpecies);
-  allocAndCopyVar_real(&localSpec->omSt      ,globalSpec.omSt      +                      localSpec->globalOff,                      localSpec->numSpecies);
-  allocAndCopyVar_real(&localSpec->omd       ,globalSpec.omd       +                      localSpec->globalOff,                      localSpec->numSpecies);
-  allocAndCopyVar_real(&localSpec->delta     ,globalSpec.delta     +                      localSpec->globalOff,                      localSpec->numSpecies);
-  allocAndCopyVar_real(&localSpec->deltaPerp ,globalSpec.deltaPerp +                      localSpec->globalOff,                      localSpec->numSpecies);
-  allocAndCopyVar_real(&localSpec->eta       ,globalSpec.eta       +                      localSpec->globalOff,                      localSpec->numSpecies);
-  allocAndCopyVar_real(&localSpec->alpha     ,globalSpec.alpha     +localSpec->numMoments*localSpec->globalOff,localSpec->numMoments*localSpec->numSpecies);
-  allocAndCopyVar_real(&localSpec->nu        ,globalSpec.nu        +localSpec->numMoments*localSpec->globalOff,localSpec->numMoments*localSpec->numSpecies);
-  allocAndCopyVar_real(&localSpec->delta0    ,globalSpec.delta0    +                      localSpec->globalOff,                      localSpec->numSpecies);
-  allocAndCopyVar_real(&localSpec->hDiffOrder,globalSpec.hDiffOrder+                      localSpec->globalOff,                      localSpec->numSpecies);
-  allocAndCopyVar_real(&localSpec->hDiff     ,globalSpec.hDiff     +                 nDim*localSpec->globalOff,                 nDim*localSpec->numSpecies);
-  allocAndCopyVar_real(&localSpec->kDiffMin  ,globalSpec.kDiffMin  +                 nDim*localSpec->globalOff,                 nDim*localSpec->numSpecies);
-  allocAndCopyVar_int( &localSpec->icOp      ,globalSpec.icOp      +                      localSpec->globalOff,                      localSpec->numSpecies);
-  allocAndCopyVar_real(&localSpec->initAux   ,globalSpec.initAux   +                 nDim*localSpec->globalOff,                 nDim*localSpec->numSpecies);
-  allocAndCopyVar_real(&localSpec->initA     ,globalSpec.initA     +                      localSpec->globalOff,                      localSpec->numSpecies);
-  allocAndCopyVar_real(&localSpec->noiseA    ,globalSpec.noiseA    +                      localSpec->globalOff,                      localSpec->numSpecies);
+  distribute1dDOFs(globalPop.mpiProcs, sRank, globalPop.numSpecies, &localPop->numSpecies, &localPop->globalOff);
+  localPop->spec = (struct species*) calloc(localPop->numSpecies, sizeof(struct species));
+  for (int s=0; s<localPop->numSpecies; s++) {
+    localPop->spec[s].numMoments = globalPop.spec[s+localPop->globalOff].numMoments;
+
+    localPop->spec[s].alpha    = alloc_realArray(localPop->spec[s].numMoments);
+    localPop->spec[s].nu       = alloc_realArray(localPop->spec[s].numMoments);
+    localPop->spec[s].hDiff    = alloc_realArray(nDim);
+    localPop->spec[s].kDiffMin = alloc_realArray(nDim);
+    localPop->spec[s].initAux  = alloc_realArray(nDim);
+
+    localPop->spec[s].qCharge    = globalPop.spec[s+localPop->globalOff].qCharge   ;
+    localPop->spec[s].muMass     = globalPop.spec[s+localPop->globalOff].muMass    ;
+    localPop->spec[s].tau        = globalPop.spec[s+localPop->globalOff].tau       ;
+    localPop->spec[s].omSt       = globalPop.spec[s+localPop->globalOff].omSt      ;
+    localPop->spec[s].omd        = globalPop.spec[s+localPop->globalOff].omd       ;
+    localPop->spec[s].delta      = globalPop.spec[s+localPop->globalOff].delta     ;
+    localPop->spec[s].deltaPerp  = globalPop.spec[s+localPop->globalOff].deltaPerp ;
+    localPop->spec[s].eta        = globalPop.spec[s+localPop->globalOff].eta       ;
+    memcpy(localPop->spec[s].alpha, globalPop.spec[s+localPop->globalOff].alpha, localPop->spec[s].numMoments*sizeof(real));
+    memcpy(localPop->spec[s].nu   , globalPop.spec[s+localPop->globalOff].nu   , localPop->spec[s].numMoments*sizeof(real));
+    localPop->spec[s].delta0     = globalPop.spec[s+localPop->globalOff].delta0    ;
+    localPop->spec[s].hDiffOrder = globalPop.spec[s+localPop->globalOff].hDiffOrder;
+    memcpy(localPop->spec[s].hDiff   , globalPop.spec[s+localPop->globalOff].hDiff   , nDim*sizeof(real));
+    memcpy(localPop->spec[s].kDiffMin, globalPop.spec[s+localPop->globalOff].kDiffMin, nDim*sizeof(real));
+    localPop->spec[s].icOp       = globalPop.spec[s+localPop->globalOff].icOp      ;
+    memcpy(localPop->spec[s].initAux, globalPop.spec[s+localPop->globalOff].initAux, nDim*sizeof(real));
+    localPop->spec[s].initA      = globalPop.spec[s+localPop->globalOff].initA     ;
+    localPop->spec[s].noiseA     = globalPop.spec[s+localPop->globalOff].noiseA    ;
+  }
 
   // Distribute the real-space and Fourier-space points. 
   for (int d=0; d<nDim; d++) {
@@ -149,10 +160,14 @@ void distributeDOFs(struct grid globalGrid, struct speciesParameters globalSpec,
     distribute1dDOFs(globalGrid.mpiProcs[d], sub1dRank[d], globalGrid.fGa.dual.Nx[d],
                      &localGrid->fGa.dual.Nx[d], &localGrid->fGa.dual.globalOff[d]);
   }
-  localGrid->fG.NekxTot     = prod_int(localGrid->fG.Nekx,nDim);
-  localGrid->fG.dual.NxTot  = prod_int(localGrid->fG.dual.Nx,nDim);
-  localGrid->fGa.NekxTot    = prod_int(localGrid->fGa.Nekx,nDim);
-  localGrid->fGa.dual.NxTot = prod_int(localGrid->fGa.dual.Nx,nDim);
+  localGrid->fG.NekxTot      = prod_int(localGrid->fG.Nekx,nDim);
+  localGrid->fG.dual.NxTot   = prod_int(localGrid->fG.dual.Nx,nDim);
+  localGrid->fG.NekxyTot     = prod_int(localGrid->fG.Nekx,2);
+  localGrid->fG.dual.NxyTot  = prod_int(localGrid->fG.dual.Nx,2);
+  localGrid->fGa.NekxTot     = prod_int(localGrid->fGa.Nekx,nDim);
+  localGrid->fGa.dual.NxTot  = prod_int(localGrid->fGa.dual.Nx,nDim);
+  localGrid->fGa.NekxyTot    = prod_int(localGrid->fGa.Nekx,2);
+  localGrid->fGa.dual.NxyTot = prod_int(localGrid->fGa.dual.Nx,2);
 
   // Create local real-space and Fourier-space coordinate arrays.
   localGrid->fG.kx     = alloc_realArray(sum_int(localGrid->fG.Nekx, nDim));

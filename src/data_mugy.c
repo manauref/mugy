@@ -8,10 +8,10 @@
 struct realMoments mom, moma;
 struct fourierMoments momk, momka;
 
-fourier* getMoment_fourier(struct fourierGrid grid, struct speciesParameters spec, const int sIdx, const int momIdx, fourier *momkIn) {
+fourier* getMoment_fourier(struct fourierGrid grid, struct population pop, const int sIdx, const int momIdx, fourier *momkIn) {
   // Return a pointer to the momIdx-th moment of the sIdx-th species in momk.
   fourier* ptrOut = momkIn;
-  return ptrOut+(sIdx*spec.numMoments+momIdx)*grid.NekxTot;
+  return ptrOut+(sIdx*pop.spec[sIdx].numMoments+momIdx)*grid.NekxTot;
 }
 
 int sub2lin_fourier(const int *kxI, const struct fourierGrid grid) {

@@ -24,7 +24,7 @@ extern int sub1dRank[nDim+1];    // ID (rank) in the 1D xpec,Z,X,Y subcommunicat
 void init_mpi(int argc, char *argv[]);  // Initialize MPI.
 
 // Initialize sub-communicators.
-void init_comms(struct grid grid, struct speciesParameters spec);
+void init_comms(struct grid grid, struct population pop);
 
 // Allocate array var and copy numE elements to it from src.
 void allocAndCopyVar_int(int **var, int *src, const int numE);
@@ -34,7 +34,7 @@ void allocAndCopyVar_real(real **var, real *src, const int numE);
 void distribute1dDOFs(const int procs, const int procID, const int globalDOFs, int *localDOFs, int *firstDOF);
 
 // Distribute s,Z,X,Y degrees of freedom amongst MPI processes.
-void distributeDOFs(struct grid globalGrid, struct speciesParameters globalSpec, struct grid *localGrid, struct speciesParameters *localSpec);
+void distributeDOFs(struct grid globalGrid, struct population globalPop, struct grid *localGrid, struct population *localPop);
 
 void terminate_mpi();  // Terminate MPI.
 

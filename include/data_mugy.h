@@ -15,12 +15,21 @@
 #if USE_SINGLE_PRECISION > 0
 typedef float real;
 typedef float complex fourier;
+#define mugyMPI_REAL MPI_FLOAT
+#define mugyMPI_FOURIER MPI_C_COMPLEX
 #define SCNfREAL "f"
 #else
 typedef double real;
 typedef double complex fourier;
 #define SCNfREAL "lf"
+#define mugyMPI_REAL MPI_DOUBLE
+#define mugyMPI_FOURIER MPI_C_DOUBLE_COMPLEX
 #endif
+
+#define mugyMPI_INT MPI_INT
+
+// ID of rank that does simpe I/O:
+#define ioRank 0
 
 // Moment indices.
 #define denIdx 0 
@@ -63,8 +72,8 @@ struct fourierGrid {
 };
 
 struct grid {
-  struct fourierGrid fG;  // this grid's (dealised) Fourier grid.
-  struct fourierGrid fGa; // this grid's aliased Fourier grid.
+  struct fourierGrid fG;  // This grid's (dealised) Fourier grid.
+  struct fourierGrid fGa; // This grid's aliased Fourier grid.
   int mpiProcs[nDim];     // Number of MPI processes along each direction.
 };
 
@@ -82,30 +91,34 @@ struct timeSetup {
   int ark_ewtScaling;    // which error weight scaling to use.
 };
 
-struct speciesParameters {
-  int numSpecies;    // Number of species.
+struct species {
   int numMoments;    // Number of moments.
-  int mpiProcs;      // MPI decomposition of the species.
-  int globalOff;     // Offset of first element in this process within the global domain.
-  real *qCharge;     // Charge.
-  real *muMass;      // sqrt of the mass.
-  real *tau;         // Temperature. 
-  real *omSt;        // omega_star.
-  real *omd;         // omega_d.
-  real *delta;       // (Tpar + Tperp)/T.
-  real *deltaPerp;   // Tperp/T.
-  real *eta;         // L_n/L_{Tperp}.
+  real qCharge;      // Charge.
+  real muMass;       // sqrt of the mass.
+  real tau;          // Temperature. 
+  real omSt;         // omega_star.
+  real omd;          // omega_d.
+  real delta;        // (Tpar + Tperp)/T.
+  real deltaPerp;    // Tperp/T.
+  real eta;          // L_n/L_{Tperp}.
   real *alpha;       // Damping coefficient.
   real *nu;          // Diffusion coefficient.
-  real *delta0;      // i-delta non-adiabaticity parameter.
-  real *hDiffOrder;  // Hyperdiffusion order.
+  real delta0;       // i-delta non-adiabaticity parameter.
+  real hDiffOrder;   // Hyperdiffusion order.
   real *hDiff;       // Hyperdiffusion coefficient.
   real *kDiffMin;    // Minimum k at which to apply HD.
   // The following are used by initial conditions.
-  int *icOp;         // IC option.
+  int icOp;          // IC option.
   real *initAux;     // Auxiliary parameters for ICs.
-  real *initA;       // Initial amplitude.
-  real *noiseA;      // Initial noise amplitude.
+  real initA;        // Initial amplitude.
+  real noiseA;      // Initial noise amplitude.
+};
+
+struct population {
+  int numSpecies;        // Number of species.
+  int mpiProcs;          // MPI decomposition of the species.
+  int globalOff;         // Offset of first element in this process within the global domain.
+  struct species *spec;  // Pointer to array of species.
 };
 
 struct fieldParameters {
@@ -130,7 +143,7 @@ extern struct realMoments mom, moma;
 extern struct fourierMoments momk, momka;
 
 // Return a pointer to the momIdx-th moment of the sIdx-th species in momk.
-fourier* getMoment_fourier(struct fourierGrid grid, struct speciesParameters spec, const int sIdx, const int momIdx, fourier *momkIn);
+fourier* getMoment_fourier(struct fourierGrid grid, struct population pop, const int sIdx, const int momIdx, fourier *momkIn);
 
 // Linear index given the nDim-dimensional subscript in a Fourier grid.
 int sub2lin_fourier(const int *kxI, const struct fourierGrid grid);

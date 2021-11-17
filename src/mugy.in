@@ -2,7 +2,7 @@
 NkxG     = 4 4 1
 kxMin    = 0.12566 0.12566 1.0
 kMaxDyn  = 0. 0. 0.
-mpiProcs = 1 1 1
+mpiProcs = 1 2 1
 /
 
 &time
@@ -21,8 +21,8 @@ ark_ewtScaling   = 0
 
 &species
 numSpecies = 2
-numMoments = 2
 mpiProcs   = 1
+numMoments = 2 2
 qCharge    = -1.0 1.0
 muMass     = 1.0 60.59
 tau        = 1.0 1.0

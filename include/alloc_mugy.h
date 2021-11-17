@@ -19,17 +19,17 @@ fourier *alloc_fourierArray(int numElements);
 
 /* Allocate real-space moment vectors, on host and/or device.
      grid: grid on which to allocate the vector of moments.
-     spec: species struct containing the number of species and moments.
+     pop: population struct containing the number of species and moments.
      res: resource on which to allocate (host, device or both).
      mom: struct holding the vector of moments. */
-void alloc_realMoments(const struct realGrid grid, const struct speciesParameters spec, const resource res, struct realMoments *mom);
+void alloc_realMoments(const struct realGrid grid, const struct population pop, const resource res, struct realMoments *mom);
 
 /* Allocate Fourier-space moment vectors, on host and/or device.
      grid: grid on which to allocate the vector of moments.
-     spec: species struct containing the number of species and moments.
+     pop: population struct containing the number of species and moments.
      res: resource on which to allocate (host, device or both).
      momk: struct holding the vector of moments. */
-void alloc_fourierMoments(const struct fourierGrid grid, const struct speciesParameters spec, const resource res, struct fourierMoments *momk);
+void alloc_fourierMoments(const struct fourierGrid grid, const struct population pop, const resource res, struct fourierMoments *momk);
 
 /* Functions to free memory associated used for moment vector. 
      mom: vector of moments to free.

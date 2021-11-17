@@ -27,7 +27,7 @@ ADIOS_LIB = -Wl,-rpath,/Users/manaure/Documents/multiscale/code/adios2-openmpi4.
 ADIOS_INCL = -I/Users/manaure/Documents/multiscale/code/adios2-openmpi4.1.1-intel19.1/include
 
 #[ Define any compile-time flags.
-CFLAGS = -Wall -std=c99 $(ADIOS_FLAGS)
+CFLAGS = -Wall -std=c11 $(ADIOS_FLAGS)
 
 #[ Define any directories containing header files.
 INCLUDES = -I../include $(ADIOS_INCL)
