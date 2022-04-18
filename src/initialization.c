@@ -3,6 +3,7 @@
    Functions used to initialize the simulation.
 */
 #include "initialization.h"
+#include <complex.h>  /* For complex data types. */
 
 // Read an variable from input file.
 void readFileVar_mint(FILE *fp, const mint numElements, mint *var) {
@@ -25,7 +26,7 @@ void readFileVar_real(FILE *fp, const mint numElements, real *var) {
 // Read species parameter composed of numElements[s] for the s-th species.
 // Skip the species prior to the s-th species, and when numElements[i] is
 // greater than one allocate an array for such parameter.
-void readFileSpeciesPar_mint(mint **var, FILE *fp, const mint sIdx, const mint *numElements) {
+void readFileSpeciesPar_mint(mint **var, FILE *fp, const mint sIdx, const mint numSpecies, const mint *numElements) {
   fscanf(fp, "%*s = ");
   // Skip species prior to sIdx (presumably already read).
   for (mint s=0; s<sIdx; s++) {
@@ -38,8 +39,12 @@ void readFileSpeciesPar_mint(mint **var, FILE *fp, const mint sIdx, const mint *
     *var = alloc_mintArray(numElements[sIdx]);
     for (mint i=0; i<numElements[sIdx]; i++) fscanf(fp, "%d", &(*var)[i]);
   }
+  // Skip species after sIdx (presumably will be read later).
+  for (mint s=sIdx+1; s<numSpecies; s++) {
+    for (mint i=0; i<numElements[s]; i++) fscanf(fp, "%*d");
+  }
 }
-void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint *numElements) {
+void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint numSpecies, const mint *numElements) {
   fscanf(fp, "%*s = ");
   // Skip species prior to sIdx (presumably already read).
   for (mint s=0; s<sIdx; s++) {
@@ -51,6 +56,10 @@ void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint *
   } else {
     *var = alloc_realArray(numElements[sIdx]);
     for (mint i=0; i<numElements[sIdx]; i++) fscanf(fp, "%"fmt_real, &(*var)[i]);
+  }
+  // Skip species after sIdx (presumably will be read later).
+  for (mint s=sIdx+1; s<numSpecies; s++) {
+    for (mint i=0; i<numElements[s]; i++) fscanf(fp, "%*"fmt_real);
   }
 }
 
@@ -102,24 +111,24 @@ void read_inputFile(const char *fileNameIn, struct grid *grid, struct timeSetup 
     real* real_p; real** real_pp; mint* mint_p;
     for (mint s=0; s<pop->numSpecies; s++) {
       fseek(file_p, filePos, SEEK_SET);
-      real_p  =    &pop->spec[s].qCharge; readFileSpeciesPar_real(&real_p, file_p, s, specOnes);
-      real_p  =     &pop->spec[s].muMass; readFileSpeciesPar_real(&real_p, file_p, s, specOnes);
-      real_p  =        &pop->spec[s].tau; readFileSpeciesPar_real(&real_p, file_p, s, specOnes);
-      real_p  =       &pop->spec[s].omSt; readFileSpeciesPar_real(&real_p, file_p, s, specOnes);
-      real_p  =        &pop->spec[s].omd; readFileSpeciesPar_real(&real_p, file_p, s, specOnes);
-      real_p  =      &pop->spec[s].delta; readFileSpeciesPar_real(&real_p, file_p, s, specOnes);
-      real_p  =  &pop->spec[s].deltaPerp; readFileSpeciesPar_real(&real_p, file_p, s, specOnes);
-      real_p  =        &pop->spec[s].eta; readFileSpeciesPar_real(&real_p, file_p, s, specOnes);
-      real_pp =      &pop->spec[s].alpha; readFileSpeciesPar_real(real_pp, file_p, s, specNumMoms);
-      real_pp =         &pop->spec[s].nu; readFileSpeciesPar_real(real_pp, file_p, s, specNumMoms);
-      real_p  =     &pop->spec[s].delta0; readFileSpeciesPar_real(&real_p, file_p, s, specOnes);
-      real_p  = &pop->spec[s].hDiffOrder; readFileSpeciesPar_real(&real_p, file_p, s, specOnes);
-      real_pp =      &pop->spec[s].hDiff; readFileSpeciesPar_real(real_pp, file_p, s, specnDim);
-      real_pp =   &pop->spec[s].kDiffMin; readFileSpeciesPar_real(real_pp, file_p, s, specnDim);
-      mint_p  =       &pop->spec[s].icOp; readFileSpeciesPar_mint(&mint_p, file_p, s, specOnes);
-      real_pp =    &pop->spec[s].initAux; readFileSpeciesPar_real(real_pp, file_p, s, specnDim);
-      real_p  =      &pop->spec[s].initA; readFileSpeciesPar_real(&real_p, file_p, s, specOnes);
-      real_p  =     &pop->spec[s].noiseA; readFileSpeciesPar_real(&real_p, file_p, s, specOnes);
+      real_p  =    &pop->spec[s].qCharge; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
+      real_p  =     &pop->spec[s].muMass; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
+      real_p  =        &pop->spec[s].tau; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
+      real_p  =       &pop->spec[s].omSt; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
+      real_p  =        &pop->spec[s].omd; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
+      real_p  =      &pop->spec[s].delta; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
+      real_p  =  &pop->spec[s].deltaPerp; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
+      real_p  =        &pop->spec[s].eta; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
+      real_pp =      &pop->spec[s].alpha; readFileSpeciesPar_real(real_pp, file_p, s, pop->numSpecies, specNumMoms);
+      real_pp =         &pop->spec[s].nu; readFileSpeciesPar_real(real_pp, file_p, s, pop->numSpecies, specNumMoms);
+      real_p  =     &pop->spec[s].delta0; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
+      real_pp = &pop->spec[s].hDiffOrder; readFileSpeciesPar_real(real_pp, file_p, s, pop->numSpecies, specnDim   );
+      real_pp =      &pop->spec[s].hDiff; readFileSpeciesPar_real(real_pp, file_p, s, pop->numSpecies, specnDim   );
+      real_pp =   &pop->spec[s].kDiffMin; readFileSpeciesPar_real(real_pp, file_p, s, pop->numSpecies, specnDim   );
+      mint_p  =       &pop->spec[s].icOp; readFileSpeciesPar_mint(&mint_p, file_p, s, pop->numSpecies, specOnes   );
+      real_pp =    &pop->spec[s].initAux; readFileSpeciesPar_real(real_pp, file_p, s, pop->numSpecies, specnDim   );
+      real_p  =      &pop->spec[s].initA; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
+      real_p  =     &pop->spec[s].noiseA; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
     }
     free(specnDim); free(specOnes); free(specNumMoms);
     fscanf(file_p, "%*s");  // /.
@@ -157,12 +166,14 @@ void read_inputFile(const char *fileNameIn, struct grid *grid, struct timeSetup 
   for (mint s=0; s<pop->numSpecies; s++) {
     MPI_Bcast(&pop->spec[s].numMoments,                       1, mpi_mint, ioRank, MPI_COMM_WORLD);
     if (myRank != ioRank) {
-      pop->spec[s].alpha    = alloc_realArray(pop->spec[s].numMoments);
-      pop->spec[s].nu       = alloc_realArray(pop->spec[s].numMoments);
-      pop->spec[s].hDiff    = alloc_realArray(nDim);
-      pop->spec[s].kDiffMin = alloc_realArray(nDim);
-      pop->spec[s].initAux  = alloc_realArray(nDim);
+      pop->spec[s].alpha      = alloc_realArray(pop->spec[s].numMoments);
+      pop->spec[s].nu         = alloc_realArray(pop->spec[s].numMoments);
+      pop->spec[s].hDiffOrder = alloc_realArray(nDim);
+      pop->spec[s].hDiff      = alloc_realArray(nDim);
+      pop->spec[s].kDiffMin   = alloc_realArray(nDim);
+      pop->spec[s].initAux    = alloc_realArray(nDim);
     }
+    MPI_Bcast(&pop->spec[s].qCharge   ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
     MPI_Bcast(&pop->spec[s].muMass    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
     MPI_Bcast(&pop->spec[s].tau       ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
     MPI_Bcast(&pop->spec[s].omSt      ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
@@ -173,7 +184,7 @@ void read_inputFile(const char *fileNameIn, struct grid *grid, struct timeSetup 
     MPI_Bcast(pop->spec[s].alpha      , pop->spec[s].numMoments, mpi_real, ioRank, MPI_COMM_WORLD);
     MPI_Bcast(pop->spec[s].nu         , pop->spec[s].numMoments, mpi_real, ioRank, MPI_COMM_WORLD);
     MPI_Bcast(&pop->spec[s].delta0    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&pop->spec[s].hDiffOrder,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(pop->spec[s].hDiffOrder ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
     MPI_Bcast(pop->spec[s].hDiff      ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
     MPI_Bcast(pop->spec[s].kDiffMin   ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
     MPI_Bcast(&pop->spec[s].icOp      ,                       1, mpi_mint, ioRank, MPI_COMM_WORLD);
@@ -354,9 +365,9 @@ void set_initialCondition(struct grid localGrid, struct population localPop) {
       get_kx(&kx[0], kxIdx, localGrid.fG);
 
       // Set density to a power-law in k-space.
+      den_p[0] = initA*(pow((kxMin[0]+fabs(kx[0]))/kxMin[0],initAux[0]))
+                      *(pow((kxMin[1]+fabs(kx[1]))/kxMin[1],initAux[1]));
       den_p++;
-      den_p[0] = initA*(pow((kxMin[0]+abs(kx[0]))/kxMin[0],initAux[0]))
-                      *(pow((kxMin[1]+abs(kx[1]))/kxMin[1],initAux[1]));
 
       // Set the initial temperature (fluctuations) to zero.
       temp_p++;
@@ -412,6 +423,7 @@ void free_population(struct population *pop) {
   for (mint s=0; s<pop->numSpecies; s++) {
     free(pop->spec[s].alpha);
     free(pop->spec[s].nu);
+    free(pop->spec[s].hDiffOrder);
     free(pop->spec[s].hDiff);
     free(pop->spec[s].kDiffMin);
     free(pop->spec[s].initAux);

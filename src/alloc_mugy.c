@@ -42,7 +42,7 @@ void alloc_realMoments(const struct realGrid grid, const struct population pop, 
 }
 
 void alloc_fourierMoments(const struct fourierGrid grid, const struct population pop, const resource res, struct fourierMoments *momk) {
-  mint numMomentsTot = 1;
+  mint numMomentsTot = 0;
   for (mint s=0; s<pop.numSpecies; s++) numMomentsTot += pop.spec[s].numMoments;
 
   if ((res == hostOnly) || (res == hostAndDevice))

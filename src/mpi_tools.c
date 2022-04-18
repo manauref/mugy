@@ -114,11 +114,12 @@ void distributeDOFs(struct grid globalGrid, struct population globalPop, struct 
   for (mint s=0; s<localPop->numSpecies; s++) {
     localPop->spec[s].numMoments = globalPop.spec[s+localPop->globalSpecOff].numMoments;
 
-    localPop->spec[s].alpha    = alloc_realArray(localPop->spec[s].numMoments);
-    localPop->spec[s].nu       = alloc_realArray(localPop->spec[s].numMoments);
-    localPop->spec[s].hDiff    = alloc_realArray(nDim);
-    localPop->spec[s].kDiffMin = alloc_realArray(nDim);
-    localPop->spec[s].initAux  = alloc_realArray(nDim);
+    localPop->spec[s].alpha      = alloc_realArray(localPop->spec[s].numMoments);
+    localPop->spec[s].nu         = alloc_realArray(localPop->spec[s].numMoments);
+    localPop->spec[s].hDiffOrder = alloc_realArray(nDim);
+    localPop->spec[s].hDiff      = alloc_realArray(nDim);
+    localPop->spec[s].kDiffMin   = alloc_realArray(nDim);
+    localPop->spec[s].initAux    = alloc_realArray(nDim);
 
     localPop->spec[s].qCharge    = globalPop.spec[s+localPop->globalSpecOff].qCharge   ;
     localPop->spec[s].muMass     = globalPop.spec[s+localPop->globalSpecOff].muMass    ;
@@ -131,9 +132,9 @@ void distributeDOFs(struct grid globalGrid, struct population globalPop, struct 
     memcpy(localPop->spec[s].alpha, globalPop.spec[s+localPop->globalSpecOff].alpha, localPop->spec[s].numMoments*sizeof(real));
     memcpy(localPop->spec[s].nu   , globalPop.spec[s+localPop->globalSpecOff].nu   , localPop->spec[s].numMoments*sizeof(real));
     localPop->spec[s].delta0     = globalPop.spec[s+localPop->globalSpecOff].delta0    ;
-    localPop->spec[s].hDiffOrder = globalPop.spec[s+localPop->globalSpecOff].hDiffOrder;
-    memcpy(localPop->spec[s].hDiff   , globalPop.spec[s+localPop->globalSpecOff].hDiff   , nDim*sizeof(real));
-    memcpy(localPop->spec[s].kDiffMin, globalPop.spec[s+localPop->globalSpecOff].kDiffMin, nDim*sizeof(real));
+    memcpy(localPop->spec[s].hDiffOrder, globalPop.spec[s+localPop->globalSpecOff].hDiffOrder, nDim*sizeof(real));
+    memcpy(localPop->spec[s].hDiff     , globalPop.spec[s+localPop->globalSpecOff].hDiff     , nDim*sizeof(real));
+    memcpy(localPop->spec[s].kDiffMin  , globalPop.spec[s+localPop->globalSpecOff].kDiffMin  , nDim*sizeof(real));
     localPop->spec[s].icOp       = globalPop.spec[s+localPop->globalSpecOff].icOp      ;
     memcpy(localPop->spec[s].initAux, globalPop.spec[s+localPop->globalSpecOff].initAux, nDim*sizeof(real));
     localPop->spec[s].initA      = globalPop.spec[s+localPop->globalSpecOff].initA     ;
@@ -177,6 +178,14 @@ void distributeDOFs(struct grid globalGrid, struct population globalPop, struct 
            getArray_real(globalGrid.fGa.kx,globalGrid.fGa.Nekx,d)+localGrid->fGa.globalOff[d], localGrid->fGa.Nekx[d]*sizeof(real));
     memcpy(getArray_real(localGrid->fGa.dual.x,localGrid->fGa.dual.Nx,d),
            getArray_real(globalGrid.fGa.dual.x,globalGrid.fGa.dual.Nx,d)+localGrid->fGa.dual.globalOff[d], localGrid->fGa.dual.Nx[d]*sizeof(real));
+  }
+
+  // Copy global scalars into local grids.
+  for (mint d=0; d<nDim; d++) {
+    localGrid->fG.kxMin[d]    = globalGrid.fG.kxMin[d];
+    localGrid->fGa.kxMin[d]   = globalGrid.fGa.kxMin[d];
+    localGrid->fG.dual.dx[d]  = globalGrid.fG.dual.dx[d];
+    localGrid->fGa.dual.dx[d] = globalGrid.fGa.dual.dx[d];
   }
 
 }

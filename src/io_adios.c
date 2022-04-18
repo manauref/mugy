@@ -45,7 +45,7 @@ void setup_files(struct grid globalGrid, struct grid localGrid, struct populatio
     count[dimOrg[d]] = (size_t)localGrid.fG.Nekx[d];
   }
 
-  ad_momk_var = adios2_define_variable(ad_io, "momk", adios_real, nDim+1, shape,
+  ad_momk_var = adios2_define_variable(ad_io, "momk", adios_fourier, nDim+1, shape,
                                        start, count, adios2_constant_dims_true);
   ad_check_handler(ad_momk_var, " ADIOS: Error defining variable.");
 

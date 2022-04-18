@@ -11,7 +11,9 @@ struct fourierMoments momk, momka;
 fourier* getMoment_fourier(struct fourierGrid grid, struct population pop, const mint sIdx, const mint momIdx, fourier *momkIn) {
   // Return a pominter to the momIdx-th moment of the sIdx-th species in momk.
   fourier* ptrOut = momkIn;
-  return ptrOut+(sIdx*pop.spec[sIdx].numMoments+momIdx)*grid.NekxTot;
+  mint momOff = 0;
+  for (mint s=0; s<sIdx; s++) momOff += pop.spec[s].numMoments;
+  return ptrOut+(momOff+momIdx)*grid.NekxTot;
 }
 
 mint sub2lin_fourier(const mint *kxI, const struct fourierGrid grid) {

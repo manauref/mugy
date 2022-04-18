@@ -23,6 +23,8 @@ int main(int argc, char *argv[]) {
 
   MPI_Barrier(MPI_COMM_WORLD); // To avoid premature deallocations.
 
+  terminate_io();  // Close IO interface. Need to do it before freeing fields.
+
   free_fields();
   free_grid(&gridL);
   free_population(&popL);

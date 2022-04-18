@@ -107,7 +107,7 @@ struct species {
   real *alpha;       // Damping coefficient.
   real *nu;          // Diffusion coefficient.
   real delta0;       // i-delta non-adiabaticity parameter.
-  real hDiffOrder;   // Hyperdiffusion order.
+  real *hDiffOrder;  // Hyperdiffusion order.
   real *hDiff;       // Hyperdiffusion coefficient.
   real *kDiffMin;    // Minimum k at which to apply HD.
   // The following are used by initial conditions.

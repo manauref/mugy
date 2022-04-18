@@ -19,8 +19,8 @@
 void readFileVar_real(FILE *fp, const mint numElements, real *var);
 void readFileVar_mint(FILE *fp, const mint numElements, mint *var);
 // Read species parameter composed of numElements[s] for the s-th species.
-void readFileSpeciesPar_mint(mint **var, FILE *fp, const mint sIdx, const mint *numElements);
-void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint *numElements);
+void readFileSpeciesPar_mint(mint **var, FILE *fp, const mint sIdx, const mint numSpecies, const mint *numElements);
+void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint numSpecies, const mint *numElements);
 
 // Read input values from input file.
 void read_inputFile(const char *fileNameIn, struct grid *grid, struct timeSetup *time,

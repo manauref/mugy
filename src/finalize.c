@@ -7,8 +7,6 @@
 void terminate_all() {
   // Call the termination of the various mugy components.
   
-  terminate_io();  // Close IO interface.
-
   terminate_mpi();  // Finalize MPI.
 
 }

@@ -47,6 +47,34 @@ class pmIO:
        return ad_varin.Shape()
    #[ .......... end of varShape method ...... ]#
 
+   #[ Translate an adios datatype to a numpy datatype.
+   def adType2npType(self, adtype):
+       if adtype == 'float':
+           return np.single
+       elif adtype == 'float complex':
+           return np.csingle
+       elif adtype == 'double':
+           return np.double
+       elif adtype == 'double complex':
+           return np.cdouble
+   #[ .......... end of adTyope2npType ....... ]#
+
+   #[ Get the data type of a variable.
+   def varType(self, varName, **kwargs):
+       if 'fileName' in kwargs:
+           ad_istream = self.fOpen(kwargs['fileName'])
+           ad_varin = self.ad_read.InquireVariable(varName)
+           self.fClose(ad_istream)
+       else:
+           ad_varin = self.ad_read.InquireVariable(varName)
+
+       numpyOut = kwargs.get('numpy', False)
+       if numpyOut:
+           return self.adType2npType(ad_varin.Type())
+       else:
+           return ad_varin.Type()
+   #[ .......... end of varShape method ...... ]#
+
    #[ Read a variable.
    def varRead(self, varName, **kwargs):
        #[ Establish file handle.
@@ -69,13 +97,13 @@ class pmIO:
            ad_varin.SetSelection([[0 for i in range(len(ad_varshape))], ad_varshape])
 
        #[ Read variable.
-       if 'var' in kwargs:
-           ad_iStream.Get(ad_varin, kwargs['var'], adios2.Mode.Sync)
+       if 'array' in kwargs:
+           ad_iStream.Get(ad_varin, kwargs['array'], adios2.Mode.Sync)
            if closeFile:
                self.fClose(ad_iStream)
        else:
            inSize = ad_varin.SelectionSize()
-           var = np.zeros(inSize, dtype=np.single)
+           var = np.zeros(inSize, dtype=self.adType2npType(ad_varin.Type()))
            ad_iStream.Get(ad_varin, var, adios2.Mode.Sync)
            if closeFile:
                self.fClose(ad_iStream)
