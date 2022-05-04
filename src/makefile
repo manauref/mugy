@@ -19,21 +19,27 @@
 
 
 #[ Define the C compiler to use.
-CC = /Users/manaure/Documents/multiscale/code/openmpi4.1.1-intel19.1/bin/mpicc
+#CC = /Users/manaure/Documents/multiscale/code/openmpi4.1.1-intel19.1/bin/mpicc
+CC = ${CCCOMPILER}
 
-#[ ADIOS flags:
-ADIOS_FLAGS = -DADIOS2_USE_MPI
-ADIOS_LIB = -Wl,-rpath,/Users/manaure/Documents/multiscale/code/adios2-openmpi4.1.1-intel19.1/lib /Users/manaure/Documents/multiscale/code/adios2-openmpi4.1.1-intel19.1/lib/libadios2_c_mpi.2.7.1.dylib /Users/manaure/Documents/multiscale/code/adios2-openmpi4.1.1-intel19.1/lib/libadios2_c.2.7.1.dylib
-ADIOS_INCL = -I/Users/manaure/Documents/multiscale/code/adios2-openmpi4.1.1-intel19.1/include
+#ADIOS_FLAGS = -DADIOS2_USE_MPI
+#ADIOS_LIB = -Wl,-rpath,/Users/manaure/Documents/multiscale/code/adios2-openmpi4.1.1-intel19.1/lib /Users/manaure/Documents/multiscale/code/adios2-openmpi4.1.1-intel19.1/lib/libadios2_c_mpi.2.7.1.dylib /Users/manaure/Documents/multiscale/code/adios2-openmpi4.1.1-intel19.1/lib/libadios2_c.2.7.1.dylib
+#ADIOS_INCL = -I/Users/manaure/Documents/multiscale/code/adios2-openmpi4.1.1-intel19.1/include
+#ADIOS_LIB = -Wl,-rpath,/home/manaurer/multiscale/code/adios2-openmpi-cuda-11.1-gcc-4.1.1/lib64 /home/manaurer/multiscale/code/adios2-openmpi-cuda-11.1-gcc-4.1.1/lib64/libadios2_c_mpi.so /home/manaurer/multiscale/code/adios2-openmpi-cuda-11.1-gcc-4.1.1/lib64/libadios2_c.so
+#ADIOS_INCL = -I/home/manaurer/multiscale/code/adios2-openmpi-cuda-11.1-gcc-4.1.1/include
+#ADIOS2_PREFIX = /home/manaurer/multiscale/code/adios2-openmpi-cuda-11.1-gcc-4.1.1/
+#ADIOS_LIB = -Wl,-rpath,$(ADIOS2_PREFIX)/lib64 $(ADIOS2_PREFIX)/lib64/libadios2_c_mpi.so.2.8.0 $(ADIOS2_PREFIX)/lib64/libadios2_c.so.2.8.0 -Wl,-rpath-link,$(ADIOS2_PREFIX)/lib64 
+#ADIOS_INCL = -isystem $(ADIOS2_PREFIX)/include 
 
 #[ Define any compile-time flags.
-CFLAGS = -Wall -std=c11 $(ADIOS_FLAGS)
+#CFLAGS = -Wall -std=c11 -lm $(ADIOS_FLAGS)
+CFLAGS = -Wall -std=c11 -lm
 
 #[ Define any directories containing header files.
-INCLUDES = -I../include $(ADIOS_INCL)
+INCLUDES = -I../include -I${MPI_INC} -I${CUDA_INC} ${ADIOS_INC}
 
 #[ Define library paths.
-LFLAGS = -L../lib $(ADIOS_LIB)
+LFLAGS = -L../lib -L${MPI_LIB} -L${CUDA_LIB} ${ADIOS_LIB}
 
 #[ Define any libraries to link into executable:
 #[   if I want to link in libraries (libx.so or libx.a) I use the -llibname

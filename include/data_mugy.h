@@ -38,6 +38,10 @@ typedef int mint;
 #define denIdx 0 
 #define tempIdx 1
 
+#ifndef M_PI
+#define M_PI (3.14159265358979323846)
+#endif
+
 // Container for IO instructions
 struct ioSetup {
   char *inputFile;           // Name of input file.
