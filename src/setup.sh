@@ -6,21 +6,40 @@
 HOST=${HOST:-`hostname`}
 
 # set hostname-specific defaults
-if [[ "$HOST" == *"stellar"* ]]
+if [[ $HOST == "mfrancis-lt" ]]
+then
+
+  #[ Mana's local.
+  export CCCOMPILER=mpicc
+  export MPI_DIR=$HOME/Documents/multiscale/code/openmpi4.1.1-intel19.1//
+  export CCCOMPILER=$MPI_DIR/bin/mpicc
+  export MPI_INC=$MPI_DIR/include
+  export MPI_LIB=$MPI_DIR/lib
+  export CUDA_DIR=
+  export CUDA_INC=
+  export CUDA_LIB=
+  export ADIOS_DIR=$HOME/Documents/multiscale/code/adios2-openmpi4.1.1-intel19.1/
+  export ADIOS_INC=`$ADIOS_DIR/bin/adios2-config --c-flags`
+  export ADIOS_LIB=`$ADIOS_DIR/bin/adios2-config --c-libs`
+  export SUNDIALS_DIR=$HOME/multiscale/code/BUILD.Release/INSTALL.Release/
+  export SUNDIALS_MOD=$SUNDIALS_DIR/fortran
+  export SUNDIALS_LIB=$SUNDIALS_DIR/lib
+
+elif [[ "$HOST" == *"stellar"* ]]
 then
 
   #[ Princeton's Stellar.
   module load cudatoolkit/11.1
   module load openmpi/cuda-11.1/gcc/4.1.1
   module load anaconda3/2020.11
-  export CCCOMPILER=mpicc
   export MPI_DIR=$MPI_HOME
-  export ADIOS_DIR=$HOME/multiscale/code/adios2-openmpi-cuda-11.1-gcc-4.1.1/
+  export CCCOMPILER=$MPI_DIR/bin/mpicc
   export MPI_INC=$MPI_DIR/include
   export MPI_LIB=$MPI_DIR/lib64
   export CUDA_DIR=$CUDA_HOME
   export CUDA_INC=$MPI_DIR/include
   export CUDA_LIB=$MPI_DIR/lib64
+  export ADIOS_DIR=$HOME/multiscale/code/adios2-openmpi-cuda-11.1-gcc-4.1.1/
   export ADIOS_INC=`$ADIOS_DIR/bin/adios2-config --c-flags`
   export ADIOS_LIB=`$ADIOS_DIR/bin/adios2-config --c-libs`
   export SUNDIALS_DIR=$HOME/multiscale/code/BUILD.Release/INSTALL.Release/

@@ -31,15 +31,25 @@ CC = ${CCCOMPILER}
 #ADIOS_LIB = -Wl,-rpath,$(ADIOS2_PREFIX)/lib64 $(ADIOS2_PREFIX)/lib64/libadios2_c_mpi.so.2.8.0 $(ADIOS2_PREFIX)/lib64/libadios2_c.so.2.8.0 -Wl,-rpath-link,$(ADIOS2_PREFIX)/lib64 
 #ADIOS_INCL = -isystem $(ADIOS2_PREFIX)/include 
 
+#.Optimization flags.
+ifdef use_gpu
+    CUDA_INCL = -I${CUDA_INC}
+    CUDA_LIBS = -L${CUDA_LIB}
+else
+    CUDA_INCL = 
+    CUDA_LIBS = 
+endif
+
 #[ Define any compile-time flags.
 #CFLAGS = -Wall -std=c11 -lm $(ADIOS_FLAGS)
-CFLAGS = -Wall -std=c11 -lm
+#CFLAGS = -Wall -std=c11 -lm
+CFLAGS = -Wall -std=c11
 
 #[ Define any directories containing header files.
-INCLUDES = -I../include -I${MPI_INC} -I${CUDA_INC} ${ADIOS_INC}
+INCLUDES = -I../include -I${MPI_INC} $(CUDA_INCL) ${ADIOS_INC}
 
 #[ Define library paths.
-LFLAGS = -L../lib -L${MPI_LIB} -L${CUDA_LIB} ${ADIOS_LIB}
+LFLAGS = -L../lib -L${MPI_LIB} $(CUDA_LIBS) ${ADIOS_LIB}
 
 #[ Define any libraries to link into executable:
 #[   if I want to link in libraries (libx.so or libx.a) I use the -llibname
