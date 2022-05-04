@@ -43,7 +43,7 @@ endif
 #[ Define any compile-time flags.
 #CFLAGS = -Wall -std=c11 -lm $(ADIOS_FLAGS)
 #CFLAGS = -Wall -std=c11 -lm
-CFLAGS = -Wall -std=c11
+CFLAGS = -Wall -std=c11 ${CCFLAGS}
 
 #[ Define any directories containing header files.
 INCLUDES = -I../include -I${MPI_INC} $(CUDA_INCL) ${ADIOS_INC}

@@ -11,6 +11,7 @@ then
 
   #[ Mana's local.
   export CCCOMPILER=mpicc
+  export CCFLAGS=
   export MPI_DIR=$HOME/Documents/multiscale/code/openmpi4.1.1-intel19.1//
   export CCCOMPILER=$MPI_DIR/bin/mpicc
   export MPI_INC=$MPI_DIR/include
@@ -34,11 +35,12 @@ then
   module load anaconda3/2020.11
   export MPI_DIR=$MPI_HOME
   export CCCOMPILER=$MPI_DIR/bin/mpicc
+  export CCFLAGS=-lm
   export MPI_INC=$MPI_DIR/include
   export MPI_LIB=$MPI_DIR/lib64
   export CUDA_DIR=$CUDA_HOME
-  export CUDA_INC=$MPI_DIR/include
-  export CUDA_LIB=$MPI_DIR/lib64
+  export CUDA_INC=$CUDA_DIR/include
+  export CUDA_LIB=$CUDA_DIR/lib64
   export ADIOS_DIR=$HOME/multiscale/code/adios2-openmpi-cuda-11.1-gcc-4.1.1/
   export ADIOS_INC=`$ADIOS_DIR/bin/adios2-config --c-flags`
   export ADIOS_LIB=`$ADIOS_DIR/bin/adios2-config --c-libs`
