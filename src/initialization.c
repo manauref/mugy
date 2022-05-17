@@ -3,6 +3,7 @@
    Functions used to initialize the simulation.
 */
 #include "initialization.h"
+#include "initialization_dev.h"
 #include <complex.h>  /* For complex data types. */
 
 // Read an variable from input file.
@@ -383,6 +384,11 @@ void init_all(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gridG
 
   // Read inputs (from command line arguments and input file).
   read_inputs(argc, argv, ioSet, gridG, timePars, popG, fieldPars);
+
+#ifdef USE_GPU
+  // Initialize devices (GPUs) if any.
+  init_dev(myRank);
+#endif
 
   init_io();  // Initialize IO interface.
 

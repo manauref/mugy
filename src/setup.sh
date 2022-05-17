@@ -35,6 +35,8 @@ then
   module load anaconda3/2020.11
   export MPI_DIR=$MPI_HOME
   export CCCOMPILER=$MPI_DIR/bin/mpicc
+  export NVCCCOMPILER=$CUDA_HOME/bin/nvcc
+  export NVCCFLAGS=-arch=sm_80
   export CCFLAGS=-lm
   export MPI_INC=$MPI_DIR/include
   export MPI_LIB=$MPI_DIR/lib64

@@ -8,9 +8,6 @@
 // Pre-processor flags.
 #include "mugyFLAGS.h"
 
-// Global macros.
-#include "macros.h"
-
 // Global parameters.
 #include "parameters.h"
 
