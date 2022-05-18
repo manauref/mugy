@@ -2,7 +2,7 @@
    
    Function to end the simulation in a tidy manner.
 */
-#include "finalize.h"
+#include "mh_finalize.h"
 
 void terminate_all() {
   // Call the termination of the various mugy components.

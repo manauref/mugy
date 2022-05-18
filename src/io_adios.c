@@ -4,7 +4,7 @@
 */
 
 
-#include "io_adios.h"
+#include "mh_io_adios.h"
 
 adios2_adios *ad_ctx;  // ADIOS context used throughout our IO.
 

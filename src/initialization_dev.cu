@@ -3,10 +3,10 @@
    Functions used to initialize the device (GPU).
 */
 
-#include <utilities_dev.h>
+#include <mh_utilities_dev.h>
 
 extern "C" {
-#include <initialization_dev.h>
+#include <mh_initialization_dev.h>
 }
 
 void init_dev(int mpiRank) {

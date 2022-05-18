@@ -2,7 +2,7 @@
    
    A collection of utility functions.
 */
-#include "utilities.h"
+#include "mh_utilities.h"
 
 mint prod_mint(const mint *arrIn, const mint numElements) {
   /* Compute the product of the elements in an array. */

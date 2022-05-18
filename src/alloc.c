@@ -2,7 +2,7 @@
    
    Functions used to allocate arrays.
 */
-#include "alloc_mugy.h"
+#include "mh_alloc.h"
 
 // Wrappers to basic functions that allocate memory.
 mint* alloc_mintArray(const mint numElements) {

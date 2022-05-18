@@ -2,8 +2,8 @@
    
    Functions used to initialize the simulation.
 */
-#include "initialization.h"
-#include "initialization_dev.h"
+#include "mh_initialization.h"
+#include "mh_initialization_dev.h"
 #include <complex.h>  /* For complex data types. */
 
 // Read an variable from input file.

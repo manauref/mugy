@@ -7,7 +7,7 @@
 
 #include <complex.h>  /* For complex data types. */
 #include <stdbool.h>  // e.g. for bool, true, false.
-#include "mugyFLAGS.h"
+#include "mh_userFLAGS.h"
 
 // Number of dimensions in the code.
 #define nDim 3

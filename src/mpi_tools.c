@@ -3,7 +3,7 @@
    MPI-related operations.
 */
 
-#include "mpi_tools.h"
+#include "mh_mpi_tools.h"
 
 mint myRank, totNumProcs;  // Rank of this process & total number of processes.
 mint numProcs[nDim+1];     // Processes along x,y,z and species.

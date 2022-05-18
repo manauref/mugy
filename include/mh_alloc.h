@@ -6,8 +6,8 @@
 #ifndef ALLOC_MUGY
 #define ALLOC_MUGY
 
-#include "data_mugy.h"
-#include "utilities.h"
+#include "mh_data.h"
+#include "mh_utilities.h"
 #include <stdlib.h>  // e.g. for calloc.
 
 // Wrappers to basic functions that allocate plain arrays.

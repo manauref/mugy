@@ -10,8 +10,8 @@
 #include <stdlib.h>   // e.g. for abs.
 #include <stdbool.h>  // e.g. for bool, true, false.
 #include <stdio.h>    // e.g. for fopen.
-#include "data_mugy.h"
-#include "macros.h"
+#include "mh_data.h"
+#include "mh_macros.h"
 
 mint prod_mint(const mint *arrIn, mint numElements);  // Product of the elements in array.
 mint sum_mint(const mint *arrIn, mint numElements);  // Sum of the elements in array.

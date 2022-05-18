@@ -3,7 +3,7 @@
    IO module.
 */
 
-#include "io_tools.h"
+#include "mh_io_tools.h"
 
 void r0printf(char *str) {
   // Print string out if this is the zeroth rank.

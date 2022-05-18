@@ -9,10 +9,10 @@
 #include <mpi.h>
 #include <stdbool.h>  // e.g. for bool, true, false.
 #include <string.h>   // e.g. for memcpy.
-#include "utilities.h"
-#include "data_mugy.h"
-#include "alloc_mugy.h"
-#include "io_tools.h"
+#include "mh_utilities.h"
+#include "mh_data.h"
+#include "mh_alloc.h"
+#include "mh_io_tools.h"
 
 extern mint myRank, totNumProcs;  // Rank of this process & total number of processes.
 extern mint numProcs[nDim+1];     // Processes along x,y,z and species.

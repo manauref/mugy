@@ -3,7 +3,7 @@
    Parameters and fields used throughout mugy.
 */
 
-#include "data_mugy.h"
+#include "mh_data.h"
 
 struct realMoments mom, moma;
 struct fourierMoments momk, momka;

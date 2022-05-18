@@ -7,10 +7,10 @@
 #define IO_TOOLS 
 
 #include <string.h>   // e.g. for memcpy.
-#include "utilities.h"
-#include "data_mugy.h"
-#include "mpi_tools.h"
-#include "io_adios.h"
+#include "mh_utilities.h"
+#include "mh_data.h"
+#include "mh_mpi_tools.h"
+#include "mh_io_adios.h"
 
 // Print string out if this is the zeroth rank.
 void r0printf(char *str);

@@ -12,7 +12,7 @@
 #define CU_DH __device__ __host__
 #define CU_D __device__
 
-// for directional copies
+// For copying to/from device.
 enum dev_memcpy_dir {
   DEV_MEMCPY_H2D = cudaMemcpyHostToDevice,
   DEV_MEMCPY_D2H = cudaMemcpyDeviceToHost,
@@ -35,7 +35,7 @@ enum dev_memcpy_dir {
 
 #define DEFAULT_NUM_DEV_THREADS 1
 
-#endif // CUDA specific defines etc
+#endif  // GPU related macros.
 
 
 #define max(a,b)             \
