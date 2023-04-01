@@ -1,10 +1,10 @@
-/* mugy: io_adios.h
+/* mugy: mh_io_adios.h
 
    Header file for ADIOS IO module.
 */
 
-#ifndef IO_ADIOS
-#define IO_ADIOS
+#ifndef MUGY_IO_ADIOS
+#define MUGY_IO_ADIOS
 
 #include "adios2_c.h"
 #include "mh_userFLAGS.h"

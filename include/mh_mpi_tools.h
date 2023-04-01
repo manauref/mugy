@@ -1,10 +1,10 @@
-/* mugy: mpi_tools header file.
+/* mugy: mh_mpi_tools.h
 
    MPI-related operations.
 */
 
-#ifndef MPI_TOOLS 
-#define MPI_TOOLS 
+#ifndef MUGY_MPI_TOOLS 
+#define MUGY_MPI_TOOLS 
 
 #include <mpi.h>
 #include <stdbool.h>  // e.g. for bool, true, false.

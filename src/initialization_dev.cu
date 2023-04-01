@@ -3,13 +3,13 @@
    Functions used to initialize the device (GPU).
 */
 
-#include <mh_utilities_dev.h>
-
 extern "C" {
-#include <mh_initialization_dev.h>
+#include "mh_utilities_dev.h"
+#include "mh_data_dev.h"
+#include "mh_initialization_dev.h"
 }
 
-void init_dev(int mpiRank) {
+void init_dev(mint mpiRank) {
 
   // Set the device of this MPI rank.
   int devCount = 0;

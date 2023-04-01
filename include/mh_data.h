@@ -1,13 +1,14 @@
-/* A mugy header file:
+/* mugy: mh_data.h
 
    Data types (e.g. structs) used in mugy.
 */
-#ifndef DATA_MUGY
-#define DATA_MUGY
+#ifndef MUGY_DATA
+#define MUGY_DATA
 
 #include <complex.h>  /* For complex data types. */
 #include <stdbool.h>  // e.g. for bool, true, false.
 #include "mh_userFLAGS.h"
+#include "mh_macros.h"
 
 // Number of dimensions in the code.
 #define nDim 3
@@ -114,7 +115,7 @@ struct species {
   real *hDiffOrder;  // Hyperdiffusion order.
   real *hDiff;       // Hyperdiffusion coefficient.
   real *kDiffMin;    // Minimum k at which to apply HD.
-  // The following are used by initial conditions.
+  // The following are used by initial conditions. It'd be good to put them elsewhere.
   mint icOp;         // IC option.
   real *initAux;     // Auxiliary parameters for ICs.
   real initA;        // Initial amplitude.
@@ -171,5 +172,11 @@ void lin2sub_fourier(mint *kxI, mint lin, const struct fourierGrid grid);
 
 // (kx,ky,kz) coordinates given the multidimensional kxI index.
 void get_kx(real *kx, mint *kxI, const struct fourierGrid grid);
+
+// Copy real-space moments between host and device.
+void memcpy_real(real *dest, real *src, mint dofs, enum memcpy_dir_dev dir);
+
+// Copy fourier-space moments between host and device.
+void memcpy_fourier(void *dest, void *src, mint dofs, enum memcpy_dir_dev dir);
 
 #endif

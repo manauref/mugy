@@ -1,4 +1,4 @@
-/* mugy: alloc_mugy header file.
+/* mugy: mh_alloc.h
 
    Functions used to allocate arrays.
 */
@@ -8,14 +8,13 @@
 
 #include "mh_data.h"
 #include "mh_utilities.h"
-#include <stdlib.h>  // e.g. for calloc.
 
 // Wrappers to basic functions that allocate plain arrays.
 //   numElements: number of elements in the array.
 mint* alloc_mintArray(mint numElements);
 char* alloc_charArray(mint numElements);
 real* alloc_realArray(mint numElements);
-fourier *alloc_fourierArray(mint numElements);
+fourier* alloc_fourierArray(mint numElements);
 
 /* Allocate real-space moment vectors, on host and/or device.
      grid: grid on which to allocate the vector of moments.

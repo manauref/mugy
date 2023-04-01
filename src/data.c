@@ -4,12 +4,13 @@
 */
 
 #include "mh_data.h"
+#include "mh_data_dev.h"
 
 struct realMoments mom, moma;
 struct fourierMoments momk, momka;
 
 fourier* getMoment_fourier(struct fourierGrid grid, struct population pop, const mint sIdx, const mint momIdx, fourier *momkIn) {
-  // Return a pominter to the momIdx-th moment of the sIdx-th species in momk.
+  // Return a pointer to the momIdx-th moment of the sIdx-th species in momk.
   fourier* ptrOut = momkIn;
   mint momOff = 0;
   for (mint s=0; s<sIdx; s++) momOff += pop.spec[s].numMoments;
@@ -43,4 +44,16 @@ void get_kx(real *kx, mint *kxI, const struct fourierGrid grid) {
     kx[d] = kx_p[kxI[d]]; 
     kx_p += grid.Nekx[d];
   }
+}
+
+void memcpy_real(real *dest, real *src, mint dofs, enum memcpy_dir_dev dir) {
+#ifdef USE_GPU
+  memcpy_real_dev(dest, src, dofs, dir);
+#endif
+}
+// MF 2023/03/29: Use void* because C doesn't know cuCumplex/cufourier the type.
+void memcpy_fourier(void *dest, void *src, mint dofs, enum memcpy_dir_dev dir) {
+#ifdef USE_GPU
+  memcpy_fourier_dev(dest, src, dofs, dir);
+#endif
 }

@@ -2,9 +2,17 @@
    
    Functions used to initialize the simulation.
 */
+
+#include <string.h>   // e.g. for strcat, strlen.
+#include "mh_parameters.h"
+#include "mh_utilities.h"
+#include "mh_alloc.h"
+#include "mh_mpi_tools.h"
+#include "mh_io_tools.h"
 #include "mh_initialization.h"
 #include "mh_initialization_dev.h"
-#include <complex.h>  /* For complex data types. */
+#include <complex.h>  /* Needed by some fscanf below. */
+#include "mh_data.h"
 
 // Read an variable from input file.
 void readFileVar_mint(FILE *fp, const mint numElements, mint *var) {
@@ -346,8 +354,13 @@ void init_global_grids(struct grid *globalGrid) {
 
 void allocate_fields(struct grid localGrid, struct population localPop) {
   // Allocate various fields needed.
+#ifdef USE_GPU
+  resource onResource = hostAndDevice;
+#elif
   resource onResource = hostOnly;
+#endif
   alloc_fourierMoments( localGrid.fG, localPop, onResource, &momk);
+  alloc_realMoments( localGrid.fG.dual, localPop, onResource, &mom);
 }
 
 void set_initialCondition(struct grid localGrid, struct population localPop) {
@@ -371,11 +384,16 @@ void set_initialCondition(struct grid localGrid, struct population localPop) {
       den_p++;
 
       // Set the initial temperature (fluctuations) to zero.
-      temp_p++;
       temp_p[0] = 0.;
+      temp_p++;
     };
-
   }
+
+  // Copy initialized moments from host to device.
+  mint numMomentsTot = 0;
+  for (mint s=0; s<localPop.numSpecies; s++) numMomentsTot += localPop.spec[s].numMoments;
+  memcpy_fourier((&momk)->dev, (&momk)->ho, numMomentsTot*prod_mint(localGrid.fG.Nekx,nDim), host2dev);
+
 }
 
 void init_all(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gridG, struct grid *gridL, struct timeSetup *timePars,
@@ -412,8 +430,13 @@ void init_all(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gridG
 
 void free_fields() {
   // Deallocate fields.
+#ifdef USE_GPU
+  resource onResource = hostAndDevice;
+#elif
   resource onResource = hostOnly;
+#endif
   free_fourierMoments(&momk, onResource);
+  free_realMoments(&mom, onResource);
 }
 
 void free_grid(struct grid *grid) {

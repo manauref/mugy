@@ -1,10 +1,10 @@
-/* mugy: io_tools.h
+/* mugy: mh_io_tools.h
 
    IO module header file.
 */
 
-#ifndef IO_TOOLS 
-#define IO_TOOLS 
+#ifndef MUGY_IO_TOOLS 
+#define MUGY_IO_TOOLS 
 
 #include <string.h>   // e.g. for memcpy.
 #include "mh_utilities.h"

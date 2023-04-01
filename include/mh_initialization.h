@@ -1,18 +1,12 @@
-/* mugy: initialization.h
+/* mugy: mh_initialization.h
 
    Utility functions used in mugy.
 */
 
-#ifndef INITIALIZATION
-#define INITIALIZATION
+#ifndef MUGY_INITIALIZATION
+#define MUGY_INITIALIZATION
 
-#include <string.h>   // e.g. for strcat, strlen.
-#include "mh_parameters.h"
 #include "mh_data.h"
-#include "mh_utilities.h"
-#include "mh_alloc.h"
-#include "mh_mpi_tools.h"
-#include "mh_io_tools.h"
 
 // Read a real variable from input file. Need this function to support
 // reading floats and doubles with the same function call.

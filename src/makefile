@@ -28,9 +28,9 @@ ifeq ($(NVCC_TEST),nvcc)
     USE_GPU = true
     CUDA_INCL = -I${CUDA_INC}
     CUDA_LIBS = -L${CUDA_LIB}
-    CUDAFLAGS = ${NVCCFLAGS}
+    CUDAFLAGS = -DUSE_GPU=$(USE_GPU) ${NVCCFLAGS}
     NVCC = ${NVCCCOMPILER}
-    CUDART = -lcudart
+    CUDART = -lcudart -lcudadevrt
     CFLAGS_DEV = -DUSE_GPU=$(USE_GPU) 
 else
     USE_GPU = false
@@ -61,7 +61,7 @@ LIBS =
 #[ Define the C source files.
 SRCS = alloc.c initialization.c io_adios.c io_tools.c mpi_tools.c mugy.c utilities.c data.c finalize.c
 ifeq ($(USE_GPU),true)
-    SRCS_DEV = initialization_dev.cu
+    SRCS_DEV = initialization_dev.cu alloc_dev.cu data_dev.cu
 else
     SRCS_DEV =
 endif
@@ -97,16 +97,16 @@ all:    $(MAIN)
 	@echo  Source mugy.c has been compiled into executable: mugy.x
 
 $(MAIN): $(MAIN_DEV) $(OBJS)
-	$(CC) $(CFLAGS) $(INCLUDES) $(OBJS) $(OBJS_DEV) $(MAIN_DEV) $(CUDART) $(LFLAGS) $(LIBS) -o $(MAIN)
+	$(CC) $(CFLAGS) $(INCLUDES) $(MAIN_DEV) $(OBJS) $(OBJS_DEV) $(CUDART) $(LFLAGS) $(LIBS) -o $(MAIN)
 
 #[ This is a suffix replacement rule for building .o's from .c's
 #[ it uses automatic variables $<: the name of the prerequisite of
 #[ the rule(a .c file) and $@: the name of the target of the rule (a .o file)
 #[ (see the gnu make manual section about automatic variables).
 $(MAIN_DEV): $(OBJS_DEV)
-	$(NVCC) $(CUDAFLAGS) -dlink $(INCLUDES) $< -o $(MAIN_DEV)
+	$(NVCC) $(CUDAFLAGS) -dlink $(INCLUDES) $^ -o $(MAIN_DEV)
 
-$(OBJS_DEV): $(SRCS_DEV)
+$(OBJS_DEV): %.o: %.cu
 	$(NVCC) $(CUDAFLAGS) $(INCLUDES) -dc $< -o $@
 
 .c.o:

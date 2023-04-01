@@ -1,7 +1,10 @@
-/* mugy: macros.h
+/* mugy: mh_macros.h
 
    A series of macros used throughout mugy.
 */
+
+#ifndef MUGY_MACROS 
+#define MUGY_MACROS 
 
 
 // GPU related macros. USE_GPU is passed as a compile-time preprocessor variable.
@@ -12,11 +15,12 @@
 #define CU_DH __device__ __host__
 #define CU_D __device__
 
-// For copying to/from device.
-enum dev_memcpy_dir {
-  DEV_MEMCPY_H2D = cudaMemcpyHostToDevice,
-  DEV_MEMCPY_D2H = cudaMemcpyDeviceToHost,
-  DEV_MEMCPY_D2D = cudaMemcpyDeviceToDevice
+// Directions of memcopy in host/device memory.
+enum memcpy_dir_dev {
+  host2host = cudaMemcpyHostToHost,
+  host2dev  = cudaMemcpyHostToDevice,
+  dev2host  = cudaMemcpyDeviceToHost,
+  dev2dev   = cudaMemcpyDeviceToDevice,
 };
 
 #define DEFAULT_NUM_DEV_THREADS 256
@@ -26,11 +30,12 @@ enum dev_memcpy_dir {
 #define CU_DH
 #define CU_D
 
-// for directional copies
-enum dev_memcpy_dir {
-  DEV_MEMCPY_H2D,
-  DEV_MEMCPY_D2H,
-  DEV_MEMCPY_D2D,
+// Directions of memcopy in host/device memory.
+enum memcpy_dir_dev {
+  host2host,
+  host2dev ,
+  dev2host ,
+  dev2dev  ,
 };
 
 #define DEFAULT_NUM_DEV_THREADS 1
@@ -51,3 +56,6 @@ enum dev_memcpy_dir {
     __typeof__ (b) _b = (b); \
     _a < _b ? _a : _b;       \
 })
+
+
+#endif

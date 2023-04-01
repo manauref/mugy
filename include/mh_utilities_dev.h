@@ -1,7 +1,10 @@
-/* mugy: initialization_dev.c
+/* mugy: mh_utilities_dev.h
    
-   Functions used to initialize the device (GPU).
+  Handy device (GPU) functions.
 */
+
+#ifndef MUGY_UTILITIES_DEV
+#define MUGY_UTILITIES_DEV
 
 #include <stdio.h>
 #include <stdint.h>
@@ -529,3 +532,5 @@ inline int findCudaDevice(int argc, const char **argv) {
 }
 #endif
 
+
+#endif

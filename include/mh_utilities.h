@@ -1,10 +1,10 @@
-/* A mugy header file:
+/* mugy: mh_utilities.h
 
    Utility functions used in mugy.
 */
 
-#ifndef UTILITIES
-#define UTILITIES
+#ifndef MUGY_UTILITIES
+#define MUGY_UTILITIES
 
 #include <math.h>     // e.g. for pow.
 #include <stdlib.h>   // e.g. for abs.

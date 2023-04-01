@@ -1,6 +1,6 @@
 /* 
    mugy (header file)
-   A reduced gyrofluid code for ITG-ETG multiscale simulations.
+   A gyrofluid code for multiscale simulations.
 
    This file contains global macros and inclusion of various header files.
 */
