@@ -21,9 +21,9 @@ void* alloc_fourierArray_dev(const mint numElements) {
   return out_p;
 }
 
-void free_realMoments_dev(real *mom_dev) {
-  checkCudaErrors(cudaFree(mom_dev));  // Free free memory.
+void free_realArray_dev(real *arr) {
+  checkCudaErrors(cudaFree(arr));  // Free device memory.
 }
-void free_fourierMoments_dev(void *momk_dev) {
-  checkCudaErrors(cudaFree((cufourier*) momk_dev));  // Free device memory.
+void free_fourierArray_dev(void *arrk) {
+  checkCudaErrors(cudaFree((cufourier*) arrk));  // Free device memory.
 }

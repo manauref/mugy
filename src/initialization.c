@@ -45,7 +45,7 @@ void readFileSpeciesPar_mint(mint **var, FILE *fp, const mint sIdx, const mint n
   if (numElements[sIdx] == 1) {
     fscanf(fp, "%d", &(*var)[0]);
   } else {
-    *var = alloc_mintArray(numElements[sIdx]);
+    *var = alloc_mintArray_ho(numElements[sIdx]);
     for (mint i=0; i<numElements[sIdx]; i++) fscanf(fp, "%d", &(*var)[i]);
   }
   // Skip species after sIdx (presumably will be read later).
@@ -63,7 +63,7 @@ void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint n
   if (numElements[sIdx] == 1) {
     fscanf(fp, "%"fmt_real, &(*var)[0]);
   } else {
-    *var = alloc_realArray(numElements[sIdx]);
+    *var = alloc_realArray_ho(numElements[sIdx]);
     for (mint i=0; i<numElements[sIdx]; i++) fscanf(fp, "%"fmt_real, &(*var)[i]);
   }
   // Skip species after sIdx (presumably will be read later).
@@ -175,12 +175,12 @@ void read_inputFile(const char *fileNameIn, struct grid *grid, struct timeSetup 
   for (mint s=0; s<pop->numSpecies; s++) {
     MPI_Bcast(&pop->spec[s].numMoments,                       1, mpi_mint, ioRank, MPI_COMM_WORLD);
     if (myRank != ioRank) {
-      pop->spec[s].alpha      = alloc_realArray(pop->spec[s].numMoments);
-      pop->spec[s].nu         = alloc_realArray(pop->spec[s].numMoments);
-      pop->spec[s].hDiffOrder = alloc_realArray(nDim);
-      pop->spec[s].hDiff      = alloc_realArray(nDim);
-      pop->spec[s].kDiffMin   = alloc_realArray(nDim);
-      pop->spec[s].initAux    = alloc_realArray(nDim);
+      pop->spec[s].alpha      = alloc_realArray_ho(pop->spec[s].numMoments);
+      pop->spec[s].nu         = alloc_realArray_ho(pop->spec[s].numMoments);
+      pop->spec[s].hDiffOrder = alloc_realArray_ho(nDim);
+      pop->spec[s].hDiff      = alloc_realArray_ho(nDim);
+      pop->spec[s].kDiffMin   = alloc_realArray_ho(nDim);
+      pop->spec[s].initAux    = alloc_realArray_ho(nDim);
     }
     MPI_Bcast(&pop->spec[s].qCharge   ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
     MPI_Bcast(&pop->spec[s].muMass    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
@@ -286,7 +286,7 @@ void init_global_grids(struct grid *globalGrid) {
   }
 
   // Global de-aliased real-space grids
-  globalGrid->fG.dual.x = alloc_realArray(sum_mint(globalGrid->fG.dual.Nx, nDim));
+  globalGrid->fG.dual.x = alloc_realArray_ho(sum_mint(globalGrid->fG.dual.Nx, nDim));
   real *dx = globalGrid->fG.dual.dx;
   mint *Nx = globalGrid->fG.dual.Nx; 
   mint xOff = 0;
@@ -298,7 +298,7 @@ void init_global_grids(struct grid *globalGrid) {
     xOff += Nx[d];
   }
   // Global aliased real-space grids (may not be needed).
-  globalGrid->fGa.dual.x = alloc_realArray(sum_mint(globalGrid->fGa.dual.Nx, 3));
+  globalGrid->fGa.dual.x = alloc_realArray_ho(sum_mint(globalGrid->fGa.dual.Nx, 3));
   real *dxa = globalGrid->fGa.dual.dx;
   mint *Nxa = globalGrid->fGa.dual.Nx; 
   mint xaOff = 0;
@@ -312,7 +312,7 @@ void init_global_grids(struct grid *globalGrid) {
 
   // Global dealiased k-space grids.
   for (mint d=0; d<nDim; d++) globalGrid->fGa.kxMin[d] = globalGrid->fG.kxMin[d];
-  globalGrid->fG.kx  = alloc_realArray(sum_mint(globalGrid->fG.Nekx, 3));
+  globalGrid->fG.kx  = alloc_realArray_ho(sum_mint(globalGrid->fG.Nekx, 3));
   real *kxMin = globalGrid->fG.kxMin;
   mint *Nkx = globalGrid->fG.Nkx; 
   mint kxOff = 0;
@@ -326,7 +326,7 @@ void init_global_grids(struct grid *globalGrid) {
     globalGrid->fG.kx[i] = -(real)(Nkx[0]-1-(i-Nkx[0]))*kxMin[0];
 
   // Global aliased k-space grids.
-  globalGrid->fGa.kx = alloc_realArray(sum_mint(globalGrid->fGa.Nekx, 3));
+  globalGrid->fGa.kx = alloc_realArray_ho(sum_mint(globalGrid->fGa.Nekx, 3));
   real *kxaMin = globalGrid->fGa.kxMin;
   mint *Nkxa = globalGrid->fGa.Nkx; 
   mint kxaOff = 0;
@@ -355,12 +355,12 @@ void init_global_grids(struct grid *globalGrid) {
 void allocate_fields(struct grid localGrid, struct population localPop) {
   // Allocate various fields needed.
 #ifdef USE_GPU
-  resource onResource = hostAndDevice;
+  enum resource_mem onResource = hostAndDevice;
 #elif
-  resource onResource = hostOnly;
+  enum resource_mem onResource = hostOnly;
 #endif
-  alloc_fourierMoments( localGrid.fG, localPop, onResource, &momk);
-  alloc_realMoments( localGrid.fG.dual, localPop, onResource, &mom);
+  alloc_fourierMoments(&momk, localGrid.fG, localPop, onResource);
+  alloc_realMoments(&mom, localGrid.fG.dual, localPop, onResource);
 }
 
 void set_initialCondition(struct grid localGrid, struct population localPop) {
@@ -424,19 +424,19 @@ void init_all(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gridG
 
   setup_files(*gridG, *gridL, *popG, *popL);  // Setup IO files.
 
-  writeMoments_fourier(momk);
+  write_fourierArray(momk);
 
 }
 
 void free_fields() {
   // Deallocate fields.
 #ifdef USE_GPU
-  resource onResource = hostAndDevice;
+  enum resource_mem onResource = hostAndDevice;
 #elif
-  resource onResource = hostOnly;
+  enum resource_mem onResource = hostOnly;
 #endif
-  free_fourierMoments(&momk, onResource);
-  free_realMoments(&mom, onResource);
+  free_fourierArray(&momk, onResource);
+  free_realArray(&mom, onResource);
 }
 
 void free_grid(struct grid *grid) {

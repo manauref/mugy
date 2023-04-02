@@ -6,8 +6,8 @@
 #include "mh_data.h"
 #include "mh_data_dev.h"
 
-struct realMoments mom, moma;
-struct fourierMoments momk, momka;
+struct realArray mom, moma;
+struct fourierArray momk, momka;
 
 fourier* getMoment_fourier(struct fourierGrid grid, struct population pop, const mint sIdx, const mint momIdx, fourier *momkIn) {
   // Return a pointer to the momIdx-th moment of the sIdx-th species in momk.

@@ -12,7 +12,7 @@
 real* alloc_realArray_dev(mint numElements);
 void* alloc_fourierArray_dev(mint numElements);
 
-void free_realMoments_dev(real *mom_dev);
-void free_fourierMoments_dev(void *momk_dev);
+void free_realArray_dev(real *arr);
+void free_fourierArray_dev(void *arrk);
 
 #endif

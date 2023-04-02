@@ -31,8 +31,8 @@ void init_io();
 // Create files for IO.
 void setup_files(struct grid globalGrid, struct grid localGrid, struct population globalPop, struct population localPop);
 
-// Output Fourier-space moments.
-void writeMoments_fourier(struct fourierMoments momkIn);
+// Output Fourier-space array..
+void write_fourierArray(struct fourierArray arrkIn);
 
 // Finalize ADIOS IO.
 void terminate_io();

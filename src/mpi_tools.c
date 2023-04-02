@@ -114,12 +114,12 @@ void distributeDOFs(struct grid globalGrid, struct population globalPop, struct 
   for (mint s=0; s<localPop->numSpecies; s++) {
     localPop->spec[s].numMoments = globalPop.spec[s+localPop->globalSpecOff].numMoments;
 
-    localPop->spec[s].alpha      = alloc_realArray(localPop->spec[s].numMoments);
-    localPop->spec[s].nu         = alloc_realArray(localPop->spec[s].numMoments);
-    localPop->spec[s].hDiffOrder = alloc_realArray(nDim);
-    localPop->spec[s].hDiff      = alloc_realArray(nDim);
-    localPop->spec[s].kDiffMin   = alloc_realArray(nDim);
-    localPop->spec[s].initAux    = alloc_realArray(nDim);
+    localPop->spec[s].alpha      = alloc_realArray_ho(localPop->spec[s].numMoments);
+    localPop->spec[s].nu         = alloc_realArray_ho(localPop->spec[s].numMoments);
+    localPop->spec[s].hDiffOrder = alloc_realArray_ho(nDim);
+    localPop->spec[s].hDiff      = alloc_realArray_ho(nDim);
+    localPop->spec[s].kDiffMin   = alloc_realArray_ho(nDim);
+    localPop->spec[s].initAux    = alloc_realArray_ho(nDim);
 
     localPop->spec[s].qCharge    = globalPop.spec[s+localPop->globalSpecOff].qCharge   ;
     localPop->spec[s].muMass     = globalPop.spec[s+localPop->globalSpecOff].muMass    ;
@@ -165,10 +165,10 @@ void distributeDOFs(struct grid globalGrid, struct population globalPop, struct 
   localGrid->fGa.dual.NxyTot = prod_mint(localGrid->fGa.dual.Nx,2);
 
   // Create local real-space and Fourier-space coordinate arrays.
-  localGrid->fG.kx     = alloc_realArray(sum_mint(localGrid->fG.Nekx, nDim));
-  localGrid->fG.dual.x = alloc_realArray(sum_mint(localGrid->fG.dual.Nx, nDim));
-  localGrid->fGa.kx     = alloc_realArray(sum_mint(localGrid->fGa.Nekx, nDim));
-  localGrid->fGa.dual.x = alloc_realArray(sum_mint(localGrid->fGa.dual.Nx, nDim));
+  localGrid->fG.kx     = alloc_realArray_ho(sum_mint(localGrid->fG.Nekx, nDim));
+  localGrid->fG.dual.x = alloc_realArray_ho(sum_mint(localGrid->fG.dual.Nx, nDim));
+  localGrid->fGa.kx     = alloc_realArray_ho(sum_mint(localGrid->fGa.Nekx, nDim));
+  localGrid->fGa.dual.x = alloc_realArray_ho(sum_mint(localGrid->fGa.dual.Nx, nDim));
   for (mint d=0; d<nDim; d++) {
     memcpy(getArray_real(localGrid->fG.kx,localGrid->fG.Nekx,d),
            getArray_real(globalGrid.fG.kx,globalGrid.fG.Nekx,d)+localGrid->fG.globalOff[d], localGrid->fG.Nekx[d]*sizeof(real));

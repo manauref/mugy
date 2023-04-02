@@ -54,7 +54,7 @@ struct ioSetup {
 
 // Flags for differentiating between operations done on device
 // or on host, or both.
-typedef enum {hostOnly, deviceOnly, hostAndDevice} resource;
+enum resource_mem {hostOnly, deviceOnly, hostAndDevice};
 
 struct realGrid {
   mint Nx[nDim];        // Number of cells.
@@ -122,6 +122,18 @@ struct species {
   real noiseA;       // Initial noise amplitude.
 };
 
+// Structures storing an array on host, device, or both.
+struct realArray {
+  real *ho;    // Pointer to host memory.
+  real *dev;   // Pointer to device memory.
+  mint nelem;  // Number of elements allocated.
+};
+struct fourierArray {
+  fourier *ho;   // Pointer to host memory.
+  fourier *dev;  // Pointer to device memory.
+  mint nelem;    // Number of elements allocated.
+};
+
 struct population {
   mint numSpecies;       // Number of species.
   mint mpiProcs;         // MPI decomposition of the species.
@@ -129,6 +141,7 @@ struct population {
   mint globalMomOff;     // Offset of first moment in this process within global number of moments.
   struct species *spec;  // Pointer to array of species.
   mint numMomentsTot;    // Total number of moments across all species.
+  struct fourierArray *momk; // Moments in Fourier space. Possibly multiple copies (e.g. for time stepper).
 };
 
 struct fieldParameters {
@@ -147,19 +160,9 @@ struct timeState {
   real dt;
 };
 
-// Structures storing host and device pointers to vector field.
-struct realMoments {
-  real *ho;
-  real *dev;
-};
-struct fourierMoments {
-  fourier *ho;
-  fourier *dev;
-};
-
 // Define the various fields and moments needed.
-extern struct realMoments mom, moma;
-extern struct fourierMoments momk, momka;
+extern struct realArray mom, moma;
+extern struct fourierArray momk, momka;
 
 // Return a pointer to the momIdx-th moment of the sIdx-th species in momk.
 fourier* getMoment_fourier(struct fourierGrid grid, struct population pop, const mint sIdx, const mint momIdx, fourier *momkIn);

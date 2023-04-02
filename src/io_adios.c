@@ -53,11 +53,11 @@ void setup_files(struct grid globalGrid, struct grid localGrid, struct populatio
   ad_check_handler(ad_momk_eng, " ADIOS: Error creating engine/opening file.");
 }
 
-void writeMoments_fourier(struct fourierMoments momkIn) {
-  // Write out the moments in fourier space.
+void write_fourierArray(struct fourierArray arrkIn) {
+  // Write out Fourier space array.
   adios2_error ioerr;
-  if (momkIn.ho) ioerr = adios2_put(ad_momk_eng, ad_momk_var, momkIn.ho, adios2_mode_deferred);
-  ad_check_error(ioerr, " ADIOS: Error in putting Fourier moments.");
+  if (arrkIn.ho) ioerr = adios2_put(ad_momk_eng, ad_momk_var, arrkIn.ho, adios2_mode_deferred);
+  ad_check_error(ioerr, " ADIOS: Error in putting Fourier array.");
 }
 
 void terminate_io() {

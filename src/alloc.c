@@ -9,26 +9,26 @@
 #include "mh_alloc_dev.h"
 
 // Wrappers to basic functions that allocate memory.
-mint* alloc_mintArray(const mint numElements) {
+mint* alloc_mintArray_ho(mint numElements) {
   mint *out_p;
   out_p = (mint *) calloc(numElements, sizeof(mint));
   if (out_p == NULL) abortSimulation(" alloc_mintArray: calloc failed! Terminating...\n");
   return out_p;
 }
-char* alloc_charArray(const mint numElements) {
+char* alloc_charArray_ho(mint numElements) {
   char *out_p;
   out_p = (char *) calloc(numElements, sizeof(char));
   if (out_p == NULL) abortSimulation(" alloc_charArray: calloc failed! Terminating...\n");
   return out_p;
 }
-real* alloc_realArray(const mint numElements) {
+real* alloc_realArray_ho(mint numElements) {
   real *out_p;
   out_p = (real *) calloc(numElements, sizeof(real));
   if (out_p == NULL)
     abortSimulation(" alloc_realArray: calloc failed! Terminating...\n");
   return out_p;
 }
-fourier *alloc_fourierArray(const mint numElements) {
+fourier *alloc_fourierArray_ho(mint numElements) {
   fourier *out_p;
   out_p = (fourier *) calloc(numElements, sizeof(fourier));
   if (out_p == NULL)
@@ -36,39 +36,48 @@ fourier *alloc_fourierArray(const mint numElements) {
   return out_p;
 }
 
-// Functions that allocate moment vectors, on host and/or device.
-void alloc_realMoments(const struct realGrid grid, const struct population pop, const resource res, struct realMoments *mom) {
-  mint numMomentsTot = 1;
-  for (mint s=0; s<pop.numSpecies; s++) numMomentsTot += pop.spec[s].numMoments;
+// Functions that allocate arrays on host, device, or both.
+void alloc_realArray(struct realArray *arr, mint numElements, enum resource_mem res) {
+  arr->nelem = numElements;
 
   if ((res == hostOnly) || (res == hostAndDevice))
-    mom->ho = alloc_realArray(numMomentsTot*prod_mint(grid.Nx,nDim));  // Allocate on host.
+    arr->ho = alloc_realArray_ho(arr->nelem);  // Allocate on host.
 
   if ((res == deviceOnly) || (res == hostAndDevice))
-    mom->dev = alloc_realArray_dev(numMomentsTot*prod_mint(grid.Nx,nDim));  // Allocate on device.
+    arr->dev = alloc_realArray_dev(arr->nelem);  // Allocate on device.
+}
+void alloc_fourierArray(struct fourierArray *arrk, mint numElements, enum resource_mem res) {
+  arrk->nelem = numElements;
+
+  if ((res == hostOnly) || (res == hostAndDevice))
+    arrk->ho = alloc_fourierArray_ho(arrk->nelem);  // Allocate on host.
+
+  if ((res == deviceOnly) || (res == hostAndDevice))
+    arrk->dev = alloc_fourierArray_dev(arrk->nelem);  // Allocate on device.
 }
 
-void alloc_fourierMoments(const struct fourierGrid grid, const struct population pop, const resource res, struct fourierMoments *momk) {
-  mint numMomentsTot = 0;
-  for (mint s=0; s<pop.numSpecies; s++) numMomentsTot += pop.spec[s].numMoments;
-
-  if ((res == hostOnly) || (res == hostAndDevice))
-    momk->ho = alloc_fourierArray(numMomentsTot*prod_mint(grid.Nekx,nDim));  // Allocate on host.
-
-  if ((res == deviceOnly) || (res == hostAndDevice))
-    momk->dev = alloc_fourierArray_dev(numMomentsTot*prod_mint(grid.Nekx,nDim));  // Allocate on device.
+// Functions that allocate moment vectors.
+void alloc_realMoments(struct realArray *mom, const struct realGrid grid, const struct population pop, enum resource_mem res) {
+  mint nelem = pop.numMomentsTot*prod_mint(grid.Nx,nDim);
+  alloc_realArray(mom, nelem, res);
+}
+void alloc_fourierMoments(struct fourierArray *momk, const struct fourierGrid grid, const struct population pop, enum resource_mem res) {
+  mint nelem = pop.numMomentsTot*prod_mint(grid.Nekx,nDim);
+  alloc_fourierArray(momk, nelem, res);
 }
 
-// Functions to free memory associated used for moment vector. 
-void free_realMoments(struct realMoments *mom, const resource res) {
+// Functions to free memory associated with arrays on host, device or both.
+void free_realArray(struct realArray *arr, enum resource_mem res) {
   if ((res == hostOnly) || (res == hostAndDevice))
-    free(mom->ho);  // Free host memory.
+    free(arr->ho);  // Free host memory.
+
   if ((res == deviceOnly) || (res == hostAndDevice))
-    free_realMoments_dev(mom->dev);  // Free device memory.
+    free_realArray_dev(arr->dev);  // Free device memory.
 }
-void free_fourierMoments(struct fourierMoments *momk, const resource res) {
+void free_fourierArray(struct fourierArray *arrk, enum resource_mem res) {
   if ((res == hostOnly) || (res == hostAndDevice))
-    free(momk->ho);  // Free host memory.
+    free(arrk->ho);  // Free host memory.
+
   if ((res == deviceOnly) || (res == hostAndDevice))
-    free_fourierMoments_dev(momk->dev);  // Free device memory.
+    free_fourierArray_dev(arrk->dev);  // Free device memory.
 }
