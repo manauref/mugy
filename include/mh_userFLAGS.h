@@ -11,5 +11,9 @@
      > 0 use single precision. */
 #define USE_SINGLE_PRECISION 1 
 
+// Time steppers supported. Options must be consistent with mh_macros.h
+//   =4 Runge-Kutta 4th order.
+#define TIME_STEPPER 4
+
 
 #endif

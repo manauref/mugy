@@ -6,10 +6,7 @@
 #include "mh_data.h"
 #include "mh_data_dev.h"
 
-struct realArray mom, moma;
-struct fourierArray momk, momka;
-
-fourier* getMoment_fourier(struct fourierGrid grid, struct population pop, const mint sIdx, const mint momIdx, fourier *momkIn) {
+fourier* getMoment_fourier(struct fourierGrid grid, struct population pop, mint sIdx, mint momIdx, fourier *momkIn) {
   // Return a pointer to the momIdx-th moment of the sIdx-th species in momk.
   fourier* ptrOut = momkIn;
   mint momOff = 0;
@@ -17,7 +14,7 @@ fourier* getMoment_fourier(struct fourierGrid grid, struct population pop, const
   return ptrOut+(momOff+momIdx)*grid.NekxTot;
 }
 
-mint sub2lin_fourier(const mint *kxI, const struct fourierGrid grid) {
+mint sub2lin_fourier(mint *kxI, const struct fourierGrid grid) {
   // Given the nDim-dimensional index (subscript) kxI return the linear index
   // in a Fourier grid. We assume row major order for the (kz,kx,ky) dimensions.
   mint strides[nDim] = {grid.Nekx[1],1,grid.NekxyTot};

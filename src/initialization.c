@@ -243,6 +243,9 @@ void read_inputs(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gr
   pop->numMomentsTot = 0;
   for (mint s=0; s<pop->numSpecies; s++) pop->numMomentsTot += pop->spec[s].numMoments;
 
+  // Set the moments pointer in the global population to NULL (we don't store global moments).
+  pop->momk = NULL;
+
 }
 
 void init_global_grids(struct grid *globalGrid) {
@@ -352,26 +355,32 @@ void init_global_grids(struct grid *globalGrid) {
 
 }
 
-void allocate_fields(struct grid localGrid, struct population localPop) {
+void allocate_dynfields(struct grid localGrid, struct population *localPop) {
   // Allocate various fields needed.
 #ifdef USE_GPU
   enum resource_mem onResource = hostAndDevice;
 #elif
   enum resource_mem onResource = hostOnly;
 #endif
-  alloc_fourierMoments(&momk, localGrid.fG, localPop, onResource);
-  alloc_realMoments(&mom, localGrid.fG.dual, localPop, onResource);
+
+  // Allocate moments vector needed for time stepping.
+  localPop->momk = (struct fourierArray*) calloc(TIME_STEPPER_NUM_FIELDS, sizeof(struct fourierArray));
+  for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
+    alloc_fourierMoments(&localPop->momk[s], localGrid.fG, *localPop, onResource);
+
+  // Allocate auxiliary arrays/fields.
 }
 
-void set_initialCondition(struct grid localGrid, struct population localPop) {
+void set_initialCondition(struct grid localGrid, struct population *localPop) {
   // Impose the initial conditions on the moments and thoe potential.
 
+  struct fourierArray momk = localPop->momk[0]; // Put ICs in first stepper field.
   real *kxMin = &localGrid.fG.kxMin[0];
-  for (mint s=0; s<localPop.numSpecies; s++) {
-    fourier *den_p  = getMoment_fourier(localGrid.fG, localPop, s, denIdx, momk.ho);  // Get density of species s.
-    fourier *temp_p = getMoment_fourier(localGrid.fG, localPop, s, tempIdx, momk.ho);  // Get temperature of species s.
-    real initA    = localPop.spec[s].initA;
-    real *initAux = &localPop.spec[s].initAux[0];
+  for (mint s=0; s<localPop->numSpecies; s++) {
+    fourier *den_p  = getMoment_fourier(localGrid.fG, *localPop, s, denIdx, momk.ho);  // Get density of species s.
+    fourier *temp_p = getMoment_fourier(localGrid.fG, *localPop, s, tempIdx, momk.ho);  // Get temperature of species s.
+    real initA    = localPop->spec[s].initA;
+    real *initAux = &localPop->spec[s].initAux[0];
     for (mint linIdx=0; linIdx<localGrid.fG.NekxTot; linIdx++) {
       mint kxIdx[nDim];
       lin2sub_fourier(&kxIdx[0], linIdx, localGrid.fG);  // Convert linear index to multidimensional kx index.
@@ -390,9 +399,7 @@ void set_initialCondition(struct grid localGrid, struct population localPop) {
   }
 
   // Copy initialized moments from host to device.
-  mint numMomentsTot = 0;
-  for (mint s=0; s<localPop.numSpecies; s++) numMomentsTot += localPop.spec[s].numMoments;
-  memcpy_fourier((&momk)->dev, (&momk)->ho, numMomentsTot*prod_mint(localGrid.fG.Nekx,nDim), host2dev);
+  memcpy_fourier(momk.dev, momk.ho, localPop->numMomentsTot, host2dev);
 
 }
 
@@ -418,25 +425,22 @@ void init_all(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gridG
   // Decompose the x,y,z,s domains amongst MPI processes.
   distributeDOFs(*gridG, *popG, gridL, popL);
 
-  allocate_fields(*gridL, *popL);  // Allocate multi-D fields.
+  allocate_dynfields(*gridL, popL);  // Allocate dynamic fields.
 
-  set_initialCondition(*gridL, *popL);  // Impose ICs.
+  set_initialCondition(*gridL, popL);  // Impose ICs.
 
   setup_files(*gridG, *gridL, *popG, *popL);  // Setup IO files.
 
-  write_fourierArray(momk);
-
+  write_fourierArray(popL->momk[0]);
 }
 
 void free_fields() {
   // Deallocate fields.
-#ifdef USE_GPU
-  enum resource_mem onResource = hostAndDevice;
-#elif
-  enum resource_mem onResource = hostOnly;
-#endif
-  free_fourierArray(&momk, onResource);
-  free_realArray(&mom, onResource);
+//#ifdef USE_GPU
+//  enum resource_mem onResource = hostAndDevice;
+//#elif
+//  enum resource_mem onResource = hostOnly;
+//#endif
 }
 
 void free_grid(struct grid *grid) {
@@ -458,4 +462,16 @@ void free_population(struct population *pop) {
     free(pop->spec[s].initAux);
   }
   free(pop->spec);
+
+#ifdef USE_GPU
+  enum resource_mem onResource = hostAndDevice;
+#elif
+  enum resource_mem onResource = hostOnly;
+#endif
+
+  // Free moments vector.
+  if (pop->momk) {
+    for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
+      free_fourierArray(&pop->momk[s], onResource);
+  }
 }

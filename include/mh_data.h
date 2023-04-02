@@ -160,15 +160,11 @@ struct timeState {
   real dt;
 };
 
-// Define the various fields and moments needed.
-extern struct realArray mom, moma;
-extern struct fourierArray momk, momka;
-
 // Return a pointer to the momIdx-th moment of the sIdx-th species in momk.
-fourier* getMoment_fourier(struct fourierGrid grid, struct population pop, const mint sIdx, const mint momIdx, fourier *momkIn);
+fourier* getMoment_fourier(struct fourierGrid grid, struct population pop, mint sIdx, mint momIdx, fourier *momkIn);
 
 // Linear index given the nDim-dimensional subscript in a Fourier grid.
-mint sub2lin_fourier(const mint *kxI, const struct fourierGrid grid);
+mint sub2lin_fourier(mint *kxI, const struct fourierGrid grid);
 
 // nDim-dimensional subscript given the linear index in a Fourier grid.
 void lin2sub_fourier(mint *kxI, mint lin, const struct fourierGrid grid);

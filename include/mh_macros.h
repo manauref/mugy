@@ -57,5 +57,9 @@ enum memcpy_dir_dev {
     _a < _b ? _a : _b;       \
 })
 
+// Number of fields needed for time stepping.
+#if (TIME_STEPPER == 4)
+#define TIME_STEPPER_NUM_FIELDS 4
+#endif
 
 #endif

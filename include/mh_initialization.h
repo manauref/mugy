@@ -27,11 +27,11 @@ void read_inputs(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gr
 // Set number of cells in de-aliased, aliased and real space global grids.
 void init_global_grids(struct grid *grid);
 
-// Allocate various fields needed.
-void allocate_fields(struct grid localGrid, struct population localPop);
+// Allocate time dependent fields needed.
+void allocate_dynfields(struct grid localGrid, struct population *localPop);
 
 // Impose the initial conditions on the moments and the electrostatic potential.
-void set_initialCondition(struct grid localGrid, struct population localPop);
+void set_initialCondition(struct grid localGrid, struct population *localPop);
 
 // Run the full initialization.
 void init_all(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gridG, struct grid *gridL, struct timeSetup *timePars,
