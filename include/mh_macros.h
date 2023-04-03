@@ -6,6 +6,26 @@
 #ifndef MUGY_MACROS 
 #define MUGY_MACROS 
 
+// Number of dimensions in the code.
+#define nDim 3
+
+#if USE_SINGLE_PRECISION > 0
+typedef float real;
+#else
+typedef double real;
+#endif
+
+// Define our own int in case we wish to change to long.
+typedef int mint;
+
+// Moment indices.
+#define denIdx 0
+#define tempIdx 1
+
+#ifndef M_PI
+#define M_PI (3.14159265358979323846)
+#endif
+
 
 // GPU related macros. USE_GPU is passed as a compile-time preprocessor variable.
 #if USE_GPU

@@ -10,38 +10,24 @@
 #include "mh_userFLAGS.h"
 #include "mh_macros.h"
 
-// Number of dimensions in the code.
-#define nDim 3
-
+// mugy specific types (some other types in mh_macros.h).
 #if USE_SINGLE_PRECISION > 0
-typedef float real;
 typedef float complex fourier;
 #define mpi_real MPI_FLOAT
 #define mpi_fourier MPI_C_COMPLEX
 #define fmt_real "f"
 #else
-typedef double real;
 typedef double complex fourier;
 #define fmt_real "lf"
 #define mpi_real MPI_DOUBLE
 #define mpi_fourier MPI_C_DOUBLE_COMPLEX
 #endif
 
-// Define our own int in case we wish to change to long.
-typedef int mint;
 #define mpi_mint MPI_INT
 #define fmt_mint "d"
 
 // ID of rank that does simpe I/O:
 #define ioRank 0
-
-// Moment indices.
-#define denIdx 0 
-#define tempIdx 1
-
-#ifndef M_PI
-#define M_PI (3.14159265358979323846)
-#endif
 
 // Container for IO instructions
 struct ioSetup {
