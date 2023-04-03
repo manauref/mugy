@@ -8,7 +8,7 @@
 
 
 // GPU related macros. USE_GPU is passed as a compile-time preprocessor variable.
-#ifdef USE_GPU
+#if USE_GPU
 
 #include <cuda_runtime.h>
 
@@ -23,7 +23,7 @@ enum memcpy_dir_dev {
   device2device = cudaMemcpyDeviceToDevice,
 };
 
-#define DEFAULT_NUM_DEV_THREADS 256
+#define DEFAULT_NUM_THREADS_DEV 256
 
 #else
 
@@ -38,7 +38,7 @@ enum memcpy_dir_dev {
   device2device,
 };
 
-#define DEFAULT_NUM_DEV_THREADS 1
+#define DEFAULT_NUM_THREADS_DEV 1
 
 #endif  // GPU related macros.
 

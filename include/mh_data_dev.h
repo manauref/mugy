@@ -32,11 +32,9 @@ typedef int mint;
 #endif
 
 // Copy real-space moments between host and device.
-//void memcpy_real_dev(real *dest, real *src, mint dofs, enum memcpy_dir_dev dir);
-void memcpy_real_dev(real *dest, real *src, mint dofs, enum cudaMemcpyKind dir);
+void memcpy_real_dev(real *dest, real *src, mint dofs, enum memcpy_dir_dev dir);
 
 // Copy fourier-space moments between host and device.
-//void memcpy_fourier_dev(void *dest, void *src, mint dofs, enum memcpy_dir_dev dir);
-void memcpy_fourier_dev(void *dest, void *src, mint dofs, enum cudaMemcpyKind dir);
+void memcpy_fourier_dev(void *dest, void *src, mint dofs, enum memcpy_dir_dev dir);
 
 #endif

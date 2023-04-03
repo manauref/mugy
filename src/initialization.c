@@ -359,7 +359,7 @@ void allocate_dynfields(struct grid localGrid, struct population *localPop) {
   // Allocate various fields needed.
 #ifdef USE_GPU
   enum resource_mem onResource = hostAndDeviceMem;
-#elif
+#else
   enum resource_mem onResource = hostMem;
 #endif
 
@@ -494,7 +494,7 @@ void free_fields() {
   // Deallocate fields.
 //#ifdef USE_GPU
 //  enum resource_mem onResource = hostAndDeviceMem;
-//#elif
+//#else
 //  enum resource_mem onResource = hostMem;
 //#endif
 }
@@ -521,7 +521,7 @@ void free_population(struct population *pop) {
 
 #ifdef USE_GPU
   enum resource_mem onResource = hostAndDeviceMem;
-#elif
+#else
   enum resource_mem onResource = hostMem;
 #endif
 
