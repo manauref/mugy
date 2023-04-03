@@ -1,13 +1,13 @@
-/* mugy: finalize.h
+/* mugy: mh_finalize.h
 
    Header file for termination functions.
 */
 
-#ifndef FINALIZE
-#define FINALIZE
+#ifndef MUGY_FINALIZE
+#define MUGY_FINALIZE
 
-#include "io_tools.h"
-#include "mpi_tools.h"
+#include "mh_io_tools.h"
+#include "mh_mpi_tools.h"
 
 // Call for the termination of the various parts of mugy.
 void terminate_all();

@@ -19,21 +19,39 @@
 
 
 #[ Define the C compiler to use.
-CC = /Users/manaure/Documents/multiscale/code/openmpi4.1.1-intel19.1/bin/mpicc
+CC = ${CCCOMPILER}
 
-#[ ADIOS flags:
-ADIOS_FLAGS = -DADIOS2_USE_MPI
-ADIOS_LIB = -Wl,-rpath,/Users/manaure/Documents/multiscale/code/adios2-openmpi4.1.1-intel19.1/lib /Users/manaure/Documents/multiscale/code/adios2-openmpi4.1.1-intel19.1/lib/libadios2_c_mpi.2.7.1.dylib /Users/manaure/Documents/multiscale/code/adios2-openmpi4.1.1-intel19.1/lib/libadios2_c.2.7.1.dylib
-ADIOS_INCL = -I/Users/manaure/Documents/multiscale/code/adios2-openmpi4.1.1-intel19.1/include
+#[ CUDA flags and variables.
+NVCC_RESULT := $(shell which nvcc 2> NULL)
+NVCC_TEST := $(notdir $(NVCC_RESULT))
+ifeq ($(NVCC_TEST),nvcc)
+    USE_GPU = true
+    CUDA_INCL = -I${CUDA_INC}
+    CUDA_LIBS = -L${CUDA_LIB}
+    CUDAFLAGS = -DUSE_GPU=$(USE_GPU) ${NVCCFLAGS}
+    NVCC = ${NVCCCOMPILER}
+    CUDART = -lcudart -lcudadevrt
+    CFLAGS_DEV = -DUSE_GPU=$(USE_GPU) 
+else
+    USE_GPU = false
+    CUDA_INCL =
+    CUDA_LIBS =
+    CUDAFLAGS =
+    NVCC =
+    CUDART =
+    CFLAGS_DEV =
+endif
 
 #[ Define any compile-time flags.
-CFLAGS = -Wall -std=c11 $(ADIOS_FLAGS)
+#CFLAGS = -Wall -std=c11 -lm $(ADIOS_FLAGS)
+#CFLAGS = -Wall -std=c11 -lm
+CFLAGS = $(CFLAGS_DEV) -Wall -std=c11 ${CCFLAGS}
 
 #[ Define any directories containing header files.
-INCLUDES = -I../include $(ADIOS_INCL)
+INCLUDES = -I../include -I${MPI_INC} $(CUDA_INCL) ${ADIOS_INC}
 
 #[ Define library paths.
-LFLAGS = -L../lib $(ADIOS_LIB)
+LFLAGS = -L../lib -L${MPI_LIB} $(CUDA_LIBS) ${ADIOS_LIB}
 
 #[ Define any libraries to link into executable:
 #[   if I want to link in libraries (libx.so or libx.a) I use the -llibname
@@ -41,7 +59,12 @@ LFLAGS = -L../lib $(ADIOS_LIB)
 LIBS = 
 
 #[ Define the C source files.
-SRCS = alloc_mugy.c initialization.c io_adios.c io_tools.c mpi_tools.c mugy.c utilities.c data_mugy.c finalize.c
+SRCS = alloc.c initialization.c io_adios.c io_tools.c mpi_tools.c mugy.c utilities.c data.c finalize.c
+ifeq ($(USE_GPU),true)
+    SRCS_DEV = initialization_dev.cu alloc_dev.cu data_dev.cu
+else
+    SRCS_DEV =
+endif
 
 #[ Define the C object files.
 #[ Uses Suffix Replacement within a macro:
@@ -50,9 +73,19 @@ SRCS = alloc_mugy.c initialization.c io_adios.c io_tools.c mpi_tools.c mugy.c ut
 #[ Below we are replacing the suffix .c of all words in the macro SRCS
 #[ with the .o suffix
 OBJS = $(SRCS:.c=.o)
+ifeq ($(USE_GPU),true)
+    OBJS_DEV = $(SRCS_DEV:.cu=.o)
+else
+    OBJS_DEV =
+endif
 
 #[ Define the executable file.
 MAIN = mugy.x
+ifeq ($(USE_GPU),true)
+    MAIN_DEV = mugy_dev.o
+else
+    MAIN_DEV =
+endif
 
 #[ The following part of the makefile is generic; it can be used to
 #[ build any executable just by changing the definitions above and by
@@ -63,13 +96,19 @@ MAIN = mugy.x
 all:    $(MAIN)
 	@echo  Source mugy.c has been compiled into executable: mugy.x
 
-$(MAIN): $(OBJS)
-	$(CC) $(CFLAGS) $(INCLUDES) -o $(MAIN) $(OBJS) $(LFLAGS) $(LIBS)
+$(MAIN): $(MAIN_DEV) $(OBJS)
+	$(CC) $(CFLAGS) $(INCLUDES) $(MAIN_DEV) $(OBJS) $(OBJS_DEV) $(CUDART) $(LFLAGS) $(LIBS) -o $(MAIN)
 
 #[ This is a suffix replacement rule for building .o's from .c's
 #[ it uses automatic variables $<: the name of the prerequisite of
 #[ the rule(a .c file) and $@: the name of the target of the rule (a .o file)
 #[ (see the gnu make manual section about automatic variables).
+$(MAIN_DEV): $(OBJS_DEV)
+	$(NVCC) $(CUDAFLAGS) -dlink $(INCLUDES) $^ -o $(MAIN_DEV)
+
+$(OBJS_DEV): %.o: %.cu
+	$(NVCC) $(CUDAFLAGS) $(INCLUDES) -dc $< -o $@
+
 .c.o:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<  -o $@
 

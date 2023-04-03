@@ -3,7 +3,7 @@
    A reduced gyrofluid code for ITG-ETG multiscale simulations.
 */
 
-#include "mugy.h"
+#include "mh_mugy.h"
 
 int main(int argc, char *argv[]) {
 

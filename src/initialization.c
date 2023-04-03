@@ -2,8 +2,17 @@
    
    Functions used to initialize the simulation.
 */
-#include "initialization.h"
-#include <complex.h>  /* For complex data types. */
+
+#include <string.h>   // e.g. for strcat, strlen.
+#include "mh_parameters.h"
+#include "mh_utilities.h"
+#include "mh_alloc.h"
+#include "mh_mpi_tools.h"
+#include "mh_io_tools.h"
+#include "mh_initialization.h"
+#include "mh_initialization_dev.h"
+#include <complex.h>  /* Needed by some fscanf below. */
+#include "mh_data.h"
 
 // Read an variable from input file.
 void readFileVar_mint(FILE *fp, const mint numElements, mint *var) {
@@ -36,7 +45,7 @@ void readFileSpeciesPar_mint(mint **var, FILE *fp, const mint sIdx, const mint n
   if (numElements[sIdx] == 1) {
     fscanf(fp, "%d", &(*var)[0]);
   } else {
-    *var = alloc_mintArray(numElements[sIdx]);
+    *var = alloc_mintArray_ho(numElements[sIdx]);
     for (mint i=0; i<numElements[sIdx]; i++) fscanf(fp, "%d", &(*var)[i]);
   }
   // Skip species after sIdx (presumably will be read later).
@@ -54,7 +63,7 @@ void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint n
   if (numElements[sIdx] == 1) {
     fscanf(fp, "%"fmt_real, &(*var)[0]);
   } else {
-    *var = alloc_realArray(numElements[sIdx]);
+    *var = alloc_realArray_ho(numElements[sIdx]);
     for (mint i=0; i<numElements[sIdx]; i++) fscanf(fp, "%"fmt_real, &(*var)[i]);
   }
   // Skip species after sIdx (presumably will be read later).
@@ -166,12 +175,12 @@ void read_inputFile(const char *fileNameIn, struct grid *grid, struct timeSetup 
   for (mint s=0; s<pop->numSpecies; s++) {
     MPI_Bcast(&pop->spec[s].numMoments,                       1, mpi_mint, ioRank, MPI_COMM_WORLD);
     if (myRank != ioRank) {
-      pop->spec[s].alpha      = alloc_realArray(pop->spec[s].numMoments);
-      pop->spec[s].nu         = alloc_realArray(pop->spec[s].numMoments);
-      pop->spec[s].hDiffOrder = alloc_realArray(nDim);
-      pop->spec[s].hDiff      = alloc_realArray(nDim);
-      pop->spec[s].kDiffMin   = alloc_realArray(nDim);
-      pop->spec[s].initAux    = alloc_realArray(nDim);
+      pop->spec[s].alpha      = alloc_realArray_ho(pop->spec[s].numMoments);
+      pop->spec[s].nu         = alloc_realArray_ho(pop->spec[s].numMoments);
+      pop->spec[s].hDiffOrder = alloc_realArray_ho(nDim);
+      pop->spec[s].hDiff      = alloc_realArray_ho(nDim);
+      pop->spec[s].kDiffMin   = alloc_realArray_ho(nDim);
+      pop->spec[s].initAux    = alloc_realArray_ho(nDim);
     }
     MPI_Bcast(&pop->spec[s].qCharge   ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
     MPI_Bcast(&pop->spec[s].muMass    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
@@ -234,6 +243,9 @@ void read_inputs(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gr
   pop->numMomentsTot = 0;
   for (mint s=0; s<pop->numSpecies; s++) pop->numMomentsTot += pop->spec[s].numMoments;
 
+  // Set the moments pointer in the global population to NULL (we don't store global moments).
+  pop->momk = NULL;
+
 }
 
 void init_global_grids(struct grid *globalGrid) {
@@ -277,7 +289,7 @@ void init_global_grids(struct grid *globalGrid) {
   }
 
   // Global de-aliased real-space grids
-  globalGrid->fG.dual.x = alloc_realArray(sum_mint(globalGrid->fG.dual.Nx, nDim));
+  globalGrid->fG.dual.x = alloc_realArray_ho(sum_mint(globalGrid->fG.dual.Nx, nDim));
   real *dx = globalGrid->fG.dual.dx;
   mint *Nx = globalGrid->fG.dual.Nx; 
   mint xOff = 0;
@@ -289,7 +301,7 @@ void init_global_grids(struct grid *globalGrid) {
     xOff += Nx[d];
   }
   // Global aliased real-space grids (may not be needed).
-  globalGrid->fGa.dual.x = alloc_realArray(sum_mint(globalGrid->fGa.dual.Nx, 3));
+  globalGrid->fGa.dual.x = alloc_realArray_ho(sum_mint(globalGrid->fGa.dual.Nx, 3));
   real *dxa = globalGrid->fGa.dual.dx;
   mint *Nxa = globalGrid->fGa.dual.Nx; 
   mint xaOff = 0;
@@ -303,7 +315,7 @@ void init_global_grids(struct grid *globalGrid) {
 
   // Global dealiased k-space grids.
   for (mint d=0; d<nDim; d++) globalGrid->fGa.kxMin[d] = globalGrid->fG.kxMin[d];
-  globalGrid->fG.kx  = alloc_realArray(sum_mint(globalGrid->fG.Nekx, 3));
+  globalGrid->fG.kx  = alloc_realArray_ho(sum_mint(globalGrid->fG.Nekx, 3));
   real *kxMin = globalGrid->fG.kxMin;
   mint *Nkx = globalGrid->fG.Nkx; 
   mint kxOff = 0;
@@ -317,7 +329,7 @@ void init_global_grids(struct grid *globalGrid) {
     globalGrid->fG.kx[i] = -(real)(Nkx[0]-1-(i-Nkx[0]))*kxMin[0];
 
   // Global aliased k-space grids.
-  globalGrid->fGa.kx = alloc_realArray(sum_mint(globalGrid->fGa.Nekx, 3));
+  globalGrid->fGa.kx = alloc_realArray_ho(sum_mint(globalGrid->fGa.Nekx, 3));
   real *kxaMin = globalGrid->fGa.kxMin;
   mint *Nkxa = globalGrid->fGa.Nkx; 
   mint kxaOff = 0;
@@ -343,38 +355,108 @@ void init_global_grids(struct grid *globalGrid) {
 
 }
 
-void allocate_fields(struct grid localGrid, struct population localPop) {
+void allocate_dynfields(struct grid localGrid, struct population *localPop) {
   // Allocate various fields needed.
-  resource onResource = hostOnly;
-  alloc_fourierMoments( localGrid.fG, localPop, onResource, &momk);
+#ifdef USE_GPU
+  enum resource_mem onResource = hostAndDeviceMem;
+#else
+  enum resource_mem onResource = hostMem;
+#endif
+
+  // Allocate moments vector needed for time stepping.
+  localPop->momk = (struct fourierArray*) calloc(TIME_STEPPER_NUM_FIELDS, sizeof(struct fourierArray));
+  for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
+    alloc_fourierMoments(&localPop->momk[s], localGrid.fG, *localPop, onResource);
+
+  // Allocate auxiliary arrays/fields.
 }
 
-void set_initialCondition(struct grid localGrid, struct population localPop) {
+void set_initialCondition(struct grid localGrid, struct population *localPop) {
   // Impose the initial conditions on the moments and thoe potential.
 
-  real *kxMin = &localGrid.fG.kxMin[0];
-  for (mint s=0; s<localPop.numSpecies; s++) {
-    fourier *den_p  = getMoment_fourier(localGrid.fG, localPop, s, denIdx, momk.ho);  // Get density of species s.
-    fourier *temp_p = getMoment_fourier(localGrid.fG, localPop, s, tempIdx, momk.ho);  // Get temperature of species s.
-    real initA    = localPop.spec[s].initA;
-    real *initAux = &localPop.spec[s].initAux[0];
-    for (mint linIdx=0; linIdx<localGrid.fG.NekxTot; linIdx++) {
-      mint kxIdx[nDim];
-      lin2sub_fourier(&kxIdx[0], linIdx, localGrid.fG);  // Convert linear index to multidimensional kx index.
-      real kx[nDim];
-      get_kx(&kx[0], kxIdx, localGrid.fG);
+  struct fourierArray momk = localPop->momk[0]; // Put ICs in first stepper field.
 
-      // Set density to a power-law in k-space.
-      den_p[0] = initA*(pow((kxMin[0]+fabs(kx[0]))/kxMin[0],initAux[0]))
-                      *(pow((kxMin[1]+fabs(kx[1]))/kxMin[1],initAux[1]));
-      den_p++;
+  // NOTE: For now assume initialOp is the same for all species.
+  mint initialOp = localPop->spec[0].icOp; 
 
-      // Set the initial temperature (fluctuations) to zero.
-      temp_p++;
-      temp_p[0] = 0.;
+  if (initialOp == 0) {
+    // Initialize in real space and transform to Fourier.
+    struct realGrid *grid = &localGrid.fG.dual;
+    struct realArray momIC;
+    alloc_realMoments(&momIC, *grid, *localPop, hostMem);
+
+    for (mint s=0; s<localPop->numSpecies; s++) {
+      real initA    = localPop->spec[s].initA;
+
+      real *den_p  = getMoment_real(*grid, *localPop, s, denIdx, momIC.ho);  // Get density of species s.
+      real *temp_p = getMoment_real(*grid, *localPop, s, tempIdx, momIC.ho);  // Get temperature of species s.
+
+      for (mint linIdx=0; linIdx<grid->NxTot; linIdx++) {
+        mint xIdx[nDim];
+        lin2sub_real(&xIdx[0], linIdx, *grid);  // Convert linear index to multidimensional x index.
+        real x[nDim];
+        get_x(&x[0], xIdx, *grid);
+
+        // Initial density: a superposition of sines and cosines.
+        den_p[0] = 0.;
+          double kx = 0.1;
+          for (int i; i<localGrid.fG.Nkx[0]; i++) {
+            kx += i*0.2;
+            double ky = 0.3;
+            for (int j; j<localGrid.fG.Nkx[1]; j++) {
+              ky += i*0.1;
+              den_p[0] += initA*sin(kx*x[0])*cos(ky*x[1]);
+            }
+          }
+        den_p++;
+        
+        // Initial temperature = 0.
+        temp_p[0] = 0.;
+        temp_p++;
+      }
+    }
+
+    // Copy initialized moments from host to device.
+    hodevXfer_realArray(&momIC, host2device);
+
+    // FFT moments.
+    //fft_moments_r2c(&momk, &momIC, deviceComp)
+
+    free_realArray(&momIC, hostMem);
+
+  } else if (initialOp == 1) {
+    // Initialize with a k-spce power law.
+    real *kxMin = &localGrid.fG.kxMin[0];
+
+    for (mint s=0; s<localPop->numSpecies; s++) {
+      real initA    = localPop->spec[s].initA;
+      real *initAux = &localPop->spec[s].initAux[0];
+
+      fourier *den_p  = getMoment_fourier(localGrid.fG, *localPop, s, denIdx, momk.ho);  // Get density of species s.
+      fourier *temp_p = getMoment_fourier(localGrid.fG, *localPop, s, tempIdx, momk.ho);  // Get temperature of species s.
+
+      for (mint linIdx=0; linIdx<localGrid.fG.NekxTot; linIdx++) {
+        mint kxIdx[nDim];
+        lin2sub_fourier(&kxIdx[0], linIdx, localGrid.fG);  // Convert linear index to multidimensional kx index.
+        real kx[nDim];
+        get_kx(&kx[0], kxIdx, localGrid.fG);
+  
+        // Set density to a power-law in k-space.
+        den_p[0] = initA*(pow((kxMin[0]+fabs(kx[0]))/kxMin[0],initAux[0]))
+                        *(pow((kxMin[1]+fabs(kx[1]))/kxMin[1],initAux[1]));
+        den_p++;
+  
+        // Set the initial temperature (fluctuations) to zero.
+        temp_p[0] = 0.;
+        temp_p++;
+      };
     };
 
+    // Copy initialized moments from host to device.
+    hodevXfer_fourierArray(&momk, host2device);
+
   }
+
 }
 
 void init_all(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gridG, struct grid *gridL, struct timeSetup *timePars,
@@ -383,6 +465,11 @@ void init_all(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gridG
 
   // Read inputs (from command line arguments and input file).
   read_inputs(argc, argv, ioSet, gridG, timePars, popG, fieldPars);
+
+#ifdef USE_GPU
+  // Initialize devices (GPUs) if any.
+  init_dev(myRank);
+#endif
 
   init_io();  // Initialize IO interface.
 
@@ -394,20 +481,22 @@ void init_all(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gridG
   // Decompose the x,y,z,s domains amongst MPI processes.
   distributeDOFs(*gridG, *popG, gridL, popL);
 
-  allocate_fields(*gridL, *popL);  // Allocate multi-D fields.
+  allocate_dynfields(*gridL, popL);  // Allocate dynamic fields.
 
-  set_initialCondition(*gridL, *popL);  // Impose ICs.
+  set_initialCondition(*gridL, popL);  // Impose ICs.
 
   setup_files(*gridG, *gridL, *popG, *popL);  // Setup IO files.
 
-  writeMoments_fourier(momk);
-
+  write_fourierArray(popL->momk[0]);
 }
 
 void free_fields() {
   // Deallocate fields.
-  resource onResource = hostOnly;
-  free_fourierMoments(&momk, onResource);
+//#ifdef USE_GPU
+//  enum resource_mem onResource = hostAndDeviceMem;
+//#else
+//  enum resource_mem onResource = hostMem;
+//#endif
 }
 
 void free_grid(struct grid *grid) {
@@ -429,4 +518,16 @@ void free_population(struct population *pop) {
     free(pop->spec[s].initAux);
   }
   free(pop->spec);
+
+#ifdef USE_GPU
+  enum resource_mem onResource = hostAndDeviceMem;
+#else
+  enum resource_mem onResource = hostMem;
+#endif
+
+  // Free moments vector.
+  if (pop->momk) {
+    for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
+      free_fourierArray(&pop->momk[s], onResource);
+  }
 }

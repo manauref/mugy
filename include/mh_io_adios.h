@@ -1,15 +1,15 @@
-/* mugy: io_adios.h
+/* mugy: mh_io_adios.h
 
    Header file for ADIOS IO module.
 */
 
-#ifndef IO_ADIOS
-#define IO_ADIOS
+#ifndef MUGY_IO_ADIOS
+#define MUGY_IO_ADIOS
 
 #include "adios2_c.h"
-#include "mugyFLAGS.h"
-#include "data_mugy.h"
-#include "utilities.h"
+#include "mh_userFLAGS.h"
+#include "mh_data.h"
+#include "mh_utilities.h"
 
 extern adios2_adios *ad_ctx;  // ADIOS context used throughout our IO.
 
@@ -31,8 +31,8 @@ void init_io();
 // Create files for IO.
 void setup_files(struct grid globalGrid, struct grid localGrid, struct population globalPop, struct population localPop);
 
-// Output Fourier-space moments.
-void writeMoments_fourier(struct fourierMoments momkIn);
+// Output Fourier-space array..
+void write_fourierArray(struct fourierArray arrkIn);
 
 // Finalize ADIOS IO.
 void terminate_io();
