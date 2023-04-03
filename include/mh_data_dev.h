@@ -5,9 +5,12 @@
 #ifndef MUGY_DATA_DEV
 #define MUGY_DATA_DEV
 
-#include <cuComplex.h>  /* For complex data types. */
 #include "mh_userFLAGS.h"
 #include "mh_macros.h"
+
+#if USE_GPU
+
+#include <cuComplex.h>  /* For complex data types. */
 
 // Number of dimensions in the code.
 #define nDim 3
@@ -18,6 +21,8 @@ typedef cuComplex cufourier;
 #else
 typedef double real;
 typedef cuDoubleComplex cufourier;
+#endif
+
 #endif
 
 // Define our own int in case we wish to change to long.

@@ -81,3 +81,14 @@ void free_fourierArray(struct fourierArray *arrk, enum resource_mem res) {
   if ((res == deviceMem) || (res == hostAndDeviceMem))
     free_fourierArray_dev(arrk->dev);  // Free device memory.
 }
+
+#ifndef USE_GPU
+real* alloc_realArray_dev(int numElements) {
+  return NULL;
+}
+void* alloc_fourierArray_dev(const mint numElements) {
+  return NULL;
+}
+void free_realArray_dev(real *arr) {}
+void free_fourierArray_dev(void *arrk) {}
+#endif
