@@ -6,12 +6,29 @@
 #include "mh_data.h"
 #include "mh_data_dev.h"
 
+real* getMoment_real(struct realGrid grid, struct population pop, mint sIdx, mint momIdx, real *momIn) {
+  // Return a pointer to the momIdx-th moment of the sIdx-th species in mom.
+  real* ptrOut = momIn;
+  mint momOff = 0;
+  for (mint s=0; s<sIdx; s++) momOff += pop.spec[s].numMoments;
+  return ptrOut+(momOff+momIdx)*grid.NxTot;
+}
+
 fourier* getMoment_fourier(struct fourierGrid grid, struct population pop, mint sIdx, mint momIdx, fourier *momkIn) {
   // Return a pointer to the momIdx-th moment of the sIdx-th species in momk.
   fourier* ptrOut = momkIn;
   mint momOff = 0;
   for (mint s=0; s<sIdx; s++) momOff += pop.spec[s].numMoments;
   return ptrOut+(momOff+momIdx)*grid.NekxTot;
+}
+
+mint sub2lin_real(mint *xI, const struct realGrid grid) {
+  // Given the nDim-dimensional index (subscript) xI return the linear index
+  // in a real grid. We assume row major order for the (z,x,y) dimensions.
+  mint strides[nDim] = {grid.Nx[1],1,grid.NxyTot};
+  mint lin;
+  for (mint d=0; d<nDim; d++) lin += xI[d]*strides[d];
+  return lin;
 }
 
 mint sub2lin_fourier(mint *kxI, const struct fourierGrid grid) {
@@ -23,13 +40,33 @@ mint sub2lin_fourier(mint *kxI, const struct fourierGrid grid) {
   return lin;
 }
 
+void lin2sub_real(mint *xI, mint lin, const struct realGrid grid) {
+  // Given the linear index 'lin' in a real grid, return the nDim-dimensional
+  // index (subscript) xI. We assume row major order for the (z,x,y) dimensions.
+  mint strides[nDim] = {grid.Nx[1],1,grid.NxyTot};
+  for (mint d=0; d<nDim; d++) {
+    xI[d] = lin/strides[d];
+    lin -= xI[d]*strides[d];
+  }
+}
+
 void lin2sub_fourier(mint *kxI, mint lin, const struct fourierGrid grid) {
-  // Given the linear index 'lin' in a kx grid, return the nDim-dimensional
+  // Given the linear index 'lin' in a Fourier grid, return the nDim-dimensional
   // index (subscript) kxI. We assume row major order for the (kz,kx,ky) dimensions.
   mint strides[nDim] = {grid.Nekx[1],1,grid.NekxyTot};
   for (mint d=0; d<nDim; d++) {
     kxI[d] = lin/strides[d];
     lin -= kxI[d]*strides[d];
+  }
+}
+
+void get_x(real *x, mint *xI, const struct realGrid grid) {
+  // Obtain the x=(x,y,z) coordinates given the multidimensional
+  // xI index. Assume the flat grid.x array is organized as {x,y,z}.
+  real* x_p = grid.x;
+  for (mint d=0; d<nDim; d++) {
+    x[d] = x_p[xI[d]]; 
+    x_p += grid.Nx[d];
   }
 }
 
@@ -43,14 +80,31 @@ void get_kx(real *kx, mint *kxI, const struct fourierGrid grid) {
   }
 }
 
-void memcpy_real(real *dest, real *src, mint dofs, enum memcpy_dir_dev dir) {
+void memcpy_real(real *dest, real *src, mint numElements, enum memcpy_dir_dev dir) {
 #ifdef USE_GPU
-  memcpy_real_dev(dest, src, dofs, dir);
+  memcpy_real_dev(dest, src, numElements, dir);
 #endif
 }
 // MF 2023/03/29: Use void* because C doesn't know cuCumplex/cufourier the type.
-void memcpy_fourier(void *dest, void *src, mint dofs, enum memcpy_dir_dev dir) {
+void memcpy_fourier(void *dest, void *src, mint numElements, enum memcpy_dir_dev dir) {
 #ifdef USE_GPU
-  memcpy_fourier_dev(dest, src, dofs, dir);
+  memcpy_fourier_dev(dest, src, numElements, dir);
+#endif
+}
+
+void hodevXfer_realArray(struct realArray *arr, enum memcpy_dir_dev dir) {
+#ifdef USE_GPU
+  if (dir == host2device)
+    memcpy_real_dev(arr->dev, arr->ho, arr->nelem, dir);
+  else if (dir == device2host)
+    memcpy_real_dev(arr->ho, arr->dev, arr->nelem, dir);
+#endif
+}
+void hodevXfer_fourierArray(struct fourierArray *arr, enum memcpy_dir_dev dir) {
+#ifdef USE_GPU
+  if (dir == host2device)
+    memcpy_fourier_dev(arr->dev, arr->ho, arr->nelem, dir);
+  else if (dir == device2host)
+    memcpy_fourier_dev(arr->ho, arr->dev, arr->nelem, dir);
 #endif
 }

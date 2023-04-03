@@ -358,9 +358,9 @@ void init_global_grids(struct grid *globalGrid) {
 void allocate_dynfields(struct grid localGrid, struct population *localPop) {
   // Allocate various fields needed.
 #ifdef USE_GPU
-  enum resource_mem onResource = hostAndDevice;
+  enum resource_mem onResource = hostAndDeviceMem;
 #elif
-  enum resource_mem onResource = hostOnly;
+  enum resource_mem onResource = hostMem;
 #endif
 
   // Allocate moments vector needed for time stepping.
@@ -375,31 +375,87 @@ void set_initialCondition(struct grid localGrid, struct population *localPop) {
   // Impose the initial conditions on the moments and thoe potential.
 
   struct fourierArray momk = localPop->momk[0]; // Put ICs in first stepper field.
-  real *kxMin = &localGrid.fG.kxMin[0];
-  for (mint s=0; s<localPop->numSpecies; s++) {
-    fourier *den_p  = getMoment_fourier(localGrid.fG, *localPop, s, denIdx, momk.ho);  // Get density of species s.
-    fourier *temp_p = getMoment_fourier(localGrid.fG, *localPop, s, tempIdx, momk.ho);  // Get temperature of species s.
-    real initA    = localPop->spec[s].initA;
-    real *initAux = &localPop->spec[s].initAux[0];
-    for (mint linIdx=0; linIdx<localGrid.fG.NekxTot; linIdx++) {
-      mint kxIdx[nDim];
-      lin2sub_fourier(&kxIdx[0], linIdx, localGrid.fG);  // Convert linear index to multidimensional kx index.
-      real kx[nDim];
-      get_kx(&kx[0], kxIdx, localGrid.fG);
 
-      // Set density to a power-law in k-space.
-      den_p[0] = initA*(pow((kxMin[0]+fabs(kx[0]))/kxMin[0],initAux[0]))
-                      *(pow((kxMin[1]+fabs(kx[1]))/kxMin[1],initAux[1]));
-      den_p++;
+  // NOTE: For now assume initialOp is the same for all species.
+  mint initialOp = localPop->spec[0].icOp; 
 
-      // Set the initial temperature (fluctuations) to zero.
-      temp_p[0] = 0.;
-      temp_p++;
+  if (initialOp == 0) {
+    // Initialize in real space and transform to Fourier.
+    struct realGrid *grid = &localGrid.fG.dual;
+    struct realArray momIC;
+    alloc_realMoments(&momIC, *grid, *localPop, hostMem);
+
+    for (mint s=0; s<localPop->numSpecies; s++) {
+      real initA    = localPop->spec[s].initA;
+
+      real *den_p  = getMoment_real(*grid, *localPop, s, denIdx, momIC.ho);  // Get density of species s.
+      real *temp_p = getMoment_real(*grid, *localPop, s, tempIdx, momIC.ho);  // Get temperature of species s.
+
+      for (mint linIdx=0; linIdx<grid->NxTot; linIdx++) {
+        mint xIdx[nDim];
+        lin2sub_real(&xIdx[0], linIdx, *grid);  // Convert linear index to multidimensional x index.
+        real x[nDim];
+        get_x(&x[0], xIdx, *grid);
+
+        // Initial density: a superposition of sines and cosines.
+        den_p[0] = 0.;
+          double kx = 0.1;
+          for (int i; i<localGrid.fG.Nkx[0]; i++) {
+            kx += i*0.2;
+            double ky = 0.3;
+            for (int j; j<localGrid.fG.Nkx[1]; j++) {
+              ky += i*0.1;
+              den_p[0] += initA*sin(kx*x[0])*cos(ky*x[1]);
+            }
+          }
+        den_p++;
+        
+        // Initial temperature = 0.
+        temp_p[0] = 0.;
+        temp_p++;
+      }
+    }
+
+    // Copy initialized moments from host to device.
+    hodevXfer_realArray(&momIC, host2device);
+
+    // FFT moments.
+    //fft_moments_r2c(&momk, &momIC, deviceComp)
+
+    free_realArray(&momIC, hostMem);
+
+  } else if (initialOp == 1) {
+    // Initialize with a k-spce power law.
+    real *kxMin = &localGrid.fG.kxMin[0];
+
+    for (mint s=0; s<localPop->numSpecies; s++) {
+      real initA    = localPop->spec[s].initA;
+      real *initAux = &localPop->spec[s].initAux[0];
+
+      fourier *den_p  = getMoment_fourier(localGrid.fG, *localPop, s, denIdx, momk.ho);  // Get density of species s.
+      fourier *temp_p = getMoment_fourier(localGrid.fG, *localPop, s, tempIdx, momk.ho);  // Get temperature of species s.
+
+      for (mint linIdx=0; linIdx<localGrid.fG.NekxTot; linIdx++) {
+        mint kxIdx[nDim];
+        lin2sub_fourier(&kxIdx[0], linIdx, localGrid.fG);  // Convert linear index to multidimensional kx index.
+        real kx[nDim];
+        get_kx(&kx[0], kxIdx, localGrid.fG);
+  
+        // Set density to a power-law in k-space.
+        den_p[0] = initA*(pow((kxMin[0]+fabs(kx[0]))/kxMin[0],initAux[0]))
+                        *(pow((kxMin[1]+fabs(kx[1]))/kxMin[1],initAux[1]));
+        den_p++;
+  
+        // Set the initial temperature (fluctuations) to zero.
+        temp_p[0] = 0.;
+        temp_p++;
+      };
     };
-  }
 
-  // Copy initialized moments from host to device.
-  memcpy_fourier(momk.dev, momk.ho, localPop->numMomentsTot, host2dev);
+    // Copy initialized moments from host to device.
+    hodevXfer_fourierArray(&momk, host2device);
+
+  }
 
 }
 
@@ -437,9 +493,9 @@ void init_all(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gridG
 void free_fields() {
   // Deallocate fields.
 //#ifdef USE_GPU
-//  enum resource_mem onResource = hostAndDevice;
+//  enum resource_mem onResource = hostAndDeviceMem;
 //#elif
-//  enum resource_mem onResource = hostOnly;
+//  enum resource_mem onResource = hostMem;
 //#endif
 }
 
@@ -464,9 +520,9 @@ void free_population(struct population *pop) {
   free(pop->spec);
 
 #ifdef USE_GPU
-  enum resource_mem onResource = hostAndDevice;
+  enum resource_mem onResource = hostAndDeviceMem;
 #elif
-  enum resource_mem onResource = hostOnly;
+  enum resource_mem onResource = hostMem;
 #endif
 
   // Free moments vector.

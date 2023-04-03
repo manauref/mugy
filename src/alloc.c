@@ -40,19 +40,19 @@ fourier *alloc_fourierArray_ho(mint numElements) {
 void alloc_realArray(struct realArray *arr, mint numElements, enum resource_mem res) {
   arr->nelem = numElements;
 
-  if ((res == hostOnly) || (res == hostAndDevice))
+  if ((res == hostMem) || (res == hostAndDeviceMem))
     arr->ho = alloc_realArray_ho(arr->nelem);  // Allocate on host.
 
-  if ((res == deviceOnly) || (res == hostAndDevice))
+  if ((res == deviceMem) || (res == hostAndDeviceMem))
     arr->dev = alloc_realArray_dev(arr->nelem);  // Allocate on device.
 }
 void alloc_fourierArray(struct fourierArray *arrk, mint numElements, enum resource_mem res) {
   arrk->nelem = numElements;
 
-  if ((res == hostOnly) || (res == hostAndDevice))
+  if ((res == hostMem) || (res == hostAndDeviceMem))
     arrk->ho = alloc_fourierArray_ho(arrk->nelem);  // Allocate on host.
 
-  if ((res == deviceOnly) || (res == hostAndDevice))
+  if ((res == deviceMem) || (res == hostAndDeviceMem))
     arrk->dev = alloc_fourierArray_dev(arrk->nelem);  // Allocate on device.
 }
 
@@ -68,16 +68,16 @@ void alloc_fourierMoments(struct fourierArray *momk, const struct fourierGrid gr
 
 // Functions to free memory associated with arrays on host, device or both.
 void free_realArray(struct realArray *arr, enum resource_mem res) {
-  if ((res == hostOnly) || (res == hostAndDevice))
+  if ((res == hostMem) || (res == hostAndDeviceMem))
     free(arr->ho);  // Free host memory.
 
-  if ((res == deviceOnly) || (res == hostAndDevice))
+  if ((res == deviceMem) || (res == hostAndDeviceMem))
     free_realArray_dev(arr->dev);  // Free device memory.
 }
 void free_fourierArray(struct fourierArray *arrk, enum resource_mem res) {
-  if ((res == hostOnly) || (res == hostAndDevice))
+  if ((res == hostMem) || (res == hostAndDeviceMem))
     free(arrk->ho);  // Free host memory.
 
-  if ((res == deviceOnly) || (res == hostAndDevice))
+  if ((res == deviceMem) || (res == hostAndDeviceMem))
     free_fourierArray_dev(arrk->dev);  // Free device memory.
 }

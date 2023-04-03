@@ -52,9 +52,10 @@ struct ioSetup {
   bool outToOldDir;          // If restart, output to directory of previous run?
 };
 
-// Flags for differentiating between operations done on device
-// or on host, or both.
-enum resource_mem {hostOnly, deviceOnly, hostAndDevice};
+// Flag indicating whether to use host or device memory, or both.
+enum resource_mem {hostMem, deviceMem, hostAndDeviceMem};
+// Flags indicating whether to perform operation on host or device.
+enum resource_comp {hostComp, deviceComp};
 
 struct realGrid {
   mint Nx[nDim];        // Number of cells.
@@ -160,22 +161,30 @@ struct timeState {
   real dt;
 };
 
-// Return a pointer to the momIdx-th moment of the sIdx-th species in momk.
+// Return a pointer to the momIdx-th moment of the sIdx-th species in mom/momk.
+real* getMoment_real(struct realGrid grid, struct population pop, mint sIdx, mint momIdx, real *momIn);
 fourier* getMoment_fourier(struct fourierGrid grid, struct population pop, mint sIdx, mint momIdx, fourier *momkIn);
 
-// Linear index given the nDim-dimensional subscript in a Fourier grid.
+// Linear index given the nDim-dimensional subscript in a real/Fourier grid.
+mint sub2lin_real(mint *xI, const struct realGrid grid);
 mint sub2lin_fourier(mint *kxI, const struct fourierGrid grid);
 
-// nDim-dimensional subscript given the linear index in a Fourier grid.
+// nDim-dimensional subscript given the linear index in a real/Fourier grid.
+void lin2sub_real(mint *xI, mint lin, const struct realGrid grid);
 void lin2sub_fourier(mint *kxI, mint lin, const struct fourierGrid grid);
 
-// (kx,ky,kz) coordinates given the multidimensional kxI index.
+// (x,y,z)/(kx,ky,kz) coordinates given the multidimensional xI/kxI index.
+void get_x(real *x, mint *xI, const struct realGrid grid);
 void get_kx(real *kx, mint *kxI, const struct fourierGrid grid);
 
-// Copy real-space moments between host and device.
-void memcpy_real(real *dest, real *src, mint dofs, enum memcpy_dir_dev dir);
+// Copy real-space data (between host and device, or within a host or device).
+void memcpy_real(real *dest, real *src, mint numElements, enum memcpy_dir_dev dir);
 
-// Copy fourier-space moments between host and device.
-void memcpy_fourier(void *dest, void *src, mint dofs, enum memcpy_dir_dev dir);
+// Copy fourier-space data (between host and device, or within a host or device).
+void memcpy_fourier(void *dest, void *src, mint numElements, enum memcpy_dir_dev dir);
+
+// Copy real/fourier array between host and device.
+void hodevXfer_realArray(struct realArray *arr, enum memcpy_dir_dev dir);
+void hodevXfer_fourierArray(struct fourierArray *arr, enum memcpy_dir_dev dir);
 
 #endif

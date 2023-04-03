@@ -17,10 +17,10 @@
 
 // Directions of memcopy in host/device memory.
 enum memcpy_dir_dev {
-  host2host = cudaMemcpyHostToHost,
-  host2dev  = cudaMemcpyHostToDevice,
-  dev2host  = cudaMemcpyDeviceToHost,
-  dev2dev   = cudaMemcpyDeviceToDevice,
+  host2host     = cudaMemcpyHostToHost,
+  host2device   = cudaMemcpyHostToDevice,
+  device2host   = cudaMemcpyDeviceToHost,
+  device2device = cudaMemcpyDeviceToDevice,
 };
 
 #define DEFAULT_NUM_DEV_THREADS 256
@@ -32,10 +32,10 @@ enum memcpy_dir_dev {
 
 // Directions of memcopy in host/device memory.
 enum memcpy_dir_dev {
-  host2host,
-  host2dev ,
-  dev2host ,
-  dev2dev  ,
+  host2host    ,
+  host2device  ,
+  device2host  ,
+  device2device,
 };
 
 #define DEFAULT_NUM_DEV_THREADS 1
