@@ -9,6 +9,7 @@
 #include "mh_alloc.h"
 #include "mh_mpi_tools.h"
 #include "mh_io_tools.h"
+#include "mh_ffts.h"
 #include "mh_initialization.h"
 #include "mh_initialization_dev.h"
 #include <complex.h>  /* Needed by some fscanf below. */
@@ -422,6 +423,19 @@ void set_initialCondition(struct grid localGrid, struct population *localPop) {
     // FFT moments.
     //fft_moments_r2c(&momk, &momIC, deviceComp)
 
+    //......................................................
+//    // FFT test
+//    struct realArray fxy_r;
+//    struct fourierArray fxy_k;
+//    alloc_realArray(&fxy_r, prod_mint(grid->Nx,nDim), hostMem);
+//    alloc_fourierArray(&fxy_k, prod_mint(localGrid.fG.Nekx,nDim), hostMem);
+//
+//    xyfft_c2r(&fxy_r, &fxy_k, hostComp);
+//
+//    free_realArray(&fxy_r, hostMem);
+//    free_fourierArray(&fxy_k, hostMem);
+    //......................................................
+
     free_realArray(&momIC, hostMem);
 
   } else if (initialOp == 1) {
@@ -459,8 +473,9 @@ void set_initialCondition(struct grid localGrid, struct population *localPop) {
 
 }
 
-void init_all(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gridG, struct grid *gridL, struct timeSetup *timePars,
-              struct population *popG, struct population *popL, struct fieldParameters *fieldPars) {
+void init_all(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gridG, struct grid *gridL,
+              struct timeSetup *timePars, struct population *popG, struct population *popL,
+              struct fieldParameters *fieldPars) {
   // Run the full initialization.
 
   // Read inputs (from command line arguments and input file).
@@ -482,6 +497,8 @@ void init_all(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gridG
   distributeDOFs(*gridG, *popG, gridL, popL);
 
   allocate_dynfields(*gridL, popL);  // Allocate dynamic fields.
+
+  init_ffts(*gridG, *gridL);  // Initialize FFT infrastructure.
 
   set_initialCondition(*gridL, popL);  // Impose ICs.
 

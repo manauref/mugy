@@ -17,7 +17,7 @@ extern adios2_adios *ad_ctx;  // ADIOS context used throughout our IO.
 extern adios2_variable *ad_momk_var;
 extern adios2_engine *ad_momk_eng;
 
-#if USE_SINGLE_PRECISION > 0
+#if USE_SINGLE_PRECISION
 #define adios_real adios2_type_float
 #define adios_fourier adios2_type_float_complex
 #else

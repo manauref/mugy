@@ -9,7 +9,7 @@
 // Number of dimensions in the code.
 #define nDim 3
 
-#if USE_SINGLE_PRECISION > 0
+#if USE_SINGLE_PRECISION
 typedef float real;
 #else
 typedef double real;

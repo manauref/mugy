@@ -11,7 +11,7 @@
 #include "mh_macros.h"
 
 // mugy specific types (some other types in mh_macros.h).
-#if USE_SINGLE_PRECISION > 0
+#if USE_SINGLE_PRECISION
 typedef float complex fourier;
 #define mpi_real MPI_FLOAT
 #define mpi_fourier MPI_C_COMPLEX
@@ -41,7 +41,7 @@ struct ioSetup {
 // Flag indicating whether to use host or device memory, or both.
 enum resource_mem {hostMem, deviceMem, hostAndDeviceMem};
 // Flags indicating whether to perform operation on host or device.
-enum resource_comp {hostComp, deviceComp};
+enum resource_comp {defaultComp, hostComp, deviceComp};
 
 struct realGrid {
   mint Nx[nDim];        // Number of cells.

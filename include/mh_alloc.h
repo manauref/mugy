@@ -3,8 +3,8 @@
    Functions used to allocate arrays.
 */
 
-#ifndef ALLOC_MUGY
-#define ALLOC_MUGY
+#ifndef MUGY_ALLOC
+#define MUGY_ALLOC
 
 #include "mh_data.h"
 #include "mh_utilities.h"

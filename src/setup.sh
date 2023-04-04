@@ -33,6 +33,7 @@ then
   module load cudatoolkit/11.1
   module load openmpi/cuda-11.1/gcc/4.1.1
   module load anaconda3/2020.11
+  module load fftw/nvhpc-21.5/openmpi-4.1.1/3.3.9
   export MPI_DIR=$MPI_HOME
   export CCCOMPILER=$MPI_DIR/bin/mpicc
   export NVCCCOMPILER=$CUDA_HOME/bin/nvcc
@@ -40,6 +41,8 @@ then
   export CCFLAGS=-lm
   export MPI_INC=$MPI_DIR/include
   export MPI_LIB=$MPI_DIR/lib64
+  export FFTW_INC=$FFTW3DIR/include
+  export FFTW_LIB=$FFTW3DIR/lib64
   export CUDA_DIR=$CUDA_HOME
   export CUDA_INC=$CUDA_DIR/include
   export CUDA_LIB=$CUDA_DIR/lib64

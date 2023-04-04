@@ -12,7 +12,7 @@
 
 #include <cuComplex.h>  /* For complex data types. */
 
-#if USE_SINGLE_PRECISION > 0
+#if USE_SINGLE_PRECISION
 //typedef float real;
 typedef cuComplex cufourier;
 #else

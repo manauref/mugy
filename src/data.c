@@ -5,6 +5,7 @@
 
 #include "mh_data.h"
 #include "mh_data_dev.h"
+#include <string.h>
 
 real* getMoment_real(struct realGrid grid, struct population pop, mint sIdx, mint momIdx, real *momIn) {
   // Return a pointer to the momIdx-th moment of the sIdx-th species in mom.
@@ -80,18 +81,32 @@ void get_kx(real *kx, mint *kxI, const struct fourierGrid grid) {
   }
 }
 
+// Functions that copy memory on the host.
+void memcpy_real_ho(real *dest, real *src, mint numElements) {
+  memcpy(dest, src, numElements*sizeof(real));
+}
+void memcpy_fourier_ho(fourier *dest, fourier *src, mint numElements) {
+  memcpy(dest, src, numElements*sizeof(fourier));
+}
+
+// Functions that copy memory between host and device.
 void memcpy_real(real *dest, real *src, mint numElements, enum memcpy_dir_dev dir) {
 #ifdef USE_GPU
-  memcpy_real_dev(dest, src, numElements, dir);
+  if (dir != host2host)
+    return memcpy_real_dev(dest, src, numElements, dir);
 #endif
+  memcpy_real_ho(dest, src, numElements);
 }
 // MF 2023/03/29: Use void* because C doesn't know cuCumplex/cufourier the type.
 void memcpy_fourier(void *dest, void *src, mint numElements, enum memcpy_dir_dev dir) {
 #ifdef USE_GPU
-  memcpy_fourier_dev(dest, src, numElements, dir);
+  if (dir != host2host)
+    return memcpy_fourier_dev(dest, src, numElements, dir);
 #endif
+  memcpy_fourier_ho(dest, src, numElements);
 }
 
+// Functions that copy real(Fourier)Arrays betwen host and device.
 void hodevXfer_realArray(struct realArray *arr, enum memcpy_dir_dev dir) {
 #ifdef USE_GPU
   if (dir == host2device)

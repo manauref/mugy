@@ -4,15 +4,22 @@
 */
 
 #include "mh_mpi_tools.h"
+#include <string.h>   // e.g. for memcpy.
 
 mint myRank, totNumProcs;  // Rank of this process & total number of processes.
 mint numProcs[nDim+1];     // Processes along x,y,z and species.
-MPI_Comm cartComm;        // Cartesian communicator.
+MPI_Comm cartComm;         // Cartesian communicator.
 mint cartRank;             // Rank in cartCOMM.
-MPI_Comm *sub1dComm;      // 1D subcommunicators along each direction.
-mint sub1dRank[nDim+1];    // ID (rank) in the 1D xpec,Z,X,Y subcommunicators.
+
+MPI_Comm *sub1dComm;       // 1D subcommunicators along each direction.
+mint sub1dRank[nDim+1];    // ID (rank) in the 1D spec,Z,X,Y subcommunicators.
 MPI_Comm *sComm, *zComm, *xComm, *yComm;  // Pointers for 1D comms.
-mint sRank, zRank, xRank, yRank;  // Pointers for 1D rank IDs.
+mint sRank, zRank, xRank, yRank;          // Pointers for 1D rank IDs.
+
+MPI_Comm *sub2dComm;   // 2D subcommunicators (e.g. XY comm).
+mint sub2dRank[nDim];  // ID (rank) in the 2D (xy,xz,yz) subcommunicators.
+MPI_Comm *xyComm, *xzComm, *yzComm;  // Pointers for 2D comms.
+mint xyRank, xzRank, yzRank;         // Pointers for 2D rank IDs.
 
 void init_mpi(mint argc, char *argv[]) {
   // Initialize MPI, get rank of this process and total number of processes.
@@ -73,6 +80,16 @@ void init_comms(struct grid grid, struct population pop) {
   xRank = sub1dRank[0];  yRank = sub1dRank[1];
   zRank = sub1dRank[2];  sRank = sub1dRank[3];
 
+  // 2D x-y subcommunicators.
+  sub2dComm = (MPI_Comm *) calloc(nDim, sizeof(MPI_Comm));
+  for (mint d=nDim-1; d>-1; d--) {
+    mint remain[nDim+1] = {true,true,true,true};
+    remain[commOrg[nDim+1]] = false;  remain[commOrg[d]] = false;
+    MPI_Cart_sub(cartComm, remain, &sub2dComm[d]);
+    MPI_Comm_rank(sub2dComm[d], &sub2dRank[d]);
+  }
+  xyComm = &sub2dComm[0];  xzComm = &sub2dComm[1];  yzComm = &sub2dComm[2];
+  xyRank = sub2dRank[0];  xzRank = sub2dRank[1];  yzRank = sub2dRank[2];
 }
 
 void distribute1dDOFs(const mint procs, const mint procID, const mint globalDOFs, mint *localDOFs, mint *firstDOF) {
@@ -195,7 +212,8 @@ void terminate_mpi() {
   MPI_Barrier(MPI_COMM_WORLD); // To avoid premature deallocations.
 
   for (mint d=0; d<nDim+1; d++) MPI_Comm_free(&sub1dComm[d]);
-  free(sub1dComm);
+  for (mint d=0; d<nDim; d++) MPI_Comm_free(&sub2dComm[d]);
+  free(sub1dComm);  free(sub2dComm);
 
   MPI_Comm_free(&cartComm);
 
