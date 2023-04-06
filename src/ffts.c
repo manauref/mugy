@@ -25,7 +25,7 @@ real *f_xyfft_buf;           // Real-space buffer.
 mugy_fftw_plan fft_plan_xy_c2r, fft_plan_xy_r2c;
 real fft_norm_xy;  // Nonunitary normalization applied in r2c transform.
 
-void init_ffts(struct grid gridG, struct grid gridL) {
+void init_ffts(struct mugy_grid gridG, struct mugy_grid gridL) {
 
   mugy_fftw_mpi_init();
 
@@ -66,7 +66,7 @@ void init_ffts(struct grid gridG, struct grid gridL) {
 
 }
 
-void xyfft_c2r(struct realArray *fOut, struct fourierArray *fkIn, enum resource_comp res) {
+void xyfft_c2r(struct mugy_realArray *fOut, struct mugy_fourierArray *fkIn, enum resource_comp res) {
 #if USE_GPU
 //  if (res == deviceComp)
 //    return xyfft_c2r_dev(fOut, fkIn);
@@ -82,7 +82,7 @@ void xyfft_c2r(struct realArray *fOut, struct fourierArray *fkIn, enum resource_
   memcpy_real(fOut->ho, f_xyfft_buf, fOut->nelem, host2host);
 }
 
-void xyfft_r2c(struct fourierArray *fkOut, struct realArray *fIn, enum resource_comp res) {
+void xyfft_r2c(struct mugy_fourierArray *fkOut, struct mugy_realArray *fIn, enum resource_comp res) {
 #if USE_GPU
 //  if (res == deviceComp)
 //    return xyfft_c2r_dev(fOut, fkIn);

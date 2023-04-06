@@ -17,29 +17,29 @@ void readFileSpeciesPar_mint(mint **var, FILE *fp, const mint sIdx, const mint n
 void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint numSpecies, const mint *numElements);
 
 // Read input values from input file.
-void read_inputFile(const char *fileNameIn, struct grid *grid, struct timeSetup *time,
-                    struct population *pop, struct fieldParameters *field);
+void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_timeSetup *time,
+                    struct mugy_population *pop, struct mugy_fieldParameters *field);
 
 // Read command line arguments and input file.
-void read_inputs(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *grid, struct timeSetup *time,
-                 struct population *pop, struct fieldParameters *field);
+void read_inputs(mint argc, char *argv[], struct mugy_ioSetup *ioSet, struct mugy_grid *grid, struct mugy_timeSetup *time,
+                 struct mugy_population *pop, struct mugy_fieldParameters *field);
 
 // Set number of cells in de-aliased, aliased and real space global grids.
-void init_global_grids(struct grid *grid);
+void init_global_grids(struct mugy_grid *grid);
 
 // Allocate time dependent fields needed.
-void allocate_dynfields(struct grid localGrid, struct population *localPop);
+void allocate_dynfields(struct mugy_grid localGrid, struct mugy_population *localPop);
 
 // Impose the initial conditions on the moments and the electrostatic potential.
-void set_initialCondition(struct grid localGrid, struct population *localPop, struct mugy_ioManager *ioman);
+void set_initialCondition(struct mugy_grid localGrid, struct mugy_population *localPop, struct mugy_ioManager *ioman);
 
 // Run the full initialization.
-void init_all(mint argc, char *argv[], struct mugy_ioManager *ioman, struct grid *gridG, struct grid *gridL, struct timeSetup *timePars,
-              struct population *popG, struct population *popL, struct fieldParameters *fieldPars);
+void init_all(mint argc, char *argv[], struct mugy_ioManager *ioman, struct mugy_grid *gridG, struct mugy_grid *gridL, struct mugy_timeSetup *timePars,
+              struct mugy_population *popG, struct mugy_population *popL, struct mugy_fieldParameters *fieldPars);
 
 // Deallocate fields.
 void free_fields();
 
-void free_grid(struct grid *grid); // Free arrays in grids.
-void free_population(struct population *pop);  // Free arrays in population struct.
+void free_grid(struct mugy_grid *grid); // Free arrays in grids.
+void free_population(struct mugy_population *pop);  // Free arrays in population struct.
 #endif

@@ -23,11 +23,11 @@ void init_io(struct mugy_ioManager *ioman) {
   ad_check_handler(ad_check_handler, " ADIOS: Error initiating.");
 }
 
-struct ad_file *ad_create_file_realArray(struct mugy_ioManager *ioman, char* fname,
+struct mugy_ad_file *ad_create_file_realArray(struct mugy_ioManager *ioman, char* fname,
   // Create a file that will hold a real-space array.
-  struct grid globalGrid, struct grid localGrid) {
+  struct mugy_grid globalGrid, struct mugy_grid localGrid) {
 
-  struct ad_file *adf = (struct ad_file *) calloc(1, sizeof(struct ad_file));
+  struct mugy_ad_file *adf = (struct mugy_ad_file *) calloc(1, sizeof(struct mugy_ad_file));
   adf->isVarReal = true;
 
   adf->fname = alloc_charArray_ho(strlen(fname)+1);
@@ -61,11 +61,11 @@ struct ad_file *ad_create_file_realArray(struct mugy_ioManager *ioman, char* fna
   return adf;
 }
 
-struct ad_file *ad_create_file_fourierArray(struct mugy_ioManager *ioman, char* fname,
+struct mugy_ad_file *ad_create_file_fourierArray(struct mugy_ioManager *ioman, char* fname,
   // Create a file that will hold a fourier-space array.
-  struct grid globalGrid, struct grid localGrid) {
+  struct mugy_grid globalGrid, struct mugy_grid localGrid) {
 
-  struct ad_file *adf = (struct ad_file *) calloc(1, sizeof(struct ad_file));
+  struct mugy_ad_file *adf = (struct mugy_ad_file *) calloc(1, sizeof(struct mugy_ad_file));
   adf->isVarReal = false;
 
   adf->fname = alloc_charArray_ho(strlen(fname)+1);
@@ -97,11 +97,11 @@ struct ad_file *ad_create_file_fourierArray(struct mugy_ioManager *ioman, char* 
   return adf;
 }
 
-struct ad_file *ad_create_file_realMoments(struct mugy_ioManager *ioman, char* fname,
-  struct grid globalGrid, struct grid localGrid, struct population globalPop, struct population localPop) {
+struct mugy_ad_file *ad_create_file_realMoments(struct mugy_ioManager *ioman, char* fname,
+  struct mugy_grid globalGrid, struct mugy_grid localGrid, struct mugy_population globalPop, struct mugy_population localPop) {
   // Create a file storing real-space moments.
 
-  struct ad_file *adf = (struct ad_file *) calloc(1, sizeof(struct ad_file));
+  struct mugy_ad_file *adf = (struct mugy_ad_file *) calloc(1, sizeof(struct mugy_ad_file));
   adf->isVarReal = true;
 
   adf->fname = alloc_charArray_ho(strlen(fname)+1);
@@ -141,11 +141,11 @@ struct ad_file *ad_create_file_realMoments(struct mugy_ioManager *ioman, char* f
   return adf;
 }
 
-struct ad_file *ad_create_file_fourierMoments(struct mugy_ioManager *ioman, char* fname,
-  struct grid globalGrid, struct grid localGrid, struct population globalPop, struct population localPop) {
+struct mugy_ad_file *ad_create_file_fourierMoments(struct mugy_ioManager *ioman, char* fname,
+  struct mugy_grid globalGrid, struct mugy_grid localGrid, struct mugy_population globalPop, struct mugy_population localPop) {
   // Create a file storing Fourier-space moments.
 
-  struct ad_file *adf = (struct ad_file *) calloc(1, sizeof(struct ad_file));
+  struct mugy_ad_file *adf = (struct mugy_ad_file *) calloc(1, sizeof(struct mugy_ad_file));
   adf->isVarReal = false;
 
   adf->fname = alloc_charArray_ho(strlen(fname)+1);
@@ -183,8 +183,8 @@ struct ad_file *ad_create_file_fourierMoments(struct mugy_ioManager *ioman, char
   return adf;
 }
 
-void setup_files(struct mugy_ioManager *ioman, struct grid globalGrid, struct grid localGrid,
-  struct population globalPop, struct population localPop) {
+void setup_files(struct mugy_ioManager *ioman, struct mugy_grid globalGrid, struct mugy_grid localGrid,
+  struct mugy_population globalPop, struct mugy_population localPop) {
 
   // List files we intend to open/write/close.
   // For some default files we prepend the type of data with this key:
@@ -197,7 +197,7 @@ void setup_files(struct mugy_ioManager *ioman, struct grid globalGrid, struct gr
   char *flist[] = {"ra_arr"};
 
   ioman->numfiles = sizeof(flist)/sizeof(flist[0]);
-  ioman->files = (struct ad_file **)calloc(ioman->numfiles, sizeof(struct ad_file*));
+  ioman->files = (struct mugy_ad_file **)calloc(ioman->numfiles, sizeof(struct mugy_ad_file*));
 
   char *dataKind = alloc_charArray_ho(3+1);
   for (mint i=0; i<ioman->numfiles; i++) {
@@ -220,7 +220,7 @@ void setup_files(struct mugy_ioManager *ioman, struct grid globalGrid, struct gr
 
 }
 
-struct ad_file *get_fileHandle(struct mugy_ioManager *ioman, char* fname) {
+struct mugy_ad_file *get_fileHandle(struct mugy_ioManager *ioman, char* fname) {
   // Given the file name, return the handle to the file in the IO manger.
   int fIdx;
   for (mint i=0; i<ioman->numfiles; i++) {
@@ -231,17 +231,17 @@ struct ad_file *get_fileHandle(struct mugy_ioManager *ioman, char* fname) {
   return ioman->files[fIdx];
 }
 
-void write_realArray(struct mugy_ioManager *ioman, char* fname, struct realArray arrIn) {
+void write_realArray(struct mugy_ioManager *ioman, char* fname, struct mugy_realArray arrIn) {
   // Write out real space array.
-  struct ad_file *fh = get_fileHandle(ioman, fname);
+  struct mugy_ad_file *fh = get_fileHandle(ioman, fname);
   adios2_error ioerr;
   if (arrIn.ho) ioerr = adios2_put(fh->eng, fh->var, arrIn.ho, adios2_mode_deferred);
   ad_check_error(ioerr, " ADIOS: Error in putting Fourier array.");
 }
 
-void write_fourierArray(struct mugy_ioManager *ioman, char* fname, struct fourierArray arrIn) {
+void write_fourierArray(struct mugy_ioManager *ioman, char* fname, struct mugy_fourierArray arrIn) {
   // Write out fourier space array.
-  struct ad_file *fh = get_fileHandle(ioman, fname);
+  struct mugy_ad_file *fh = get_fileHandle(ioman, fname);
   adios2_error ioerr;
   if (arrIn.ho) ioerr = adios2_put(fh->eng, fh->var, arrIn.ho, adios2_mode_deferred);
   ad_check_error(ioerr, " ADIOS: Error in putting Fourier array.");

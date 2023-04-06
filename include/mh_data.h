@@ -30,7 +30,7 @@ typedef double complex fourier;
 #define ioRank 0
 
 // Container for IO instructions
-struct ioSetup {
+struct mugy_ioSetup {
   char *inputFile;           // Name of input file.
   char *outputDir;           // Address of output directory.
   char *restartDir;          // Address of restart directory.
@@ -43,7 +43,7 @@ enum resource_mem {hostMem, deviceMem, hostAndDeviceMem};
 // Flags indicating whether to perform operation on host or device.
 enum resource_comp {defaultComp, hostComp, deviceComp};
 
-struct realGrid {
+struct mugy_realGrid {
   mint Nx[nDim];        // Number of cells.
   mint NxTot;           // Total number of cells.
   mint NxyTot;          // Total number of cells in an x-y plane.
@@ -54,25 +54,25 @@ struct realGrid {
   mint globalOff[nDim]; // Offset of first element in this process within the global domain.
 };
 
-struct fourierGrid {
+struct mugy_fourierGrid {
   mint Nkx[nDim];        // Number of distinct absolute amplitude wavenumbers (counting k=0).
   mint Nekx[nDim];       // Number of elements in a k-space array (counting k=0 and negative k's).
   mint NekxTot;          // Total number of elements.
   mint NekxyTot;         // Total number of cells in an kx-ky plane.
   real kxMin[nDim];      // Minimum finite absolute amplitude wavenumbers.
   real *kx;              // Coordinates along each direction.
-  struct realGrid dual;  // Real grid dual to this Fourier grid.
+  struct mugy_realGrid dual;  // Real grid dual to this Fourier grid.
   real kxMaxDyn[nDim];   // Maximum k evolved. Above this we multiply time rates of change by zero.
   mint globalOff[nDim];  // Offset of first element in this process within the global domain.
 };
 
-struct grid {
-  struct fourierGrid fG;  // This grid's (dealised) Fourier grid.
-  struct fourierGrid fGa; // This grid's aliased Fourier grid.
+struct mugy_grid {
+  struct mugy_fourierGrid fG;  // This grid's (dealised) Fourier grid.
+  struct mugy_fourierGrid fGa; // This grid's aliased Fourier grid.
   mint mpiProcs[nDim];    // Number of MPI processes along each direction.
 };
 
-struct timeSetup {
+struct mugy_timeSetup {
   real dt;               // Time step.
   real endTime;          // Absolute end time (from t=0 of first simulation).
   mint nFrames;          // Absolute frames to output (from t=0 of first simulation).
@@ -86,7 +86,7 @@ struct timeSetup {
   mint ark_ewtScaling;   // which error weight scaling to use.
 };
 
-struct species {
+struct mugy_species {
   mint numMoments;   // Number of moments.
   real qCharge;      // Charge.
   real muMass;       // sqrt of the mass.
@@ -110,35 +110,35 @@ struct species {
 };
 
 // Structures storing an array on host, device, or both.
-struct realArray {
+struct mugy_realArray {
   real *ho;    // Pointer to host memory.
   real *dev;   // Pointer to device memory.
   mint nelem;  // Number of elements allocated.
 };
-struct fourierArray {
+struct mugy_fourierArray {
   fourier *ho;   // Pointer to host memory.
   fourier *dev;  // Pointer to device memory.
   mint nelem;    // Number of elements allocated.
 };
 
-struct population {
+struct mugy_population {
   mint numSpecies;       // Number of species.
   mint mpiProcs;         // MPI decomposition of the species.
   mint globalSpecOff;    // Offset of first species in this process within the global population.
   mint globalMomOff;     // Offset of first moment in this process within global number of moments.
-  struct species *spec;  // Pointer to array of species.
+  struct mugy_species *spec;  // Pointer to array of species.
   mint numMomentsTot;    // Total number of moments across all species.
-  struct fourierArray *momk; // Moments in Fourier space. Possibly multiple copies (e.g. for time stepper).
+  struct mugy_fourierArray *momk; // Moments in Fourier space. Possibly multiple copies (e.g. for time stepper).
 };
 
-struct fieldParameters {
+struct mugy_fieldParameters {
   real lambdaD;  // Debye shielding parameter (normalized Debye length).
   mint pade;      // Option to use Pade approximations.
   // The following are used by initial conditions.
   mint icOp;      // IC option.
 };
 
-struct timeState {
+struct mugy_timeState {
   real simTime;
   mint time;
   mint framesOut;
@@ -148,20 +148,20 @@ struct timeState {
 };
 
 // Return a pointer to the momIdx-th moment of the sIdx-th species in mom/momk.
-real* getMoment_real(struct realGrid grid, struct population pop, mint sIdx, mint momIdx, real *momIn);
-fourier* getMoment_fourier(struct fourierGrid grid, struct population pop, mint sIdx, mint momIdx, fourier *momkIn);
+real* getMoment_real(struct mugy_realGrid grid, struct mugy_population pop, mint sIdx, mint momIdx, real *momIn);
+fourier* getMoment_fourier(struct mugy_fourierGrid grid, struct mugy_population pop, mint sIdx, mint momIdx, fourier *momkIn);
 
 // Linear index given the nDim-dimensional subscript in a real/Fourier grid.
-mint sub2lin_real(mint *xI, const struct realGrid grid);
-mint sub2lin_fourier(mint *kxI, const struct fourierGrid grid);
+mint sub2lin_real(mint *xI, const struct mugy_realGrid grid);
+mint sub2lin_fourier(mint *kxI, const struct mugy_fourierGrid grid);
 
 // nDim-dimensional subscript given the linear index in a real/Fourier grid.
-void lin2sub_real(mint *xI, mint lin, const struct realGrid grid);
-void lin2sub_fourier(mint *kxI, mint lin, const struct fourierGrid grid);
+void lin2sub_real(mint *xI, mint lin, const struct mugy_realGrid grid);
+void lin2sub_fourier(mint *kxI, mint lin, const struct mugy_fourierGrid grid);
 
 // (x,y,z)/(kx,ky,kz) coordinates given the multidimensional xI/kxI index.
-void get_x(real *x, mint *xI, const struct realGrid grid);
-void get_kx(real *kx, mint *kxI, const struct fourierGrid grid);
+void get_x(real *x, mint *xI, const struct mugy_realGrid grid);
+void get_kx(real *kx, mint *kxI, const struct mugy_fourierGrid grid);
 
 // Copy real-space data (between host and device, or within a host or device).
 void memcpy_real(real *dest, real *src, mint numElements, enum memcpy_dir_dev dir);
@@ -170,11 +170,11 @@ void memcpy_real(real *dest, real *src, mint numElements, enum memcpy_dir_dev di
 void memcpy_fourier(void *dest, void *src, mint numElements, enum memcpy_dir_dev dir);
 
 // Copy real/fourier array between host and device.
-void hodevXfer_realArray(struct realArray *arr, enum memcpy_dir_dev dir);
-void hodevXfer_fourierArray(struct fourierArray *arr, enum memcpy_dir_dev dir);
+void hodevXfer_realArray(struct mugy_realArray *arr, enum memcpy_dir_dev dir);
+void hodevXfer_fourierArray(struct mugy_fourierArray *arr, enum memcpy_dir_dev dir);
 
 // Scale an array by a factor 'fac'.
-void scale_realArray(struct realArray *arr, real fac, enum resource_comp res);
-void scale_fourierArray(struct fourierArray *arrk, real fac, enum resource_comp res);
+void scale_realArray(struct mugy_realArray *arr, real fac, enum resource_comp res);
+void scale_fourierArray(struct mugy_fourierArray *arrk, real fac, enum resource_comp res);
 
 #endif

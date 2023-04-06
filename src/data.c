@@ -7,7 +7,7 @@
 #include "mh_data_dev.h"
 #include <string.h>
 
-real* getMoment_real(struct realGrid grid, struct population pop, mint sIdx, mint momIdx, real *momIn) {
+real* getMoment_real(struct mugy_realGrid grid, struct mugy_population pop, mint sIdx, mint momIdx, real *momIn) {
   // Return a pointer to the momIdx-th moment of the sIdx-th species in mom.
   real* ptrOut = momIn;
   mint momOff = 0;
@@ -15,7 +15,7 @@ real* getMoment_real(struct realGrid grid, struct population pop, mint sIdx, min
   return ptrOut+(momOff+momIdx)*grid.NxTot;
 }
 
-fourier* getMoment_fourier(struct fourierGrid grid, struct population pop, mint sIdx, mint momIdx, fourier *momkIn) {
+fourier* getMoment_fourier(struct mugy_fourierGrid grid, struct mugy_population pop, mint sIdx, mint momIdx, fourier *momkIn) {
   // Return a pointer to the momIdx-th moment of the sIdx-th species in momk.
   fourier* ptrOut = momkIn;
   mint momOff = 0;
@@ -23,7 +23,7 @@ fourier* getMoment_fourier(struct fourierGrid grid, struct population pop, mint 
   return ptrOut+(momOff+momIdx)*grid.NekxTot;
 }
 
-mint sub2lin_real(mint *xI, const struct realGrid grid) {
+mint sub2lin_real(mint *xI, const struct mugy_realGrid grid) {
   // Given the nDim-dimensional index (subscript) xI return the linear index
   // in a real grid. We assume row major order for the (z,x,y) dimensions.
   mint strides[nDim] = {grid.Nx[1],1,grid.NxyTot};
@@ -32,7 +32,7 @@ mint sub2lin_real(mint *xI, const struct realGrid grid) {
   return lin;
 }
 
-mint sub2lin_fourier(mint *kxI, const struct fourierGrid grid) {
+mint sub2lin_fourier(mint *kxI, const struct mugy_fourierGrid grid) {
   // Given the nDim-dimensional index (subscript) kxI return the linear index
   // in a Fourier grid. We assume row major order for the (kz,kx,ky) dimensions.
   mint strides[nDim] = {grid.Nekx[1],1,grid.NekxyTot};
@@ -41,7 +41,7 @@ mint sub2lin_fourier(mint *kxI, const struct fourierGrid grid) {
   return lin;
 }
 
-void lin2sub_real(mint *xI, mint lin, const struct realGrid grid) {
+void lin2sub_real(mint *xI, mint lin, const struct mugy_realGrid grid) {
   // Given the linear index 'lin' in a real grid, return the nDim-dimensional
   // index (subscript) xI. We assume row major order for the (z,x,y) dimensions.
   mint strides[nDim] = {grid.Nx[1],1,grid.NxyTot};
@@ -51,7 +51,7 @@ void lin2sub_real(mint *xI, mint lin, const struct realGrid grid) {
   }
 }
 
-void lin2sub_fourier(mint *kxI, mint lin, const struct fourierGrid grid) {
+void lin2sub_fourier(mint *kxI, mint lin, const struct mugy_fourierGrid grid) {
   // Given the linear index 'lin' in a Fourier grid, return the nDim-dimensional
   // index (subscript) kxI. We assume row major order for the (kz,kx,ky) dimensions.
   mint strides[nDim] = {grid.Nekx[1],1,grid.NekxyTot};
@@ -61,7 +61,7 @@ void lin2sub_fourier(mint *kxI, mint lin, const struct fourierGrid grid) {
   }
 }
 
-void get_x(real *x, mint *xI, const struct realGrid grid) {
+void get_x(real *x, mint *xI, const struct mugy_realGrid grid) {
   // Obtain the x=(x,y,z) coordinates given the multidimensional
   // xI index. Assume the flat grid.x array is organized as {x,y,z}.
   real* x_p = grid.x;
@@ -71,7 +71,7 @@ void get_x(real *x, mint *xI, const struct realGrid grid) {
   }
 }
 
-void get_kx(real *kx, mint *kxI, const struct fourierGrid grid) {
+void get_kx(real *kx, mint *kxI, const struct mugy_fourierGrid grid) {
   // Obtain the kx=(kx,ky,kz) coordinates given the multidimensional
   // kxI index. Assume the flat grid.kx array is organized as {kx,ky,kz}.
   real* kx_p = grid.kx;
@@ -107,7 +107,7 @@ void memcpy_fourier(void *dest, void *src, mint numElements, enum memcpy_dir_dev
 }
 
 // Functions that copy real(Fourier)Arrays betwen host and device.
-void hodevXfer_realArray(struct realArray *arr, enum memcpy_dir_dev dir) {
+void hodevXfer_realArray(struct mugy_realArray *arr, enum memcpy_dir_dev dir) {
 #ifdef USE_GPU
   if (dir == host2device)
     memcpy_real_dev(arr->dev, arr->ho, arr->nelem, dir);
@@ -115,7 +115,7 @@ void hodevXfer_realArray(struct realArray *arr, enum memcpy_dir_dev dir) {
     memcpy_real_dev(arr->ho, arr->dev, arr->nelem, dir);
 #endif
 }
-void hodevXfer_fourierArray(struct fourierArray *arr, enum memcpy_dir_dev dir) {
+void hodevXfer_fourierArray(struct mugy_fourierArray *arr, enum memcpy_dir_dev dir) {
 #ifdef USE_GPU
   if (dir == host2device)
     memcpy_fourier_dev(arr->dev, arr->ho, arr->nelem, dir);
@@ -125,7 +125,7 @@ void hodevXfer_fourierArray(struct fourierArray *arr, enum memcpy_dir_dev dir) {
 }
 
 // Functions that scale real(Fourier)Arrays by a constant.
-void scale_realArray(struct realArray *arr, real fac, enum resource_comp res) {
+void scale_realArray(struct mugy_realArray *arr, real fac, enum resource_comp res) {
 #ifdef USE_GPU
 //  if (res == deviceComp)
 //    return scale_realArray_dev(arr, fac, res);
@@ -136,7 +136,7 @@ void scale_realArray(struct realArray *arr, real fac, enum resource_comp res) {
     fk[0] *= fac;  fk++;
   }
 }
-void scale_fourierArray(struct fourierArray *arrk, real fac, enum resource_comp res) {
+void scale_fourierArray(struct mugy_fourierArray *arrk, real fac, enum resource_comp res) {
 #ifdef USE_GPU
 //  if (res == deviceComp)
 //    return scale_fourierArray_dev(arr, fac, res);

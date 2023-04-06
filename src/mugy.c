@@ -7,12 +7,12 @@
 
 int main(int argc, char *argv[]) {
 
-  struct grid gridG, gridL;
-  struct timeSetup timePars;
-  struct population popG, popL;
+  struct mugy_grid gridG, gridL;
+  struct mugy_timeSetup timePars;
+  struct mugy_population popG, popL;
   struct mugy_ioManager ioMan;
-  struct fieldParameters fieldPars; 
-  struct timeState tState;
+  struct mugy_fieldParameters fieldPars; 
+  struct mugy_timeState tState;
 
   init_mpi(argc, argv);  // Initialize MPI interface.
 

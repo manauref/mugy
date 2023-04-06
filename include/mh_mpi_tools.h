@@ -31,13 +31,13 @@ extern mint xyRank, xzRank, yzRank;         // Pointers for 2D rank IDs.
 void init_mpi(mint argc, char *argv[]);  // Initialize MPI.
 
 // Initialize sub-communicators.
-void init_comms(struct grid grid, struct population pop);
+void init_comms(struct mugy_grid grid, struct mugy_population pop);
 
 // Distribute degrees of freedom amongst MPI processes in 1D.
 void distribute1dDOFs(const mint procs, const mint procID, const mint globalDOFs, mint *localDOFs, mint *firstDOF);
 
 // Distribute s,Z,X,Y degrees of freedom amongst MPI processes.
-void distributeDOFs(struct grid globalGrid, struct population globalPop, struct grid *localGrid, struct population *localPop);
+void distributeDOFs(struct mugy_grid globalGrid, struct mugy_population globalPop, struct mugy_grid *localGrid, struct mugy_population *localPop);
 
 void terminate_mpi();  // Terminate MPI.
 

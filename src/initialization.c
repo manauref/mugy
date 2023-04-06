@@ -73,8 +73,8 @@ void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint n
   }
 }
 
-void read_inputFile(const char *fileNameIn, struct grid *grid, struct timeSetup *time,
-                    struct population *pop, struct fieldParameters *field) {
+void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_timeSetup *time,
+                    struct mugy_population *pop, struct mugy_fieldParameters *field) {
   // Read input values from input file.
 
   if (myRank == ioRank) {  // Only ioRank reads from input file.
@@ -107,7 +107,7 @@ void read_inputFile(const char *fileNameIn, struct grid *grid, struct timeSetup 
     fscanf(file_p, "%*s");  // &species.
     readFileVar_mint(file_p, 1, &pop->numSpecies);
     readFileVar_mint(file_p, 1, &pop->mpiProcs);
-    pop->spec = (struct species*) calloc(pop->numSpecies, sizeof(struct species));
+    pop->spec = (struct mugy_species*) calloc(pop->numSpecies, sizeof(struct mugy_species));
     mint *specNumMoms = (mint*) calloc(pop->numSpecies, sizeof(mint));
     mint *specOnes    = (mint*) calloc(pop->numSpecies, sizeof(mint));
     mint *specnDim    = (mint*) calloc(pop->numSpecies, sizeof(mint));
@@ -172,7 +172,7 @@ void read_inputFile(const char *fileNameIn, struct grid *grid, struct timeSetup 
 
   MPI_Bcast(&pop->numSpecies, 1, mpi_mint, ioRank, MPI_COMM_WORLD);
   MPI_Bcast(&pop->mpiProcs  , 1, mpi_mint, ioRank, MPI_COMM_WORLD);
-  if (myRank != ioRank) pop->spec = (struct species*) calloc(pop->numSpecies, sizeof(struct species));
+  if (myRank != ioRank) pop->spec = (struct mugy_species*) calloc(pop->numSpecies, sizeof(struct mugy_species));
   for (mint s=0; s<pop->numSpecies; s++) {
     MPI_Bcast(&pop->spec[s].numMoments,                       1, mpi_mint, ioRank, MPI_COMM_WORLD);
     if (myRank != ioRank) {
@@ -209,8 +209,8 @@ void read_inputFile(const char *fileNameIn, struct grid *grid, struct timeSetup 
 
 }
 
-void read_inputs(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *grid, struct timeSetup *time,
-                 struct population *pop, struct fieldParameters *field) {
+void read_inputs(mint argc, char *argv[], struct mugy_ioSetup *ioSet, struct mugy_grid *grid, struct mugy_timeSetup *time,
+                 struct mugy_population *pop, struct mugy_fieldParameters *field) {
   // Read inputs from command line arguments and input file.
 
   // Check for commandline arguments.
@@ -249,7 +249,7 @@ void read_inputs(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gr
 
 }
 
-void init_global_grids(struct grid *globalGrid) {
+void init_global_grids(struct mugy_grid *globalGrid) {
   // Set number of cells in de-aliased, aliased and real space global grids.
 
   /* Given user-input number of distinct dealised wavenumbers, Nkx,
@@ -356,7 +356,7 @@ void init_global_grids(struct grid *globalGrid) {
 
 }
 
-void allocate_dynfields(struct grid localGrid, struct population *localPop) {
+void allocate_dynfields(struct mugy_grid localGrid, struct mugy_population *localPop) {
   // Allocate various fields needed.
 #ifdef USE_GPU
   enum resource_mem onResource = hostAndDeviceMem;
@@ -365,25 +365,25 @@ void allocate_dynfields(struct grid localGrid, struct population *localPop) {
 #endif
 
   // Allocate moments vector needed for time stepping.
-  localPop->momk = (struct fourierArray*) calloc(TIME_STEPPER_NUM_FIELDS, sizeof(struct fourierArray));
+  localPop->momk = (struct mugy_fourierArray*) calloc(TIME_STEPPER_NUM_FIELDS, sizeof(struct mugy_fourierArray));
   for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
     alloc_fourierMoments(&localPop->momk[s], localGrid.fG, *localPop, onResource);
 
   // Allocate auxiliary arrays/fields.
 }
 
-void set_initialCondition(struct grid localGrid, struct population *localPop, struct mugy_ioManager *ioman) {
+void set_initialCondition(struct mugy_grid localGrid, struct mugy_population *localPop, struct mugy_ioManager *ioman) {
   // Impose the initial conditions on the moments and thoe potential.
 
-  struct fourierArray momk = localPop->momk[0]; // Put ICs in first stepper field.
+  struct mugy_fourierArray momk = localPop->momk[0]; // Put ICs in first stepper field.
 
   // NOTE: For now assume initialOp is the same for all species.
   mint initialOp = localPop->spec[0].icOp; 
 
   if (initialOp == 0) {
     // Initialize in real space and transform to Fourier.
-    struct realGrid *grid = &localGrid.fG.dual;
-    struct realArray momIC;
+    struct mugy_realGrid *grid = &localGrid.fG.dual;
+    struct mugy_realArray momIC;
     alloc_realMoments(&momIC, *grid, *localPop, hostAndDeviceMem);
 
     for (mint s=0; s<localPop->numSpecies; s++) {
@@ -425,8 +425,8 @@ void set_initialCondition(struct grid localGrid, struct population *localPop, st
 
     //......................................................
     // FFT test
-    struct realArray fxy_r;
-    struct fourierArray fxy_k;
+    struct mugy_realArray fxy_r;
+    struct mugy_fourierArray fxy_k;
     alloc_realArray(&fxy_r, grid->NxTot, hostMem);
     alloc_fourierArray(&fxy_k, localGrid.fG.NekxTot, hostMem);
 
@@ -492,9 +492,9 @@ void set_initialCondition(struct grid localGrid, struct population *localPop, st
 
 }
 
-void init_all(mint argc, char *argv[], struct mugy_ioManager *ioman, struct grid *gridG, struct grid *gridL,
-              struct timeSetup *timePars, struct population *popG, struct population *popL,
-              struct fieldParameters *fieldPars) {
+void init_all(mint argc, char *argv[], struct mugy_ioManager *ioman, struct mugy_grid *gridG, struct mugy_grid *gridL,
+              struct mugy_timeSetup *timePars, struct mugy_population *popG, struct mugy_population *popL,
+              struct mugy_fieldParameters *fieldPars) {
   // Run the full initialization.
 
   // Read inputs (from command line arguments and input file).
@@ -535,7 +535,7 @@ void free_fields() {
 //#endif
 }
 
-void free_grid(struct grid *grid) {
+void free_grid(struct mugy_grid *grid) {
   // Deallocate memory used by grids.
   free(grid->fG.dual.x);
   free(grid->fG.kx);
@@ -543,7 +543,7 @@ void free_grid(struct grid *grid) {
   free(grid->fGa.kx);
 }
 
-void free_population(struct population *pop) {
+void free_population(struct mugy_population *pop) {
   // Deallocate memory used in species struct.
   for (mint s=0; s<pop->numSpecies; s++) {
     free(pop->spec[s].alpha);

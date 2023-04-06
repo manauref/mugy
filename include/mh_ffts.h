@@ -21,10 +21,10 @@
 #include "mh_userFLAGS.h"
 #include "mh_fftw_wrap.h"
 
-void init_ffts(struct grid gridG, struct grid gridL);
+void init_ffts(struct mugy_grid gridG, struct mugy_grid gridL);
 
-void xyfft_c2r(struct realArray *fOut, struct fourierArray *fkIn, enum resource_comp res);
-void xyfft_r2c(struct fourierArray *fkOut, struct realArray *fIn, enum resource_comp res);
+void xyfft_c2r(struct mugy_realArray *fOut, struct mugy_fourierArray *fkIn, enum resource_comp res);
+void xyfft_r2c(struct mugy_fourierArray *fkOut, struct mugy_realArray *fIn, enum resource_comp res);
 
 void terminate_ffts();
 

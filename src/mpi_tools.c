@@ -28,7 +28,7 @@ void init_mpi(mint argc, char *argv[]) {
   MPI_Comm_size(MPI_COMM_WORLD, &totNumProcs);  // Number of MPI processes.
 }
 
-void init_comms(struct grid grid, struct population pop) {
+void init_comms(struct mugy_grid grid, struct mugy_population pop) {
   // Initialize the various sub-communicators needed.
   
   // Check the number of MPI processes is correct.
@@ -120,14 +120,14 @@ void distribute1dDOFs(const mint procs, const mint procID, const mint globalDOFs
 
 }
 
-void distributeDOFs(struct grid globalGrid, struct population globalPop, struct grid *localGrid, struct population *localPop) {
+void distributeDOFs(struct mugy_grid globalGrid, struct mugy_population globalPop, struct mugy_grid *localGrid, struct mugy_population *localPop) {
   // Distribute s,Z,X,Y amongst MPI processes.
   
   // Distribute the species.
   distribute1dDOFs(globalPop.mpiProcs, sRank, globalPop.numSpecies, &localPop->numSpecies, &localPop->globalSpecOff);
   localPop->globalMomOff = 0;
   for (mint s=0; s<localPop->globalSpecOff; s++) localPop->globalMomOff += globalPop.spec[s].numMoments;
-  localPop->spec = (struct species*) calloc(localPop->numSpecies, sizeof(struct species));
+  localPop->spec = (struct mugy_species*) calloc(localPop->numSpecies, sizeof(struct mugy_species));
   for (mint s=0; s<localPop->numSpecies; s++) {
     localPop->spec[s].numMoments = globalPop.spec[s+localPop->globalSpecOff].numMoments;
 
