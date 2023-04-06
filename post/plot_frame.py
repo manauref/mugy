@@ -13,7 +13,7 @@ dataDir  = '/home/manaurer/multiscale/code/mugy/src/'
 #fileName = 'momk.bp'
 #varName  = 'momk'
 fileName = 'arr.bp'
-varName  = 'arr'
+varName  = 'globalVariable'
 
 
 #[ .......... End of user inputs (MAYBE) ............. ]#
@@ -53,7 +53,7 @@ pm.varRead(varName, fileName=filePathName, select=varSelect, array=fldIn)
 xNodal = pm.xGrid(fileName=filePathName, nodal=True)
 X = [np.outer(xNodal[0],np.ones(np.size(xNodal[1]))),
      np.outer(np.ones(np.size(xNodal[0])),xNodal[1])]
-#print(fldIn[:,21])
+print(fldIn[:,21])
 plt.pcolormesh(X[0], X[1], fldIn)
 plt.colorbar()
 plt.show()

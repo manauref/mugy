@@ -372,7 +372,7 @@ void allocate_dynfields(struct grid localGrid, struct population *localPop) {
   // Allocate auxiliary arrays/fields.
 }
 
-void set_initialCondition(struct grid localGrid, struct population *localPop) {
+void set_initialCondition(struct grid localGrid, struct population *localPop, struct mugy_ioManager *ioman) {
   // Impose the initial conditions on the moments and thoe potential.
 
   struct fourierArray momk = localPop->momk[0]; // Put ICs in first stepper field.
@@ -449,7 +449,7 @@ void set_initialCondition(struct grid localGrid, struct population *localPop) {
     xyfft_r2c(&fxy_k, &fxy_r, hostComp);
     xyfft_c2r(&fxy_r, &fxy_k, hostComp);
 
-    write_realArray(fxy_r);
+    write_realArray(ioman, "arr", fxy_r);
 
 //    write_fourierArray(popL->momk[0]);
     free_realArray(&fxy_r, hostMem);
@@ -457,8 +457,6 @@ void set_initialCondition(struct grid localGrid, struct population *localPop) {
     //......................................................
 
     free_realArray(&momIC, hostMem);
-
-    adios2_close(ad_arr_eng);
 
   } else if (initialOp == 1) {
     // Initialize with a k-spce power law.
@@ -490,26 +488,24 @@ void set_initialCondition(struct grid localGrid, struct population *localPop) {
 
     // Copy initialized moments from host to device.
     hodevXfer_fourierArray(&momk, host2device);
-
-    adios2_close(ad_arr_eng);
   }
 
 }
 
-void init_all(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gridG, struct grid *gridL,
+void init_all(mint argc, char *argv[], struct mugy_ioManager *ioman, struct grid *gridG, struct grid *gridL,
               struct timeSetup *timePars, struct population *popG, struct population *popL,
               struct fieldParameters *fieldPars) {
   // Run the full initialization.
 
   // Read inputs (from command line arguments and input file).
-  read_inputs(argc, argv, ioSet, gridG, timePars, popG, fieldPars);
+  read_inputs(argc, argv, &ioman->setup, gridG, timePars, popG, fieldPars);
 
 #ifdef USE_GPU
   // Initialize devices (GPUs) if any.
   init_dev(myRank);
 #endif
 
-  init_io();  // Initialize IO interface.
+  init_io(ioman);  // Initialize IO interface.
 
   init_comms(*gridG, *popG);
 
@@ -523,11 +519,11 @@ void init_all(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gridG
 
   init_ffts(*gridG, *gridL);  // Initialize FFT infrastructure.
 
-  setup_files(*gridG, *gridL, *popG, *popL);  // Setup IO files.
+  setup_files(ioman, *gridG, *gridL, *popG, *popL);  // Setup IO files.
 
-  set_initialCondition(*gridL, popL);  // Impose ICs.
+  set_initialCondition(*gridL, popL, ioman);  // Impose ICs.
 
-  write_fourierMoments(popL->momk[0]);
+//  write_fourierMoments(popL->momk[0]);
 }
 
 void free_fields() {

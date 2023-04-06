@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
   struct grid gridG, gridL;
   struct timeSetup timePars;
   struct population popG, popL;
-  struct ioSetup myIO;
+  struct mugy_ioManager ioMan;
   struct fieldParameters fieldPars; 
   struct timeState tState;
 
@@ -19,11 +19,11 @@ int main(int argc, char *argv[]) {
   r0printf("\n     --> Welcome to mugy <--    \n\n" );
 
   // Run the full initialization.
-  init_all(argc, argv, &myIO, &gridG, &gridL, &timePars, &popG, &popL, &fieldPars);
+  init_all(argc, argv, &ioMan, &gridG, &gridL, &timePars, &popG, &popL, &fieldPars);
 
   MPI_Barrier(MPI_COMM_WORLD); // To avoid premature deallocations.
 
-  terminate_io();  // Close IO interface. Need to do it before freeing fields.
+  terminate_io(&ioMan);  // Close IO interface. Need to do it before freeing fields.
 
   free_fields();
   free_grid(&gridL);

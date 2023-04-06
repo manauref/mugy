@@ -31,10 +31,10 @@ void init_global_grids(struct grid *grid);
 void allocate_dynfields(struct grid localGrid, struct population *localPop);
 
 // Impose the initial conditions on the moments and the electrostatic potential.
-void set_initialCondition(struct grid localGrid, struct population *localPop);
+void set_initialCondition(struct grid localGrid, struct population *localPop, struct mugy_ioManager *ioman);
 
 // Run the full initialization.
-void init_all(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gridG, struct grid *gridL, struct timeSetup *timePars,
+void init_all(mint argc, char *argv[], struct mugy_ioManager *ioman, struct grid *gridG, struct grid *gridL, struct timeSetup *timePars,
               struct population *popG, struct population *popL, struct fieldParameters *fieldPars);
 
 // Deallocate fields.

@@ -5,19 +5,8 @@
 
 
 #include "mh_io_adios.h"
-
-adios2_adios *ad_ctx;  // ADIOS context used throughout our IO.
-
-// Variable engine for outputting momk.
-adios2_variable *ad_momk_var;
-adios2_engine *ad_momk_eng;
-
-// Variable engine for outputting realArray.
-adios2_variable *ad_arr_var;
-adios2_engine *ad_arr_eng;
-// Variable engine for outputting fourierArray.
-adios2_variable *ad_arrk_var;
-adios2_engine *ad_arrk_eng;
+#include "mh_alloc.h"
+#include <string.h>
 
 void ad_check_handler(const void *handler, const char *message) {
   // Check an ADIOS handler for error.
@@ -28,27 +17,66 @@ void ad_check_error(const int error, const char *message) {
   if (error) abortSimulation(message);
 }
 
-void init_io() {
+void init_io(struct mugy_ioManager *ioman) {
   // Initialize ADIOS IO.
-  ad_ctx = adios2_init_mpi(MPI_COMM_WORLD);
-  ad_check_handler(ad_ctx, " ADIOS: Error initiating.");
+  ioman->ctx = adios2_init_mpi(MPI_COMM_WORLD);
+  ad_check_handler(ad_check_handler, " ADIOS: Error initiating.");
 }
 
-void setup_files(struct grid globalGrid, struct grid localGrid, struct population globalPop, struct population localPop) {
-  // Create files for IO.
+struct ad_file *ad_create_file_realArray(struct mugy_ioManager *ioman, char* fname,
+  // Create a file that will hold a real-space array.
+  struct grid globalGrid, struct grid localGrid) {
 
-  // The data is in s,z,x,y order.
-  mint dimOrg[nDim] = {2,3,1};
+  struct ad_file *adf = (struct ad_file *) calloc(1, sizeof(struct ad_file));
+  adf->isVarReal = true;
 
-  // ......... File for Fourier moments ......... //
-  adios2_io *ad_momk_io = adios2_declare_io(ad_ctx, "momkWrite");
-  ad_check_handler(ad_momk_io, " ADIOS: Error creating ADIOS.");
+  adf->fname = alloc_charArray_ho(strlen(fname)+1);
+  strcpy(adf->fname, fname);
 
-  size_t shape[nDim+1], start[nDim+1], count[nDim+1];
-  // The data is in s,z,x,y order.
-  shape[0] = (size_t)globalPop.numMomentsTot;
-  start[0] = (size_t)localPop.globalMomOff;
-  count[0] = (size_t)localPop.numMomentsTot;
+  adf->io = adios2_declare_io(ioman->ctx, adf->fname);
+  ad_check_handler(adf->io, " ADIOS: Error creating ADIOS.");
+
+  size_t shape[nDim], start[nDim], count[nDim];
+  // The data is in z,x,y order.
+  mint dimOrg[nDim] = {1,2,0};
+  for (mint d=0; d<nDim; d++) {
+    shape[dimOrg[d]] = (size_t)globalGrid.fG.dual.Nx[d];
+    start[dimOrg[d]] = (size_t)localGrid.fG.dual.globalOff[d];
+    count[dimOrg[d]] = (size_t)localGrid.fG.dual.Nx[d];
+  }
+
+  // Attributes
+  adios2_define_attribute_array(adf->io, "Nx", adios_mint, globalGrid.fG.dual.Nx, nDim);
+  adios2_define_attribute_array(adf->io, "xMin", adios_real, globalGrid.fG.dual.xMin, nDim);
+  adios2_define_attribute_array(adf->io, "xMax", adios_real, globalGrid.fG.dual.xMax, nDim);
+  adios2_define_attribute_array(adf->io, "dx", adios_real, globalGrid.fG.dual.dx, nDim);
+  // Variables
+  adf->var = adios2_define_variable(adf->io, "globalVariable", adios_real, nDim, shape,
+                                    start, count, adios2_constant_dims_true);
+  ad_check_handler(adf->var, " ADIOS: Error defining variable.");
+
+  adf->eng = adios2_open(adf->io, strcat(adf->fname,".bp"), adios2_mode_write);
+  ad_check_handler(adf->eng, " ADIOS: Error creating engine/opening file.");
+
+  return adf;
+}
+
+struct ad_file *ad_create_file_fourierArray(struct mugy_ioManager *ioman, char* fname,
+  // Create a file that will hold a fourier-space array.
+  struct grid globalGrid, struct grid localGrid) {
+
+  struct ad_file *adf = (struct ad_file *) calloc(1, sizeof(struct ad_file));
+  adf->isVarReal = false;
+
+  adf->fname = alloc_charArray_ho(strlen(fname)+1);
+  strcpy(adf->fname, fname);
+
+  adf->io = adios2_declare_io(ioman->ctx, adf->fname);
+  ad_check_handler(adf->io, " ADIOS: Error creating ADIOS.");
+
+  size_t shape[nDim], start[nDim], count[nDim];
+  // The data is in z,x,y order.
+  mint dimOrg[nDim] = {1,2,0};
   for (mint d=0; d<nDim; d++) {
     shape[dimOrg[d]] = (size_t)globalGrid.fG.Nekx[d];
     start[dimOrg[d]] = (size_t)localGrid.fG.globalOff[d];
@@ -56,97 +84,178 @@ void setup_files(struct grid globalGrid, struct grid localGrid, struct populatio
   }
 
   // Attributes
-  adios2_define_attribute(ad_momk_io, "numSpecies", adios_mint, &globalPop.numSpecies);
-  mint numMom = globalPop.numMomentsTot/globalPop.numSpecies;
-  adios2_define_attribute(ad_momk_io, "numMoments", adios_mint, &numMom);
-  adios2_define_attribute_array(ad_momk_io, "Nekx", adios_mint, globalGrid.fG.Nekx, nDim);
-  adios2_define_attribute_array(ad_momk_io, "kxMin", adios_real, globalGrid.fG.kxMin, nDim);
+  adios2_define_attribute_array(adf->io, "Nekx", adios_mint, globalGrid.fG.Nekx, nDim);
+  adios2_define_attribute_array(adf->io, "kxMin", adios_fourier, globalGrid.fG.kxMin, nDim);
   // Variables
-  ad_momk_var = adios2_define_variable(ad_momk_io, "momk", adios_fourier, nDim+1, shape,
-                                       start, count, adios2_constant_dims_true);
-  ad_check_handler(ad_momk_var, " ADIOS: Error defining variable.");
+  adf->var = adios2_define_variable(adf->io, "globalVariable", adios_fourier, nDim, shape,
+                                    start, count, adios2_constant_dims_true);
+  ad_check_handler(adf->var, " ADIOS: Error defining variable.");
 
-  ad_momk_eng = adios2_open(ad_momk_io, "momk.bp", adios2_mode_write);
-  ad_check_handler(ad_momk_eng, " ADIOS: Error creating engine/opening file.");
+  adf->eng = adios2_open(adf->io, strcat(adf->fname,".bp"), adios2_mode_write);
+  ad_check_handler(adf->eng, " ADIOS: Error creating engine/opening file.");
 
-  // ......... File for real array ......... //
-  adios2_io *ad_arr_io = adios2_declare_io(ad_ctx, "arrWrite");
-  ad_check_handler(ad_arr_io, " ADIOS: Error creating ADIOS r.");
+  return adf;
+}
 
-  size_t shape_arr[nDim], start_arr[nDim], count_arr[nDim];
-  // The data is in z,x,y order.
-  for (mint d=0; d<nDim; d++)  dimOrg[d] -= 1;
+struct ad_file *ad_create_file_realMoments(struct mugy_ioManager *ioman, char* fname,
+  struct grid globalGrid, struct grid localGrid, struct population globalPop, struct population localPop) {
+  // Create a file storing real-space moments.
+
+  struct ad_file *adf = (struct ad_file *) calloc(1, sizeof(struct ad_file));
+  adf->isVarReal = true;
+
+  adf->fname = alloc_charArray_ho(strlen(fname)+1);
+  strcpy(adf->fname, fname);
+
+  adf->io = adios2_declare_io(ioman->ctx, adf->fname);
+  ad_check_handler(adf->io, " ADIOS: Error creating ADIOS.");
+
+  size_t shape[nDim+1], start[nDim+1], count[nDim+1];
+  // The data is in s,z,x,y order.
+  shape[0] = (size_t)globalPop.numMomentsTot;
+  start[0] = (size_t)localPop.globalMomOff;
+  count[0] = (size_t)localPop.numMomentsTot;
+  mint dimOrg[nDim+1] = {2,3,1};
   for (mint d=0; d<nDim; d++) {
-    shape_arr[dimOrg[d]] = (size_t)globalGrid.fG.dual.Nx[d];
-    start_arr[dimOrg[d]] = (size_t)localGrid.fG.dual.globalOff[d];
-    count_arr[dimOrg[d]] = (size_t)localGrid.fG.dual.Nx[d];
+    shape[dimOrg[d]] = (size_t)globalGrid.fG.dual.Nx[d];
+    start[dimOrg[d]] = (size_t)localGrid.fG.dual.globalOff[d];
+    count[dimOrg[d]] = (size_t)localGrid.fG.dual.Nx[d];
   }
 
   // Attributes
-  adios2_define_attribute_array(ad_arr_io, "Nx", adios_mint, globalGrid.fG.dual.Nx, nDim);
-  adios2_define_attribute_array(ad_arr_io, "xMin", adios_real, globalGrid.fG.dual.xMin, nDim);
-  adios2_define_attribute_array(ad_arr_io, "xMax", adios_real, globalGrid.fG.dual.xMax, nDim);
-  adios2_define_attribute_array(ad_arr_io, "dx", adios_real, globalGrid.fG.dual.dx, nDim);
-  ad_arr_var = adios2_define_variable(ad_arr_io, "arr", adios_real, nDim, shape_arr,
-                                      start_arr, count_arr, adios2_constant_dims_true);
-  ad_check_handler(ad_arr_var, " ADIOS: Error defining variable r.");
+  adios2_define_attribute(adf->io, "numSpecies", adios_mint, &globalPop.numSpecies);
+  mint numMom = globalPop.numMomentsTot/globalPop.numSpecies;
+  adios2_define_attribute(adf->io, "numMoments", adios_mint, &numMom);
+  adios2_define_attribute_array(adf->io, "Nx", adios_mint, globalGrid.fG.dual.Nx, nDim);
+  adios2_define_attribute_array(adf->io, "xMin", adios_real, globalGrid.fG.dual.xMin, nDim);
+  adios2_define_attribute_array(adf->io, "xMax", adios_real, globalGrid.fG.dual.xMax, nDim);
+  adios2_define_attribute_array(adf->io, "dx", adios_real, globalGrid.fG.dual.dx, nDim);
+  // Variables
+  adf->var = adios2_define_variable(adf->io, "globalVariable", adios_real, nDim, shape,
+                                    start, count, adios2_constant_dims_true);
+  ad_check_handler(adf->var, " ADIOS: Error defining variable.");
 
-  ad_arr_eng = adios2_open(ad_arr_io, "arr.bp", adios2_mode_write);
-  ad_check_handler(ad_arr_eng, " ADIOS: Error creating engine/opening file r.");
+  adf->eng = adios2_open(adf->io, strcat(adf->fname,".bp"), adios2_mode_write);
+  ad_check_handler(adf->eng, " ADIOS: Error creating engine/opening file.");
 
-  // ......... File for Fourier array ......... //
-  adios2_io *ad_arrk_io = adios2_declare_io(ad_ctx, "arrkWrite");
-  ad_check_handler(ad_arrk_io, " ADIOS: Error creating ADIOS k.");
+  return adf;
+}
 
-  size_t shape_arrk[nDim], start_arrk[nDim], count_arrk[nDim];
-  // The data is in z,x,y order.
+struct ad_file *ad_create_file_fourierMoments(struct mugy_ioManager *ioman, char* fname,
+  struct grid globalGrid, struct grid localGrid, struct population globalPop, struct population localPop) {
+  // Create a file storing Fourier-space moments.
+
+  struct ad_file *adf = (struct ad_file *) calloc(1, sizeof(struct ad_file));
+  adf->isVarReal = false;
+
+  adf->fname = alloc_charArray_ho(strlen(fname)+1);
+  strcpy(adf->fname, fname);
+
+  adf->io = adios2_declare_io(ioman->ctx, adf->fname);
+  ad_check_handler(adf->io, " ADIOS: Error creating ADIOS.");
+
+  size_t shape[nDim+1], start[nDim+1], count[nDim+1];
+  // The data is in s,z,x,y order.
+  shape[0] = (size_t)globalPop.numMomentsTot;
+  start[0] = (size_t)localPop.globalMomOff;
+  count[0] = (size_t)localPop.numMomentsTot;
+  mint dimOrg[nDim+1] = {2,3,1};
   for (mint d=0; d<nDim; d++) {
-    shape_arrk[dimOrg[d]] = globalGrid.fG.Nekx[d];
-    start_arrk[dimOrg[d]] = localGrid.fG.globalOff[d];
-    count_arrk[dimOrg[d]] = localGrid.fG.Nekx[d];
+    shape[dimOrg[d]] = (size_t)globalGrid.fG.Nekx[d];
+    start[dimOrg[d]] = (size_t)localGrid.fG.globalOff[d];
+    count[dimOrg[d]] = (size_t)localGrid.fG.Nekx[d];
   }
 
   // Attributes
-  adios2_define_attribute_array(ad_arrk_io, "Nekx", adios_mint, globalGrid.fG.Nekx, nDim);
-  adios2_define_attribute_array(ad_arrk_io, "kxMin", adios_real, globalGrid.fG.kxMin, nDim);
-  ad_arrk_var = adios2_define_variable(ad_arrk_io, "arrk", adios_fourier, nDim, shape_arrk,
-                                       start_arrk, count_arrk, adios2_constant_dims_true);
-  ad_check_handler(ad_arrk_var, " ADIOS: Error defining variable k.");
+  adios2_define_attribute(adf->io, "numSpecies", adios_mint, &globalPop.numSpecies);
+  mint numMom = globalPop.numMomentsTot/globalPop.numSpecies;
+  adios2_define_attribute(adf->io, "numMoments", adios_mint, &numMom);
+  adios2_define_attribute_array(adf->io, "Nekx", adios_mint, globalGrid.fG.Nekx, nDim);
+  adios2_define_attribute_array(adf->io, "kxMin", adios_fourier, globalGrid.fG.kxMin, nDim);
+  // Variables
+  adf->var = adios2_define_variable(adf->io, "globalVariable", adios_fourier, nDim, shape,
+                                    start, count, adios2_constant_dims_true);
+  ad_check_handler(adf->var, " ADIOS: Error defining variable.");
 
-  ad_arrk_eng = adios2_open(ad_arrk_io, "arrk.bp", adios2_mode_write);
-  ad_check_handler(ad_arrk_eng, " ADIOS: Error creating engine/opening file k.");
+  adf->eng = adios2_open(adf->io, strcat(adf->fname,".bp"), adios2_mode_write);
+  ad_check_handler(adf->eng, " ADIOS: Error creating engine/opening file.");
+
+  return adf;
 }
 
-void write_fourierMoments(struct fourierArray arrkIn) {
-  // Write out Fourier space array.
-  adios2_error ioerr;
-  if (arrkIn.ho) ioerr = adios2_put(ad_momk_eng, ad_momk_var, arrkIn.ho, adios2_mode_deferred);
-  ad_check_error(ioerr, " ADIOS: Error in putting Fourier array.");
+void setup_files(struct mugy_ioManager *ioman, struct grid globalGrid, struct grid localGrid,
+  struct population globalPop, struct population localPop) {
+
+  // List files we intend to open/write/close.
+  // For some default files we prepend the type of data with this key:
+  //   ra_ : real array.
+  //   ka_ : fourier array.
+  //   rm_ : real moments.
+  //   km_ : fourier moments.
+  // If more, nonstandard files wish to be added, just put the name in flist and
+  // be sure to use the correct create/write functions.
+  char *flist[] = {"ra_arr"};
+
+  ioman->numfiles = sizeof(flist)/sizeof(flist[0]);
+  ioman->files = (struct ad_file **)calloc(ioman->numfiles, sizeof(struct ad_file*));
+
+  char *dataKind = alloc_charArray_ho(3+1);
+  for (mint i=0; i<ioman->numfiles; i++) {
+    strncpy(dataKind, flist[i], 3);
+    char *fname = alloc_charArray_ho(strlen(flist[i])-2+1);
+    strcpy(fname, flist[i]+3);
+
+    if (strcmp(dataKind, "ra_") == 0) {
+      ioman->files[i] = ad_create_file_realArray(ioman, fname, globalGrid, localGrid);
+    } else if (strcmp(dataKind, "ka_") == 0) {
+      ioman->files[i] = ad_create_file_fourierArray(ioman, fname, globalGrid, localGrid);
+    } else if (strcmp(dataKind, "rm_") == 0) {
+      ioman->files[i] = ad_create_file_realMoments(ioman, fname, globalGrid, localGrid, globalPop, localPop);
+    } else if (strcmp(dataKind, "fm_") == 0) {
+      ioman->files[i] = ad_create_file_fourierMoments(ioman, fname, globalGrid, localGrid, globalPop, localPop);
+    }
+    free(fname);
+  }
+  free(dataKind);
+
 }
 
-void write_fourierArray(struct fourierArray arrkIn) {
-  // Write out Fourier space array.
-  adios2_error ioerr;
-  if (arrkIn.ho) ioerr = adios2_put(ad_arrk_eng, ad_arrk_var, arrkIn.ho, adios2_mode_deferred);
-  ad_check_error(ioerr, " ADIOS: Error in putting Fourier array.");
+struct ad_file *get_fileHandle(struct mugy_ioManager *ioman, char* fname) {
+  // Given the file name, return the handle to the file in the IO manger.
+  int fIdx;
+  for (mint i=0; i<ioman->numfiles; i++) {
+    if (strcmp(fname, ioman->files[i]->fname) == 0) {
+      fIdx = i;  break;
+    }
+  }
+  return ioman->files[fIdx];
 }
 
-void write_realArray(struct realArray arrIn) {
+void write_realArray(struct mugy_ioManager *ioman, char* fname, struct realArray arrIn) {
   // Write out real space array.
+  struct ad_file *fh = get_fileHandle(ioman, fname);
   adios2_error ioerr;
-  if (arrIn.ho) ioerr = adios2_put(ad_arr_eng, ad_arr_var, arrIn.ho, adios2_mode_deferred);
+  if (arrIn.ho) ioerr = adios2_put(fh->eng, fh->var, arrIn.ho, adios2_mode_deferred);
   ad_check_error(ioerr, " ADIOS: Error in putting Fourier array.");
 }
 
-void terminate_io() {
-  // Finalize ADIOS IO
+void write_fourierArray(struct mugy_ioManager *ioman, char* fname, struct fourierArray arrIn) {
+  // Write out fourier space array.
+  struct ad_file *fh = get_fileHandle(ioman, fname);
   adios2_error ioerr;
+  if (arrIn.ho) ioerr = adios2_put(fh->eng, fh->var, arrIn.ho, adios2_mode_deferred);
+  ad_check_error(ioerr, " ADIOS: Error in putting Fourier array.");
+}
 
-  ioerr = adios2_close(ad_momk_eng);
-  ioerr = adios2_close(ad_arrk_eng);
-//  ioerr = adios2_close(ad_arr_eng);
-  ad_check_error(ioerr, " ADIOS: Error closing engine/file.");
+void terminate_io(struct mugy_ioManager *ioman) {
+  // Finalize ADIOS IO.
 
-  ioerr = adios2_finalize(ad_ctx);
+  // Close all files.
+  for (mint i=0; i<ioman->numfiles; i++) {
+    adios2_error ioerr = adios2_close(ioman->files[i]->eng);
+    ad_check_error(ioerr, " ADIOS: Error closing engine/file.");
+  }
+
+  adios2_error ioerr = adios2_finalize(ioman->ctx);
   ad_check_error(ioerr, " ADIOS: Error finalizing.");
 }
