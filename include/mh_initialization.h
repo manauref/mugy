@@ -7,6 +7,7 @@
 #define MUGY_INITIALIZATION
 
 #include "mh_data.h"
+#include "mh_ffts.h"
 
 // Read a real variable from input file. Need this function to support
 // reading floats and doubles with the same function call.
@@ -18,11 +19,11 @@ void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint n
 
 // Read input values from input file.
 void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_timeSetup *time,
-                    struct mugy_population *pop, struct mugy_fieldParameters *field);
+  struct mugy_population *pop, struct mugy_fieldParameters *field);
 
 // Read command line arguments and input file.
 void read_inputs(mint argc, char *argv[], struct mugy_ioSetup *ioSet, struct mugy_grid *grid, struct mugy_timeSetup *time,
-                 struct mugy_population *pop, struct mugy_fieldParameters *field);
+  struct mugy_population *pop, struct mugy_fieldParameters *field);
 
 // Set number of cells in de-aliased, aliased and real space global grids.
 void init_global_grids(struct mugy_grid *grid);
@@ -30,12 +31,10 @@ void init_global_grids(struct mugy_grid *grid);
 // Allocate time dependent fields needed.
 void allocate_dynfields(struct mugy_grid localGrid, struct mugy_population *localPop);
 
-// Impose the initial conditions on the moments and the electrostatic potential.
-void set_initialCondition(struct mugy_grid localGrid, struct mugy_population *localPop, struct mugy_ioManager *ioman);
-
 // Run the full initialization.
-void init_all(mint argc, char *argv[], struct mugy_ioManager *ioman, struct mugy_grid *gridG, struct mugy_grid *gridL, struct mugy_timeSetup *timePars,
-              struct mugy_population *popG, struct mugy_population *popL, struct mugy_fieldParameters *fieldPars);
+void init_all(mint argc, char *argv[], struct mugy_ioManager *ioman, struct mugy_grid *gridG, struct mugy_grid *gridL,
+  struct mugy_timeSetup *timePars, struct mugy_population *popG, struct mugy_population *popL,
+  struct mugy_fieldParameters *fieldPars, struct mugy_ffts *fftMan);
 
 // Deallocate fields.
 void free_fields();

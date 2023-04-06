@@ -39,16 +39,30 @@ struct mugy_ioManager {
 // Start the IO interface.
 void init_io(struct mugy_ioManager *ioman);
 
+// Create a file holding global real(Fourier)Arrays.
+struct mugy_ad_file *ad_create_file_realArray(struct mugy_ioManager *ioman, char* fname,
+  struct mugy_grid globalGrid, struct mugy_grid localGrid);
+struct mugy_ad_file *ad_create_file_fourierArray(struct mugy_ioManager *ioman, char* fname,
+  struct mugy_grid globalGrid, struct mugy_grid localGrid);
+
+// Create a file holding global real(Fourier) moments.
+struct mugy_ad_file *ad_create_file_realMoments(struct mugy_ioManager *ioman, char* fname,
+  struct mugy_grid globalGrid, struct mugy_grid localGrid, struct mugy_population globalPop, struct mugy_population localPop);
+struct mugy_ad_file *ad_create_file_fourierMoments(struct mugy_ioManager *ioman, char* fname,
+  struct mugy_grid globalGrid, struct mugy_grid localGrid, struct mugy_population globalPop, struct mugy_population localPop);
+
 // Create files for IO.
-//void setup_files(struct mugy_grid globalGrid, struct mugy_grid localGrid, struct mugy_population globalPop, struct mugy_population localPop);
 void setup_files(struct mugy_ioManager *ioman, struct mugy_grid globalGrid, struct mugy_grid localGrid,
   struct mugy_population globalPop, struct mugy_population localPop);
 
 // Output real(Fourier)-space array.
-void write_realArray(struct mugy_ioManager *ioman, char* fname, struct mugy_realArray arrIn);
-void write_fourierArray(struct mugy_ioManager *ioman, char* fname, struct mugy_fourierArray arrIn);
+void write_realArray(struct mugy_ioManager *ioman, char* fname, struct mugy_ad_file *fhIn, struct mugy_realArray arrIn);
+void write_fourierArray(struct mugy_ioManager *ioman, char* fname, struct mugy_ad_file *fhIn, struct mugy_fourierArray arrIn);
+
+// Close a file given its mugy file handle.
+void io_close_file(struct mugy_ad_file *fh);
 
 // Finalize ADIOS IO.
-void terminate_io(struct mugy_ioManager *ioman);
+void io_terminate(struct mugy_ioManager *ioman);
 
 #endif

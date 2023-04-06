@@ -9,7 +9,6 @@
 #include "mh_alloc.h"
 #include "mh_mpi_tools.h"
 #include "mh_io_tools.h"
-#include "mh_ffts.h"
 #include "mh_initialization.h"
 #include "mh_initialization_dev.h"
 #include <complex.h>  /* Needed by some fscanf below. */
@@ -372,7 +371,8 @@ void allocate_dynfields(struct mugy_grid localGrid, struct mugy_population *loca
   // Allocate auxiliary arrays/fields.
 }
 
-void set_initialCondition(struct mugy_grid localGrid, struct mugy_population *localPop, struct mugy_ioManager *ioman) {
+void set_initialCondition(struct mugy_grid globalGrid, struct mugy_grid localGrid, struct mugy_population globalPop,
+  struct mugy_population *localPop, struct mugy_ffts *fftMan, struct mugy_ioManager *ioman) {
   // Impose the initial conditions on the moments and thoe potential.
 
   struct mugy_fourierArray momk = localPop->momk[0]; // Put ICs in first stepper field.
@@ -421,7 +421,7 @@ void set_initialCondition(struct mugy_grid localGrid, struct mugy_population *lo
     hodevXfer_realArray(&momIC, host2device);
 
     // FFT moments.
-    //fft_moments_r2c(&momk, &momIC, deviceComp)
+    //fft_moments_r2c(fftMan, &momk, &momIC, deviceComp)
 
     //......................................................
     // FFT test
@@ -446,12 +446,13 @@ void set_initialCondition(struct mugy_grid localGrid, struct mugy_population *lo
       fxy_rp++;
     }
 
-    xyfft_r2c(&fxy_k, &fxy_r, hostComp);
-    xyfft_c2r(&fxy_r, &fxy_k, hostComp);
+    fft_xy_r2c(fftMan, &fxy_k, &fxy_r, hostComp);
+    fft_xy_c2r(fftMan, &fxy_r, &fxy_k, hostComp);
 
-    write_realArray(ioman, "arr", fxy_r);
+    struct mugy_ad_file *fh = ad_create_file_realArray(ioman, "arr", globalGrid, localGrid);
+    write_realArray(NULL, "arr", fh, fxy_r);
+    io_close_file(fh);
 
-//    write_fourierArray(popL->momk[0]);
     free_realArray(&fxy_r, hostMem);
     free_fourierArray(&fxy_k, hostMem);
     //......................................................
@@ -494,7 +495,7 @@ void set_initialCondition(struct mugy_grid localGrid, struct mugy_population *lo
 
 void init_all(mint argc, char *argv[], struct mugy_ioManager *ioman, struct mugy_grid *gridG, struct mugy_grid *gridL,
               struct mugy_timeSetup *timePars, struct mugy_population *popG, struct mugy_population *popL,
-              struct mugy_fieldParameters *fieldPars) {
+              struct mugy_fieldParameters *fieldPars, struct mugy_ffts *fftMan) {
   // Run the full initialization.
 
   // Read inputs (from command line arguments and input file).
@@ -517,13 +518,11 @@ void init_all(mint argc, char *argv[], struct mugy_ioManager *ioman, struct mugy
 
   allocate_dynfields(*gridL, popL);  // Allocate dynamic fields.
 
-  init_ffts(*gridG, *gridL);  // Initialize FFT infrastructure.
+  fft_init(fftMan, *gridG, *gridL);  // Initialize FFT infrastructure.
 
   setup_files(ioman, *gridG, *gridL, *popG, *popL);  // Setup IO files.
 
-  set_initialCondition(*gridL, popL, ioman);  // Impose ICs.
-
-//  write_fourierMoments(popL->momk[0]);
+  set_initialCondition(*gridG, *gridL, *popG, popL, fftMan, ioman);  // Impose ICs.
 }
 
 void free_fields() {
