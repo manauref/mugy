@@ -1,5 +1,5 @@
 &space
-NkxG     = 4 4 1
+NkxG     = 32 32 1
 kxMin    = 0.12566 0.12566 1.0
 kMaxDyn  = 0. 0. 0.
 mpiProcs = 1 1 1
@@ -37,7 +37,7 @@ delta0     = 0.0 0.0
 hDiffOrder = 4 4 4 4 4 4
 hDiff      = 10.0 10.0 0.0 10.0 10.0 0.0
 kDiffMin   = 0.0 0.0 0.0 0.0 0.0 0.0
-initialOp  = 1 1
+initialOp  = 0 0
 initAux    = -3 -3 -3 -3 -3 -3
 initA      = 2.5e-2 2.5e-2
 noiseA     = 1e-14 1e-14

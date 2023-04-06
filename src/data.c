@@ -123,3 +123,27 @@ void hodevXfer_fourierArray(struct fourierArray *arr, enum memcpy_dir_dev dir) {
     memcpy_fourier_dev(arr->ho, arr->dev, arr->nelem, dir);
 #endif
 }
+
+// Functions that scale real(Fourier)Arrays by a constant.
+void scale_realArray(struct realArray *arr, real fac, enum resource_comp res) {
+#ifdef USE_GPU
+//  if (res == deviceComp)
+//    return scale_realArray_dev(arr, fac, res);
+#endif
+
+  real *fk = arr->ho;
+  for (mint linIdx=0; linIdx<arr->nelem; linIdx++) {
+    fk[0] *= fac;  fk++;
+  }
+}
+void scale_fourierArray(struct fourierArray *arrk, real fac, enum resource_comp res) {
+#ifdef USE_GPU
+//  if (res == deviceComp)
+//    return scale_fourierArray_dev(arr, fac, res);
+#endif
+
+  fourier *fk = arrk->ho;
+  for (mint linIdx=0; linIdx<arrk->nelem; linIdx++) {
+    fk[0] *= fac;  fk++;
+  }
+}

@@ -173,4 +173,8 @@ void memcpy_fourier(void *dest, void *src, mint numElements, enum memcpy_dir_dev
 void hodevXfer_realArray(struct realArray *arr, enum memcpy_dir_dev dir);
 void hodevXfer_fourierArray(struct fourierArray *arr, enum memcpy_dir_dev dir);
 
+// Scale an array by a factor 'fac'.
+void scale_realArray(struct realArray *arr, real fac, enum resource_comp res);
+void scale_fourierArray(struct fourierArray *arrk, real fac, enum resource_comp res);
+
 #endif

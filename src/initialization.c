@@ -296,7 +296,7 @@ void init_global_grids(struct grid *globalGrid) {
   mint xOff = 0;
   for (mint d=0; d<nDim; d++) {
     for (mint i=0; i<Nx[d]; i++)
-      globalGrid->fG.dual.x[i+xOff] = (real)(i)*dx[d]+(real)(1-Nx[d] % 2-1)*0.5*dx[d]-0.5*Lx[d];
+      globalGrid->fG.dual.x[i+xOff] = ((real)i)*dx[d]+(real)(1-Nx[d] % 2-1)*0.5*dx[d]-0.5*Lx[d];
     globalGrid->fG.dual.xMin[d] = globalGrid->fG.dual.x[0+xOff];
     globalGrid->fG.dual.xMax[d] = globalGrid->fG.dual.x[Nx[d]-1+xOff];
     xOff += Nx[d];
@@ -384,10 +384,10 @@ void set_initialCondition(struct grid localGrid, struct population *localPop) {
     // Initialize in real space and transform to Fourier.
     struct realGrid *grid = &localGrid.fG.dual;
     struct realArray momIC;
-    alloc_realMoments(&momIC, *grid, *localPop, hostMem);
+    alloc_realMoments(&momIC, *grid, *localPop, hostAndDeviceMem);
 
     for (mint s=0; s<localPop->numSpecies; s++) {
-      real initA    = localPop->spec[s].initA;
+      real initA = localPop->spec[s].initA;
 
       real *den_p  = getMoment_real(*grid, *localPop, s, denIdx, momIC.ho);  // Get density of species s.
       real *temp_p = getMoment_real(*grid, *localPop, s, tempIdx, momIC.ho);  // Get temperature of species s.
@@ -400,15 +400,15 @@ void set_initialCondition(struct grid localGrid, struct population *localPop) {
 
         // Initial density: a superposition of sines and cosines.
         den_p[0] = 0.;
-          double kx = 0.1;
-          for (int i; i<localGrid.fG.Nkx[0]; i++) {
-            kx += i*0.2;
-            double ky = 0.3;
-            for (int j; j<localGrid.fG.Nkx[1]; j++) {
-              ky += i*0.1;
-              den_p[0] += initA*sin(kx*x[0])*cos(ky*x[1]);
-            }
+        double kx = 0.1;
+        for (int i; i<localGrid.fG.Nkx[0]; i++) {
+          kx += i*0.2;
+          double ky = 0.3;
+          for (int j; j<localGrid.fG.Nkx[1]; j++) {
+            ky += i*0.1;
+            den_p[0] += initA*sin(kx*x[0])*cos(ky*x[1]);
           }
+        }
         den_p++;
         
         // Initial temperature = 0.
@@ -424,19 +424,41 @@ void set_initialCondition(struct grid localGrid, struct population *localPop) {
     //fft_moments_r2c(&momk, &momIC, deviceComp)
 
     //......................................................
-//    // FFT test
-//    struct realArray fxy_r;
-//    struct fourierArray fxy_k;
-//    alloc_realArray(&fxy_r, prod_mint(grid->Nx,nDim), hostMem);
-//    alloc_fourierArray(&fxy_k, prod_mint(localGrid.fG.Nekx,nDim), hostMem);
-//
-//    xyfft_c2r(&fxy_r, &fxy_k, hostComp);
-//
-//    free_realArray(&fxy_r, hostMem);
-//    free_fourierArray(&fxy_k, hostMem);
+    // FFT test
+    struct realArray fxy_r;
+    struct fourierArray fxy_k;
+    alloc_realArray(&fxy_r, grid->NxTot, hostMem);
+    alloc_fourierArray(&fxy_k, localGrid.fG.NekxTot, hostMem);
+
+    // Assign real array to a linear combo of sines and cosines.
+    real *fxy_rp = fxy_r.ho;
+    for (mint linIdx=0; linIdx<grid->NxTot; linIdx++) {
+      real initA = localPop->spec[0].initA;
+      mint xIdx[nDim];
+      lin2sub_real(&xIdx[0], linIdx, *grid);  // Convert linear index to multidimensional x index.
+      real x[nDim];
+      get_x(&x[0], xIdx, *grid);
+
+      fxy_rp[0] = 0.;
+      double kx = localGrid.fG.kxMin[0];
+      double ky = localGrid.fG.kxMin[1];
+      fxy_rp[0] += initA*sin(kx*x[0])*cos(ky*x[1]);
+      fxy_rp++;
+    }
+
+    xyfft_r2c(&fxy_k, &fxy_r, hostComp);
+    xyfft_c2r(&fxy_r, &fxy_k, hostComp);
+
+    write_realArray(fxy_r);
+
+//    write_fourierArray(popL->momk[0]);
+    free_realArray(&fxy_r, hostMem);
+    free_fourierArray(&fxy_k, hostMem);
     //......................................................
 
     free_realArray(&momIC, hostMem);
+
+    adios2_close(ad_arr_eng);
 
   } else if (initialOp == 1) {
     // Initialize with a k-spce power law.
@@ -469,6 +491,7 @@ void set_initialCondition(struct grid localGrid, struct population *localPop) {
     // Copy initialized moments from host to device.
     hodevXfer_fourierArray(&momk, host2device);
 
+    adios2_close(ad_arr_eng);
   }
 
 }
@@ -500,11 +523,11 @@ void init_all(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gridG
 
   init_ffts(*gridG, *gridL);  // Initialize FFT infrastructure.
 
-  set_initialCondition(*gridL, popL);  // Impose ICs.
-
   setup_files(*gridG, *gridL, *popG, *popL);  // Setup IO files.
 
-  write_fourierArray(popL->momk[0]);
+  set_initialCondition(*gridL, popL);  // Impose ICs.
+
+  write_fourierMoments(popL->momk[0]);
 }
 
 void free_fields() {
