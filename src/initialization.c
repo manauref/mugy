@@ -7,7 +7,7 @@
 #include "mh_parameters.h"
 #include "mh_utilities.h"
 #include "mh_alloc.h"
-#include "mh_mpi_tools.h"
+#include "mh_comms.h"
 #include "mh_io_tools.h"
 #include "mh_initialization.h"
 #include "mh_initialization_dev.h"
@@ -73,10 +73,10 @@ void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint n
 }
 
 void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_timeSetup *time,
-                    struct mugy_population *pop, struct mugy_fieldParameters *field) {
+                    struct mugy_population *pop, struct mugy_fieldParameters *field, mint rank) {
   // Read input values from input file.
 
-  if (myRank == ioRank) {  // Only ioRank reads from input file.
+  if (rank == ioRank) {  // Only ioRank reads from input file.
     printf(" Reading inputs from %s\n\n",fileNameIn);
 
     FILE *file_p = fopen(fileNameIn, "r");  // Open for read only.
@@ -171,10 +171,10 @@ void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_
 
   MPI_Bcast(&pop->numSpecies, 1, mpi_mint, ioRank, MPI_COMM_WORLD);
   MPI_Bcast(&pop->mpiProcs  , 1, mpi_mint, ioRank, MPI_COMM_WORLD);
-  if (myRank != ioRank) pop->spec = (struct mugy_species*) calloc(pop->numSpecies, sizeof(struct mugy_species));
+  if (rank != ioRank) pop->spec = (struct mugy_species*) calloc(pop->numSpecies, sizeof(struct mugy_species));
   for (mint s=0; s<pop->numSpecies; s++) {
     MPI_Bcast(&pop->spec[s].numMoments,                       1, mpi_mint, ioRank, MPI_COMM_WORLD);
-    if (myRank != ioRank) {
+    if (rank != ioRank) {
       pop->spec[s].alpha      = alloc_realArray_ho(pop->spec[s].numMoments);
       pop->spec[s].nu         = alloc_realArray_ho(pop->spec[s].numMoments);
       pop->spec[s].hDiffOrder = alloc_realArray_ho(nDim);
@@ -209,7 +209,7 @@ void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_
 }
 
 void read_inputs(mint argc, char *argv[], struct mugy_ioSetup *ioSet, struct mugy_grid *grid, struct mugy_timeSetup *time,
-                 struct mugy_population *pop, struct mugy_fieldParameters *field) {
+                 struct mugy_population *pop, struct mugy_fieldParameters *field, mint rank) {
   // Read inputs from command line arguments and input file.
 
   // Check for commandline arguments.
@@ -237,7 +237,7 @@ void read_inputs(mint argc, char *argv[], struct mugy_ioSetup *ioSet, struct mug
     }
   }
 
-  read_inputFile(ioSet->inputFile, grid, time, pop, field);
+  read_inputFile(ioSet->inputFile, grid, time, pop, field, rank);
 
   // Set the total number of moments.
   pop->numMomentsTot = 0;
@@ -248,13 +248,13 @@ void read_inputs(mint argc, char *argv[], struct mugy_ioSetup *ioSet, struct mug
 
 }
 
-void init_global_grids(struct mugy_grid *globalGrid) {
+void init_global_grids(struct mugy_grid *globalGrid, mint rank) {
   // Set number of cells in de-aliased, aliased and real space global grids.
 
   /* Given user-input number of distinct dealised wavenumbers, Nkx,
      the number of real-space cells is Nx = 3*(Nkx-1). We prefer this
      to be a power of 2, so we may need to adjust Nkx. */
-  arrPrint_mint(globalGrid->fG.Nkx, nDim, " User requested  NkxG=("," ) distinct wavenumbers (absolute magnitude)\n");
+  arrPrintS_mint(globalGrid->fG.Nkx, nDim, " User requested  NkxG=("," ) distinct wavenumbers (absolute magnitude)\n", rank);
   for (mint d=0; d<nDim; d++) globalGrid->fGa.dual.Nx[d]  = closest_power_of_two(3*(globalGrid->fG.Nkx[d]-1));
   globalGrid->fGa.dual.NxTot  = prod_mint(globalGrid->fGa.dual.Nx,nDim);
   globalGrid->fGa.dual.NxyTot = prod_mint(globalGrid->fGa.dual.Nx,2);
@@ -342,16 +342,16 @@ void init_global_grids(struct mugy_grid *globalGrid) {
   for (mint i=Nkxa[0]; i<globalGrid->fGa.Nekx[0]; i++)
     globalGrid->fGa.kx[i] = -(real)(Nkxa[0]-1-(i-Nkxa[0]))*kxaMin[0];
 
-  r0printf("\n Proceeding with :\n");
-  arrPrint_mint(globalGrid->fG.Nkx,      nDim, " Number of distinct de-aliased absolute wavenumbers: NkxG   =", "\n");
-  arrPrint_mint(globalGrid->fG.Nekx,     nDim, " Length of de-aliased k-space arrays:                NekxG  =", "\n");
-  arrPrint_mint(globalGrid->fGa.Nkx,     nDim, " Number of distinct aliased absolute wavenumbers:    NkxaG  =", "\n");
-  arrPrint_mint(globalGrid->fGa.Nekx,    nDim, " Length of aliased k-space arrays:                   NekxaG =", "\n");
-  arrPrint_mint(globalGrid->fGa.dual.Nx, nDim, " Number of aliased real space cells:                 NxaG   =", "\n");
-  arrPrint_mint(globalGrid->fG.dual.Nx,  nDim, " Number of de-aliased real space cells:              NxG    =", "\n");
+  r0printf("\n Proceeding with :\n", rank);
+  arrPrintS_mint(globalGrid->fG.Nkx,      nDim, " Number of distinct de-aliased absolute wavenumbers: NkxG   =", "\n", rank);
+  arrPrintS_mint(globalGrid->fG.Nekx,     nDim, " Length of de-aliased k-space arrays:                NekxG  =", "\n", rank);
+  arrPrintS_mint(globalGrid->fGa.Nkx,     nDim, " Number of distinct aliased absolute wavenumbers:    NkxaG  =", "\n", rank);
+  arrPrintS_mint(globalGrid->fGa.Nekx,    nDim, " Length of aliased k-space arrays:                   NekxaG =", "\n", rank);
+  arrPrintS_mint(globalGrid->fGa.dual.Nx, nDim, " Number of aliased real space cells:                 NxaG   =", "\n", rank);
+  arrPrintS_mint(globalGrid->fG.dual.Nx,  nDim, " Number of de-aliased real space cells:              NxG    =", "\n", rank);
 
-  arrPrint_real(globalGrid->fG.kxMin,    nDim, " Minimum absolute magnitude of wavenumbers: kxMin    =", "\n");
-  arrPrint_real(globalGrid->fG.kxMaxDyn, nDim, " Largest wavenumbers evolved:               kxMaxDyn =", "\n");
+  arrPrintS_real(globalGrid->fG.kxMin,    nDim, " Minimum absolute magnitude of wavenumbers: kxMin    =", "\n", rank);
+  arrPrintS_real(globalGrid->fG.kxMaxDyn, nDim, " Largest wavenumbers evolved:               kxMaxDyn =", "\n", rank);
 
 }
 
@@ -446,12 +446,12 @@ void set_initialCondition(struct mugy_grid globalGrid, struct mugy_grid localGri
       fxy_rp++;
     }
 
-    fft_xy_r2c(fftMan, &fxy_k, &fxy_r, hostComp);
-    fft_xy_c2r(fftMan, &fxy_r, &fxy_k, hostComp);
-
-    struct mugy_ad_file *fh = ad_create_file_realArray(ioman, "arr", globalGrid, localGrid);
-    write_realArray(NULL, "arr", fh, fxy_r);
-    io_close_file(fh);
+//    fft_xy_r2c(fftMan, &fxy_k, &fxy_r, hostComp);
+//    fft_xy_c2r(fftMan, &fxy_r, &fxy_k, hostComp);
+//
+//    struct mugy_ad_file *fh = ad_create_file_realArray(ioman, "arr", globalGrid, localGrid);
+//    write_realArray(NULL, "arr", fh, fxy_r);
+//    io_close_file(fh);
 
     free_realArray(&fxy_r, hostMem);
     free_fourierArray(&fxy_k, hostMem);
@@ -493,32 +493,33 @@ void set_initialCondition(struct mugy_grid globalGrid, struct mugy_grid localGri
 
 }
 
-void init_all(mint argc, char *argv[], struct mugy_ioManager *ioman, struct mugy_grid *gridG, struct mugy_grid *gridL,
-              struct mugy_timeSetup *timePars, struct mugy_population *popG, struct mugy_population *popL,
-              struct mugy_fieldParameters *fieldPars, struct mugy_ffts *fftMan) {
+void init_all(mint argc, char *argv[], struct mugy_comms *comms, struct mugy_ioManager *ioman,
+  struct mugy_grid *gridG, struct mugy_grid *gridL, struct mugy_timeSetup *timePars,
+  struct mugy_population *popG, struct mugy_population *popL,
+  struct mugy_fieldParameters *fieldPars, struct mugy_ffts *fftMan) {
   // Run the full initialization.
 
   // Read inputs (from command line arguments and input file).
-  read_inputs(argc, argv, &ioman->setup, gridG, timePars, popG, fieldPars);
+  read_inputs(argc, argv, &ioman->setup, gridG, timePars, popG, fieldPars, comms->world.rank);
 
 #ifdef USE_GPU
   // Initialize devices (GPUs) if any.
-  init_dev(myRank);
+  init_dev(comms->world.rank);
 #endif
 
   init_io(ioman);  // Initialize IO interface.
 
-  init_comms(*gridG, *popG);
+  comms_sub_init(comms, *gridG, *popG);  // Initialize sub-communicators.
 
   // Set the number of cells in Fourier space and aliased real space.
-  init_global_grids(gridG);
+  init_global_grids(gridG, comms->world.rank);
 
   // Decompose the x,y,z,s domains amongst MPI processes.
-  distributeDOFs(*gridG, *popG, gridL, popL);
+  distributeDOFs(*comms, *gridG, *popG, gridL, popL);
 
   allocate_dynfields(*gridL, popL);  // Allocate dynamic fields.
 
-  fft_init(fftMan, *gridG, *gridL);  // Initialize FFT infrastructure.
+  fft_init(fftMan, *gridG, *gridL, *comms);  // Initialize FFT infrastructure.
 
   setup_files(ioman, *gridG, *gridL, *popG, *popL);  // Setup IO files.
 

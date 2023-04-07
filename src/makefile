@@ -71,7 +71,7 @@ LFLAGS = -L../lib -L${MPI_LIB} $(CUDA_LIBS) ${ADIOS_LIB} -L${FFTW_LIB} $(FFTW_LI
 LIBS = 
 
 #[ Define the C source files.
-SRCS = alloc.c ffts.c initialization.c io_adios.c io_tools.c mpi_tools.c mugy.c utilities.c data.c finalize.c
+SRCS = alloc.c ffts.c initialization.c io_adios.c io_tools.c comms.c mugy.c utilities.c data.c finalize.c
 ifeq ($(USE_GPU),true)
     SRCS_DEV = initialization_dev.cu alloc_dev.cu data_dev.cu
 else

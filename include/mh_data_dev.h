@@ -22,10 +22,9 @@ typedef cuDoubleComplex cufourier;
 
 #endif
 
-// Copy real-space moments between host and device.
+// Copy mint/real/fourier data moments between host and device.
+void memcpy_mint_dev(mint *dest, mint *src, mint dofs, enum memcpy_dir_dev dir);
 void memcpy_real_dev(real *dest, real *src, mint dofs, enum memcpy_dir_dev dir);
-
-// Copy fourier-space moments between host and device.
 void memcpy_fourier_dev(void *dest, void *src, mint dofs, enum memcpy_dir_dev dir);
 
 #endif

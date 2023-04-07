@@ -26,6 +26,8 @@ typedef int mint;
 #define M_PI (3.14159265358979323846)
 #endif
 
+// ID of rank that does simpe I/O:
+#define ioRank 0
 
 // GPU related macros. USE_GPU is passed as a compile-time preprocessor variable.
 #if USE_GPU

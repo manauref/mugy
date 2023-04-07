@@ -26,9 +26,6 @@ typedef double complex fourier;
 #define mpi_mint MPI_INT
 #define fmt_mint "d"
 
-// ID of rank that does simpe I/O:
-#define ioRank 0
-
 // Container for IO instructions
 struct mugy_ioSetup {
   char *inputFile;           // Name of input file.
@@ -163,10 +160,9 @@ void lin2sub_fourier(mint *kxI, mint lin, const struct mugy_fourierGrid grid);
 void get_x(real *x, mint *xI, const struct mugy_realGrid grid);
 void get_kx(real *kx, mint *kxI, const struct mugy_fourierGrid grid);
 
-// Copy real-space data (between host and device, or within a host or device).
+// Copy mint/real/fourier data (between host and device, or within a host or device).
+void memcpy_mint(mint *dest, mint *src, mint numElements, enum memcpy_dir_dev dir);
 void memcpy_real(real *dest, real *src, mint numElements, enum memcpy_dir_dev dir);
-
-// Copy fourier-space data (between host and device, or within a host or device).
 void memcpy_fourier(void *dest, void *src, mint numElements, enum memcpy_dir_dev dir);
 
 // Copy real/fourier array between host and device.

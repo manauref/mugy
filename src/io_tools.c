@@ -5,21 +5,29 @@
 
 #include "mh_io_tools.h"
 
-void r0printf(char *str) {
+void r0printf(char *str, mint rank) {
   // Print string out if this is the zeroth rank.
-  if (myRank == 0) printf(str);
+  if (rank == ioRank) printf(str);
 }
 
 // Print out elements in an array consecutively, separated by a space.
-void arrPrint_mint(const mint *arr, const mint numElements, const char *preStr, const char *postStr) {
+void arrPrintAll_mint(const mint *arr, mint numElements, const char *preStr, const char *postStr) {
   mint maxCharacters = 9999;
   char strOut[maxCharacters];
   arr2str_mint(strOut, arr, numElements, preStr, postStr);
-  r0printf(strOut);
+  printf(strOut);
 }
-void arrPrint_real(const real *arr, const mint numElements, const char *preStr, const char *postStr) {
+void arrPrintAll_real(const real *arr, mint numElements, const char *preStr, const char *postStr) {
   mint maxCharacters = 9999;
   char strOut[maxCharacters];
   arr2str_real(strOut, arr, numElements, preStr, postStr);
-  r0printf(strOut);
+  printf(strOut);
+}
+
+// Only let a single rank print.
+void arrPrintS_mint(const mint *arr, mint numElements, const char *preStr, const char *postStr, mint rank) {
+  if (rank == ioRank) arrPrintAll_mint(arr, numElements, preStr, postStr);
+}
+void arrPrintS_real(const real *arr, mint numElements, const char *preStr, const char *postStr, mint rank) {
+  if (rank == ioRank) arrPrintAll_real(arr, numElements, preStr, postStr);
 }

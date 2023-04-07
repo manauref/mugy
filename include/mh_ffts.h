@@ -36,7 +36,7 @@ struct mugy_ffts {
   struct mugy_fft_ho xy_a;  // 2D FFT of (aliased) x-y planes.
 };
 
-void fft_init(struct mugy_ffts *ffts, struct mugy_grid gridG, struct mugy_grid gridL);
+void fft_init(struct mugy_ffts *ffts, struct mugy_grid gridG, struct mugy_grid gridL, struct mugy_comms comms);
 
 void fft_xy_c2r(struct mugy_ffts *ffts, struct mugy_realArray *fOut, struct mugy_fourierArray *fkIn, enum resource_comp res);
 void fft_xy_r2c(struct mugy_ffts *ffts, struct mugy_fourierArray *fkOut, struct mugy_realArray *fIn, enum resource_comp res);

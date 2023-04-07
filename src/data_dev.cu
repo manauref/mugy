@@ -11,6 +11,9 @@ extern "C" {
 
 // MF 2023/03/30: for some reason we can't use memcpy_dir_dev directly cudaMemcpy.
 // Maybe because of how nvcc handles an enum in C/C++/CUDA. Cast instead.
+void memcpy_mint_dev(mint *dest, mint *src, mint numElements, enum memcpy_dir_dev dir) {
+  checkCudaErrors(cudaMemcpy(dest, src, numElements*sizeof(mint), (cudaMemcpyKind) dir));
+}
 void memcpy_real_dev(real *dest, real *src, mint numElements, enum memcpy_dir_dev dir) {
   checkCudaErrors(cudaMemcpy(dest, src, numElements*sizeof(real), (cudaMemcpyKind) dir));
 }

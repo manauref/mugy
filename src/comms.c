@@ -1,95 +1,116 @@
-/* mugy: mpi_tools
+/* mugy: mpi_comms
 
-   MPI-related operations.
+   Communication-related operations.
 */
 
-#include "mh_mpi_tools.h"
+#include "mh_comms.h"
 #include <string.h>   // e.g. for memcpy.
 
-mint myRank, totNumProcs;  // Rank of this process & total number of processes.
-mint numProcs[nDim+1];     // Processes along x,y,z and species.
-MPI_Comm cartComm;         // Cartesian communicator.
-mint cartRank;             // Rank in cartCOMM.
-
-MPI_Comm *sub1dComm;       // 1D subcommunicators along each direction.
-mint sub1dRank[nDim+1];    // ID (rank) in the 1D spec,Z,X,Y subcommunicators.
-MPI_Comm *sComm, *zComm, *xComm, *yComm;  // Pointers for 1D comms.
-mint sRank, zRank, xRank, yRank;          // Pointers for 1D rank IDs.
-
-MPI_Comm *sub2dComm;   // 2D subcommunicators (e.g. XY comm).
-mint sub2dRank[nDim];  // ID (rank) in the 2D (xy,xz,yz) subcommunicators.
-MPI_Comm *xyComm, *xzComm, *yzComm;  // Pointers for 2D comms.
-mint xyRank, xzRank, yzRank;         // Pointers for 2D rank IDs.
-
-void init_mpi(mint argc, char *argv[]) {
+void comms_init(struct mugy_comms *comms, mint argc, char *argv[]) {
   // Initialize MPI, get rank of this process and total number of processes.
+  comms->world.comm = MPI_COMM_WORLD;
   MPI_Init(&argc, &argv);  // Initialize MPI.
-  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);  // Rank of this MPI process.
-  MPI_Comm_size(MPI_COMM_WORLD, &totNumProcs);  // Number of MPI processes.
+  MPI_Comm_rank(comms->world.comm, &comms->world.rank);  // Rank of this MPI process.
+  MPI_Comm_size(comms->world.comm, &comms->world.size);  // Number of MPI processes.
 }
 
-void init_comms(struct mugy_grid grid, struct mugy_population pop) {
+void comms_sub_init(struct mugy_comms *comms, struct mugy_grid grid, struct mugy_population pop) {
   // Initialize the various sub-communicators needed.
   
   // Check the number of MPI processes is correct.
-  if (prod_mint(grid.mpiProcs,nDim)*pop.mpiProcs != totNumProcs) {
+  if (prod_mint(grid.mpiProcs,nDim)*pop.mpiProcs != comms->world.size) {
     printf(" Number of MPI processes in input file (%d) differs from that in mpirun (%d).\n",
-           prod_mint(grid.mpiProcs,nDim)*pop.mpiProcs, totNumProcs);
+           prod_mint(grid.mpiProcs,nDim)*pop.mpiProcs, comms->world.size);
     abortSimulation(" Terminating...\n");
   }
 
-  // Number of MPI processes along X,Y,Z,s.
-  numProcs[0] = grid.mpiProcs[0];
-  numProcs[1] = grid.mpiProcs[1];
-  numProcs[2] = grid.mpiProcs[2];
-  numProcs[3] = pop.mpiProcs;
-  arrPrint_mint(numProcs,nDim+1, " MPI processes along X,Y,Z,s: ", "\n");
-  r0printf("\n");
+  struct mugy_comms_sub *scomm;  // Temp pointer for ease of notation.
 
-  // MPI_CART boundary conditions. True=periodic.
-  mint cartCommBCs[nDim+1] = {true, true, true, false};
-  // Let MPI assign arbitrary ranks.
-  mint reorder = true;
+  // Finish initializing the world subcomm (coord initialized further down).
+  scomm         = &comms->world; 
+  scomm->dim    = nDim+1;
+  scomm->coord  = alloc_mintArray_ho(scomm->dim);
+  scomm->decomp = alloc_mintArray_ho(scomm->dim);
+  for (mint d=0; d<nDim; d++) scomm->decomp[d] = grid.mpiProcs[d];
+  scomm->decomp[nDim] = pop.mpiProcs;
+  arrPrintS_mint(scomm->decomp,nDim+1, " MPI processes along X,Y,Z,s: ", "\n", comms->world.rank);
+  r0printf("\n", comms->world.rank);
 
-  // Create a 4D Cartesian communicator (3D space + species).
-  // Re-organize the dimensions in s,Z,X,Y order.
-  mint commOrg[nDim+1] = {2,3,1,0};
-  mint numProcsOrg[nDim+1], cartCommBCsOrg[nDim+1];
-  for (mint d=0; d<nDim+1; d++) {
-    numProcsOrg[commOrg[d]] = numProcs[d];
-    cartCommBCsOrg[commOrg[d]] = cartCommBCs[d];
+  // Create a 4D communicator (3D space + species).
+  mint commOrg[nDim+1] = {2,3,1,0};  // Organize the dimensions as s,Z,X,Y.
+  mint bc[nDim+1]      = {true, true, true, false};  // Boundary conditions (true=periodic).
+  mint reorder         = true;  // Let MPI assign arbitrary ranks.
+  comms->sub4d  = (struct mugy_comms_sub *) malloc(sizeof(struct mugy_comms_sub));
+  scomm         = &comms->sub4d[0]; 
+  scomm->dim    = nDim+1;
+  scomm->coord  = alloc_mintArray_ho(scomm->dim);
+  scomm->decomp = alloc_mintArray_ho(scomm->dim);
+  mint decompOrg[nDim+1], bcOrg[nDim+1];
+  for (mint d=0; d<scomm->dim; d++) {
+    scomm->decomp[d]      = comms->world.decomp[d];
+    decompOrg[commOrg[d]] = comms->world.decomp[d];
+    bcOrg[commOrg[d]]     = bc[d];
   }
-  MPI_Cart_create(MPI_COMM_WORLD, nDim+1, numProcsOrg, cartCommBCsOrg, reorder, &cartComm);
+  MPI_Cart_create(comms->world.comm, scomm->dim, decompOrg, bcOrg, reorder, &scomm->comm);
+  MPI_Comm_size(scomm->comm, &scomm->size);
+  MPI_Comm_rank(scomm->comm, &scomm->rank);
+  MPI_Cart_coords(scomm->comm, scomm->rank, scomm->dim, scomm->coord);
+  memcpy_mint(comms->world.coord, scomm->coord, nDim+1, host2host);  // Make coords the same in world.
 
-  // Find my coordinate parameters in the Cartesial topology.
-  MPI_Comm_rank(cartComm, &cartRank);
-  mint cartCoords[nDim+1];
-  MPI_Cart_coords(cartComm, myRank, nDim+1, &cartCoords[0]);
+  // 3D subcommunicator (xyz space, no need for xys, xzs, yzs comms).
+  comms->sub3d = (struct mugy_comms_sub *) malloc(sizeof(struct mugy_comms_sub));
+  for (mint d=nDim; d<nDim+1; d++) {
+    mint remain[nDim+1] = {true,true,true,true};
+    remain[commOrg[d]] = false;  remain[commOrg[nDim+1]] = false;
+
+    scomm            = &comms->sub3d[0]; 
+    scomm->dim       = 3;
+    scomm->coord     = alloc_mintArray_ho(scomm->dim);
+    scomm->decomp    = alloc_mintArray_ho(scomm->dim);
+    for (mint e=0; e<scomm->dim; e++)
+      scomm->decomp[e] = comms->world.decomp[e];
+    MPI_Cart_sub(comms->sub4d[0].comm, remain, &scomm->comm);
+    MPI_Comm_size(scomm->comm, &scomm->size);
+    MPI_Comm_rank(scomm->comm, &scomm->rank);
+    MPI_Cart_coords(scomm->comm, scomm->rank, scomm->dim, scomm->coord);
+  }
+
+  // 2D subcommunicators (no need for xs,ys,zs subcomms at this point).
+  comms->sub2d = (struct mugy_comms_sub *) malloc(nDim*sizeof(struct mugy_comms_sub));
+  for (mint d=nDim-1; d>-1; d--) {
+    mint remain[nDim+1] = {true,true,true,true};
+    remain[commOrg[d]] = false;  remain[commOrg[nDim+1]] = false;
+
+    scomm            = &comms->sub2d[d]; 
+    scomm->dim       = 2;
+    scomm->coord     = alloc_mintArray_ho(scomm->dim);
+    scomm->decomp    = alloc_mintArray_ho(scomm->dim);
+    for (mint e=0; e<scomm->dim; e++)
+      scomm->decomp[e] = comms->world.decomp[e];
+    MPI_Cart_sub(comms->sub4d[0].comm, remain, &scomm->comm);
+    MPI_Comm_size(scomm->comm, &scomm->size);
+    MPI_Comm_rank(scomm->comm, &scomm->rank);
+    MPI_Cart_coords(scomm->comm, scomm->rank, scomm->dim, scomm->coord);
+  }
 
   // 1D subcommunicators. Organize them in s,Z,X,Y, order so processes of a
   // single X-Y plane of a single species are contiguous.
-  sub1dComm = (MPI_Comm *) calloc(nDim+1, sizeof(MPI_Comm));
+  comms->sub1d = (struct mugy_comms_sub *) malloc((nDim+1)*sizeof(struct mugy_comms_sub));
   for (mint d=0; d<nDim+1; d++) {
     mint remain[nDim+1] = {false,false,false,false};
     remain[commOrg[d]] = true;
-    MPI_Cart_sub(cartComm, remain, &sub1dComm[d]);
-    MPI_Comm_rank(sub1dComm[d], &sub1dRank[d]);
-  }
-  xComm = &sub1dComm[0];  yComm = &sub1dComm[1];
-  zComm = &sub1dComm[2];  sComm = &sub1dComm[3];
-  xRank = sub1dRank[0];  yRank = sub1dRank[1];
-  zRank = sub1dRank[2];  sRank = sub1dRank[3];
 
-  // 2D x-y subcommunicators.
-  sub2dComm = (MPI_Comm *) calloc(nDim, sizeof(MPI_Comm));
-  for (mint d=nDim-1; d>-1; d--) {
-    mint remain[nDim+1] = {true,true,true,true};
-    remain[commOrg[nDim+1]] = false;  remain[commOrg[d]] = false;
-    MPI_Cart_sub(cartComm, remain, &sub2dComm[d]);
-    MPI_Comm_rank(sub2dComm[d], &sub2dRank[d]);
+    scomm            = &comms->sub1d[d]; 
+    scomm->dim       = 1;
+    scomm->coord     = alloc_mintArray_ho(scomm->dim);
+    scomm->decomp    = alloc_mintArray_ho(scomm->dim);
+    scomm->decomp[0] = comms->world.decomp[d];
+    MPI_Cart_sub(comms->sub4d[0].comm, remain, &scomm->comm);
+    MPI_Comm_size(scomm->comm, &scomm->size);
+    MPI_Comm_rank(scomm->comm, &scomm->rank);
+    MPI_Cart_coords(scomm->comm, scomm->rank, scomm->dim, scomm->coord);
   }
-  xyComm = &sub2dComm[0];  xzComm = &sub2dComm[1];  yzComm = &sub2dComm[2];
-  xyRank = sub2dRank[0];  xzRank = sub2dRank[1];  yzRank = sub2dRank[2];
+
 }
 
 void distribute1dDOFs(const mint procs, const mint procID, const mint globalDOFs, mint *localDOFs, mint *firstDOF) {
@@ -120,11 +141,13 @@ void distribute1dDOFs(const mint procs, const mint procID, const mint globalDOFs
 
 }
 
-void distributeDOFs(struct mugy_grid globalGrid, struct mugy_population globalPop, struct mugy_grid *localGrid, struct mugy_population *localPop) {
+void distributeDOFs(struct mugy_comms comms, struct mugy_grid globalGrid, struct mugy_population globalPop,
+  struct mugy_grid *localGrid, struct mugy_population *localPop) {
   // Distribute s,Z,X,Y amongst MPI processes.
   
   // Distribute the species.
-  distribute1dDOFs(globalPop.mpiProcs, sRank, globalPop.numSpecies, &localPop->numSpecies, &localPop->globalSpecOff);
+  mint rank_s = comms.sub1d[nDim].rank;
+  distribute1dDOFs(globalPop.mpiProcs, rank_s, globalPop.numSpecies, &localPop->numSpecies, &localPop->globalSpecOff);
   localPop->globalMomOff = 0;
   for (mint s=0; s<localPop->globalSpecOff; s++) localPop->globalMomOff += globalPop.spec[s].numMoments;
   localPop->spec = (struct mugy_species*) calloc(localPop->numSpecies, sizeof(struct mugy_species));
@@ -163,13 +186,14 @@ void distributeDOFs(struct mugy_grid globalGrid, struct mugy_population globalPo
 
   // Distribute the real-space and Fourier-space points. 
   for (mint d=0; d<nDim; d++) {
-    distribute1dDOFs(globalGrid.mpiProcs[d], sub1dRank[d], globalGrid.fG.Nekx[d],
+    mint rank_i = comms.sub1d[d].rank;
+    distribute1dDOFs(globalGrid.mpiProcs[d], rank_i, globalGrid.fG.Nekx[d],
                      &localGrid->fG.Nekx[d], &localGrid->fG.globalOff[d]);
-    distribute1dDOFs(globalGrid.mpiProcs[d], sub1dRank[d], globalGrid.fG.dual.Nx[d],
+    distribute1dDOFs(globalGrid.mpiProcs[d], rank_i, globalGrid.fG.dual.Nx[d],
                      &localGrid->fG.dual.Nx[d], &localGrid->fG.dual.globalOff[d]);
-    distribute1dDOFs(globalGrid.mpiProcs[d], sub1dRank[d], globalGrid.fGa.Nekx[d],
+    distribute1dDOFs(globalGrid.mpiProcs[d], rank_i, globalGrid.fGa.Nekx[d],
                      &localGrid->fGa.Nekx[d], &localGrid->fGa.globalOff[d]);
-    distribute1dDOFs(globalGrid.mpiProcs[d], sub1dRank[d], globalGrid.fGa.dual.Nx[d],
+    distribute1dDOFs(globalGrid.mpiProcs[d], rank_i, globalGrid.fGa.dual.Nx[d],
                      &localGrid->fGa.dual.Nx[d], &localGrid->fGa.dual.globalOff[d]);
   }
   localGrid->fG.NekxTot      = prod_mint(localGrid->fG.Nekx,nDim);
@@ -207,15 +231,43 @@ void distributeDOFs(struct mugy_grid globalGrid, struct mugy_population globalPo
 
 }
 
-void terminate_mpi() {
+void comms_terminate(struct mugy_comms *comms) {
   // Close MPI up, thoroughly.
-  MPI_Barrier(MPI_COMM_WORLD); // To avoid premature deallocations.
+  MPI_Barrier(comms->world.comm); // To avoid premature deallocations.
 
-  for (mint d=0; d<nDim+1; d++) MPI_Comm_free(&sub1dComm[d]);
-  for (mint d=0; d<nDim; d++) MPI_Comm_free(&sub2dComm[d]);
-  free(sub1dComm);  free(sub2dComm);
+  struct mugy_comms_sub *scomm;  // Temp pointer for ease of notation.
 
-  MPI_Comm_free(&cartComm);
+  // Free world subcomm (DON'T FREE THE COMMUNICATOR).
+  scomm = &comms->world;
+  free(scomm->decomp);  free(scomm->coord);
+
+  // Free 4d subcomm.
+  scomm = &comms->sub4d[0];
+  free(scomm->decomp);  free(scomm->coord);
+  MPI_Comm_free(&scomm->comm);
+  free(scomm);
+
+  // Free 3d subcomm.
+  scomm = &comms->sub3d[0];
+  free(scomm->decomp);  free(scomm->coord);
+  MPI_Comm_free(&scomm->comm);
+  free(comms->sub3d);
+
+  // Free 2d subcomms.
+  for (mint d=0; d<nDim; d++) {
+    scomm = &comms->sub2d[d];
+    free(scomm->decomp);  free(scomm->coord);
+    MPI_Comm_free(&scomm->comm);
+  }
+  free(comms->sub2d);
+
+  // Free 1d subcomms.
+  for (mint d=0; d<nDim+1; d++) {
+    scomm = &comms->sub1d[d];
+    free(scomm->decomp);  free(scomm->coord);
+    MPI_Comm_free(&scomm->comm);
+  }
+  free(comms->sub1d);
 
   MPI_Finalize();
 }

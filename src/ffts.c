@@ -14,16 +14,17 @@
        - multi node
 */
 
-#include "mh_mpi_tools.h"
+#include "mh_comms.h"
 #include "mh_ffts.h"
 #include "mh_data.h"
 #include <string.h>   // e.g. for memcpy.
 
-void fft_init(struct mugy_ffts *ffts, struct mugy_grid gridG, struct mugy_grid gridL) {
+void fft_init(struct mugy_ffts *ffts, struct mugy_grid gridG, struct mugy_grid gridL, struct mugy_comms comms) {
 
   mugy_fftw_mpi_init();
 
   // ....... Setup for 2D FFTs of a single field ......... //
+  struct mugy_comms_sub *scomm = &comms.sub2d[0];
   // Get local data size.
   const mint fftDim = 2;
   ptrdiff_t fftSizek[fftDim], fftNum, blockSizek0;
@@ -32,7 +33,7 @@ void fft_init(struct mugy_ffts *ffts, struct mugy_grid gridG, struct mugy_grid g
   fftNum      = gridL.fG.Nekx[2];
   blockSizek0 = gridL.fG.Nekx[0];
   ptrdiff_t alloc_local, local_Nekx0, local_kx0_start;
-  alloc_local = mugy_fftw_mpi_local_size_many(fftDim, fftSizek, fftNum, blockSizek0, *xyComm, &local_Nekx0, &local_kx0_start);
+  alloc_local = mugy_fftw_mpi_local_size_many(fftDim, fftSizek, fftNum, blockSizek0, scomm->comm, &local_Nekx0, &local_kx0_start);
 
   // Allocate buffers.
   ffts->xy.kbuf = mugy_fftw_alloc_complex(alloc_local);
@@ -45,11 +46,11 @@ void fft_init(struct mugy_ffts *ffts, struct mugy_grid gridG, struct mugy_grid g
   blockSize0in  = gridL.fG.dual.Nx[0];
   blockSize0out = blockSizek0;
   ffts->xy.plan_r2c = mugy_fftw_mpi_plan_many_dft_r2c(fftDim, fftSize, fftNum, blockSize0in, blockSize0out,
-                                                      ffts->xy.rbuf, ffts->xy.kbuf, *xyComm, FFTW_ESTIMATE);
+                                                      ffts->xy.rbuf, ffts->xy.kbuf, scomm->comm, FFTW_ESTIMATE);
   blockSize0in  = blockSizek0;
   blockSize0out = gridL.fG.dual.Nx[0];
   ffts->xy.plan_c2r = mugy_fftw_mpi_plan_many_dft_c2r(fftDim, fftSize, fftNum, blockSize0in, blockSize0out,
-                                                      ffts->xy.kbuf, ffts->xy.rbuf, *xyComm, FFTW_ESTIMATE);
+                                                      ffts->xy.kbuf, ffts->xy.rbuf, scomm->comm, FFTW_ESTIMATE);
 
   ffts->xy.normFac = 1./((real)gridG.fG.dual.NxyTot);
   ffts->xy.forwardNorm = false;  // This FFT is only used for ICs given in real-space.

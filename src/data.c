@@ -82,6 +82,9 @@ void get_kx(real *kx, mint *kxI, const struct mugy_fourierGrid grid) {
 }
 
 // Functions that copy memory on the host.
+void memcpy_mint_ho(mint *dest, mint *src, mint numElements) {
+  memcpy(dest, src, numElements*sizeof(mint));
+}
 void memcpy_real_ho(real *dest, real *src, mint numElements) {
   memcpy(dest, src, numElements*sizeof(real));
 }
@@ -90,6 +93,13 @@ void memcpy_fourier_ho(fourier *dest, fourier *src, mint numElements) {
 }
 
 // Functions that copy memory between host and device.
+void memcpy_mint(mint *dest, mint *src, mint numElements, enum memcpy_dir_dev dir) {
+#ifdef USE_GPU
+  if (dir != host2host)
+    return memcpy_mint_dev(dest, src, numElements, dir);
+#endif
+  memcpy_mint_ho(dest, src, numElements);
+}
 void memcpy_real(real *dest, real *src, mint numElements, enum memcpy_dir_dev dir) {
 #ifdef USE_GPU
   if (dir != host2host)

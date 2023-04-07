@@ -15,7 +15,7 @@
 #include "mh_utilities.h"
 
 // MPI-related infrastructure.
-#include "mh_mpi_tools.h"
+#include "mh_comms.h"
 
 // IO module.
 #include "mh_io_tools.h"

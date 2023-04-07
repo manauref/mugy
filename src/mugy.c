@@ -8,6 +8,7 @@
 int main(int argc, char *argv[]) {
 
   struct mugy_grid gridG, gridL;
+  struct mugy_comms comms;
   struct mugy_timeSetup timePars;
   struct mugy_population popG, popL;
   struct mugy_fieldParameters fieldPars; 
@@ -15,26 +16,26 @@ int main(int argc, char *argv[]) {
   struct mugy_ffts fftMan;
   struct mugy_timeState tState;
 
-  init_mpi(argc, argv);  // Initialize MPI interface.
+  comms_init(&comms, argc, argv);  // Initialize MPI interface.
 
-  r0printf("\n     --> Welcome to mugy <--    \n\n" );
+  r0printf("\n     --> Welcome to mugy <--    \n\n", comms.world.rank );
 
   // Run the full initialization.
-  init_all(argc, argv, &ioMan, &gridG, &gridL, &timePars, &popG, &popL, &fieldPars, &fftMan);
+  init_all(argc, argv, &comms, &ioMan, &gridG, &gridL, &timePars, &popG, &popL, &fieldPars, &fftMan);
 
   MPI_Barrier(MPI_COMM_WORLD); // To avoid premature deallocations.
 
   fft_terminate(&fftMan);  // Deallocate FFT memory.
   io_terminate(&ioMan);  // Close IO interface. Need to do it before freeing fields.
 
-  free_fields();
+//  free_fields();
   free_grid(&gridL);
   free_population(&popL);
   free_grid(&gridG);
   free_population(&popG);
 
-  terminate_mpi();  // Finalize MPI.
-//  terminate_all();  // Call termination of all parts of mugy.
+  comms_terminate(&comms);  // Finalize communications.
+  terminate_all();  // Call termination of all parts of mugy.
 
   return 0;
 }
