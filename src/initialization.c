@@ -446,12 +446,12 @@ void set_initialCondition(struct mugy_grid globalGrid, struct mugy_grid localGri
       fxy_rp++;
     }
 
-//    fft_xy_r2c(fftMan, &fxy_k, &fxy_r, hostComp);
-//    fft_xy_c2r(fftMan, &fxy_r, &fxy_k, hostComp);
-//
-//    struct mugy_ad_file *fh = ad_create_file_realArray(ioman, "arr", globalGrid, localGrid);
-//    write_realArray(NULL, "arr", fh, fxy_r);
-//    io_close_file(fh);
+    fft_xy_r2c(fftMan, &fxy_k, &fxy_r, hostComp);
+    fft_xy_c2r(fftMan, &fxy_r, &fxy_k, hostComp);
+
+    struct mugy_ad_file *fh = ad_create_file_realArray(ioman, "arr", globalGrid, localGrid);
+    write_realArray(NULL, "arr", fh, fxy_r);
+    io_close_file(fh);
 
     free_realArray(&fxy_r, hostMem);
     free_fourierArray(&fxy_k, hostMem);

@@ -25,10 +25,10 @@ int main(int argc, char *argv[]) {
 
   MPI_Barrier(MPI_COMM_WORLD); // To avoid premature deallocations.
 
-  fft_terminate(&fftMan);  // Deallocate FFT memory.
   io_terminate(&ioMan);  // Close IO interface. Need to do it before freeing fields.
+  fft_terminate(&fftMan);  // Deallocate FFT memory.
 
-//  free_fields();
+  free_fields();
   free_grid(&gridL);
   free_population(&popL);
   free_grid(&gridG);

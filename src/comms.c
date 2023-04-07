@@ -61,7 +61,7 @@ void comms_sub_init(struct mugy_comms *comms, struct mugy_grid grid, struct mugy
   comms->sub3d = (struct mugy_comms_sub *) malloc(sizeof(struct mugy_comms_sub));
   for (mint d=nDim; d<nDim+1; d++) {
     mint remain[nDim+1] = {true,true,true,true};
-    remain[commOrg[d]] = false;  remain[commOrg[nDim+1]] = false;
+    remain[commOrg[d]] = false;
 
     scomm            = &comms->sub3d[0]; 
     scomm->dim       = 3;
@@ -79,7 +79,7 @@ void comms_sub_init(struct mugy_comms *comms, struct mugy_grid grid, struct mugy
   comms->sub2d = (struct mugy_comms_sub *) malloc(nDim*sizeof(struct mugy_comms_sub));
   for (mint d=nDim-1; d>-1; d--) {
     mint remain[nDim+1] = {true,true,true,true};
-    remain[commOrg[d]] = false;  remain[commOrg[nDim+1]] = false;
+    remain[commOrg[d]] = false;  remain[commOrg[nDim]] = false;
 
     scomm            = &comms->sub2d[d]; 
     scomm->dim       = 2;
