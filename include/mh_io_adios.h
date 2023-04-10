@@ -1,7 +1,8 @@
 /* mugy: mh_io_adios.h
-
-   Header file for ADIOS IO module.
-*/
+ *
+ * Header file for ADIOS IO module.
+ *
+ */
 
 #ifndef MUGY_IO_ADIOS
 #define MUGY_IO_ADIOS
@@ -9,6 +10,8 @@
 #include "adios2_c.h"
 #include "mh_userFLAGS.h"
 #include "mh_data.h"
+#include "mh_grid.h"
+#include "mh_population.h"
 #include "mh_utilities.h"
 
 #if USE_SINGLE_PRECISION
@@ -20,6 +23,15 @@
 #endif
 
 #define adios_mint adios2_type_int32_t
+
+// Container for IO instructions
+struct mugy_ioSetup {
+  char *inputFile;           // Name of input file.
+  char *outputDir;           // Address of output directory.
+  char *restartDir;          // Address of restart directory.
+  bool isRestart;            // Is this simulation a restart of a previous one?
+  bool outToOldDir;          // If restart, output to directory of previous run?
+};
 
 struct mugy_ad_file {
   char *fname;           // File name.

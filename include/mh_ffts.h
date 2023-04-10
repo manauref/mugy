@@ -1,25 +1,27 @@
 /* mugy: mh_ffts.h
-
-   Module with FFT operators. We do host FFTs with FFTW
-   and device FFTs with cuFFT. We also anticipate 3 modes
-   depending on MPI decomposition (recall data is organized
-   as (z,x,y) in row-major order):
-     FFTW:
-       - serial or MPI decomposed along x.
-       - MPI decomposed along y.
-       - MPI decomposed alog x and y.
-     cuFFT (don't yet know the data layout):
-       - single GPU
-       - single node
-       - multi node
-
-*/
+ *
+ * Module with FFT operators. We do host FFTs with FFTW
+ * and device FFTs with cuFFT. We also anticipate 3 modes
+ * depending on MPI decomposition (recall data is organized
+ * as (z,x,y) in row-major order):
+ *   FFTW:
+ *     - serial or MPI decomposed along x.
+ *     - MPI decomposed along y.
+ *     - MPI decomposed alog x and y.
+ *   cuFFT (don't yet know the data layout):
+ *     - single GPU
+ *     - single node
+ *     - multi node
+ */
 
 #ifndef MUGY_FFTS
 #define MUGY_FFTS
 
 #include "mh_userFLAGS.h"
 #include "mh_fftw_wrap.h"
+#include "mh_comms.h"
+#include "mh_data.h"
+#include "mh_grid.h"
 
 // Info needed for a single FFT on the host.
 struct mugy_fft_ho {

@@ -1,8 +1,8 @@
 /* mugy: mh_comms.h
-
-   MPI-related operations.
-*/
-
+ *
+ * MPI-related operations.
+ *
+ */
 #ifndef MUGY_MPI_TOOLS 
 #define MUGY_MPI_TOOLS 
 
@@ -10,6 +10,8 @@
 #include <stdbool.h>  // e.g. for bool, true, false.
 #include "mh_utilities.h"
 #include "mh_data.h"
+#include "mh_grid.h"
+#include "mh_population.h"
 #include "mh_alloc.h"
 #include "mh_io_tools.h"
 

@@ -1,7 +1,8 @@
 /* mugy: mh_utilities.h
-
-   Utility functions used in mugy.
-*/
+ *
+ * Utility functions used in mugy.
+ *
+ */
 
 #ifndef MUGY_UTILITIES
 #define MUGY_UTILITIES

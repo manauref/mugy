@@ -1,12 +1,15 @@
 /* mugy: mh_alloc.h
-
-   Functions used to allocate arrays.
-*/
+ *
+ * Functions used to allocate arrays.
+ *
+ */
 
 #ifndef MUGY_ALLOC
 #define MUGY_ALLOC
 
 #include "mh_data.h"
+#include "mh_grid.h"
+#include "mh_population.h"
 #include "mh_utilities.h"
 
 // Wrappers to basic functions that allocate plain arrays on host.

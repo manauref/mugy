@@ -1,7 +1,8 @@
 /* mugy: mh_finalize.h
-
-   Header file for termination functions.
-*/
+ *
+ * Header file for termination functions.
+ * 
+ */
 
 #ifndef MUGY_FINALIZE
 #define MUGY_FINALIZE

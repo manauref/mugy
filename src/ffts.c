@@ -14,9 +14,7 @@
        - multi node
 */
 
-#include "mh_comms.h"
 #include "mh_ffts.h"
-#include "mh_data.h"
 #include <string.h>   // e.g. for memcpy.
 
 void fft_init(struct mugy_ffts *ffts, struct mugy_grid gridG, struct mugy_grid gridL, struct mugy_comms comms) {

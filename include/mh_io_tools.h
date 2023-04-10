@@ -1,7 +1,8 @@
 /* mugy: mh_io_tools.h
-
-   IO module header file.
-*/
+ *
+ * IO module header file.
+ *
+ */
 
 #ifndef MUGY_IO_TOOLS 
 #define MUGY_IO_TOOLS 

@@ -1,13 +1,18 @@
 /* mugy: mh_initialization.h
-
-   Utility functions used in mugy.
-*/
+ *
+ * Utility functions used in mugy.
+ *
+ */
 
 #ifndef MUGY_INITIALIZATION
 #define MUGY_INITIALIZATION
 
 #include "mh_data.h"
+#include "mh_grid.h"
+#include "mh_population.h"
+#include "mh_field.h"
 #include "mh_ffts.h"
+#include "mh_timestepping.h"
 
 // Read a real variable from input file. Need this function to support
 // reading floats and doubles with the same function call.

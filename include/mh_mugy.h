@@ -1,15 +1,14 @@
-/* 
-   mugy (header file)
-   A gyrofluid code for multiscale simulations.
+/* mugy: mh_mugy.h
+ *
+ * mugy (header file)
+ * A gyrofluid code for multiscale simulations.
 
-   This file contains global macros and inclusion of various header files.
-*/
+ * This file contains global macros and inclusion of various header files.
+ *
+ */
 
 // Pre-processor flags.
 #include "mh_userFLAGS.h"
-
-// Global parameters.
-#include "mh_parameters.h"
 
 // Generic utility functions (with few or no dependencies).
 #include "mh_utilities.h"
@@ -23,11 +22,23 @@
 // Data structures specific to mugy.
 #include "mh_data.h"
 
+// Grid object and its methods.
+#include "mh_grid.h"
+
+// Population object and functions to manipulate it.
+#include "mh_population.h"
+
+// Field object and methods to query/modify it.
+#include "mh_field.h"
+
 // Functions that allocate mugy data.
 #include "mh_alloc.h"
 
 // Functions used to initialize the simulation.
 #include "mh_initialization.h"
+
+// Time integration objections and functions.
+#include "mh_timestepping.h"
 
 // Module in charge of closing mugy sim.
 #include "mh_finalize.h"

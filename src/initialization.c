@@ -4,7 +4,6 @@
 */
 
 #include <string.h>   // e.g. for strcat, strlen.
-#include "mh_parameters.h"
 #include "mh_utilities.h"
 #include "mh_alloc.h"
 #include "mh_comms.h"
@@ -13,6 +12,7 @@
 #include "mh_initialization_dev.h"
 #include <complex.h>  /* Needed by some fscanf below. */
 #include "mh_data.h"
+#include "mh_grid.h"
 
 // Read an variable from input file.
 void readFileVar_mint(FILE *fp, const mint numElements, mint *var) {
