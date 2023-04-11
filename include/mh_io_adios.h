@@ -9,6 +9,7 @@
 
 #include "adios2_c.h"
 #include "mh_userFLAGS.h"
+#include "mh_comms.h"
 #include "mh_data.h"
 #include "mh_grid.h"
 #include "mh_population.h"
@@ -49,7 +50,7 @@ struct mugy_ioManager {
 };
 
 // Start the IO interface.
-void init_io(struct mugy_ioManager *ioman);
+struct mugy_ioManager *io_init(struct mugy_comms comms); 
 
 // Create a file holding global real(Fourier)Arrays.
 struct mugy_ad_file *ad_create_mugy_array_file(struct mugy_ioManager *ioman, char* fname,

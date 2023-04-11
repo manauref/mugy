@@ -17,10 +17,15 @@ void ad_check_error(const int error, const char *message) {
   if (error) abortSimulation(message);
 }
 
-void init_io(struct mugy_ioManager *ioman) {
+struct mugy_ioManager *io_init(struct mugy_comms comms) {
+  // Allocate IO manager.
+  struct mugy_ioManager *ioman = (struct mugy_ioManager *) malloc(sizeof(struct mugy_ioManager));
+
   // Initialize ADIOS IO.
-  ioman->ctx = adios2_init_mpi(MPI_COMM_WORLD);
+  ioman->ctx = adios2_init_mpi(comms.world.comm);
   ad_check_handler(ad_check_handler, " ADIOS: Error initiating.");
+
+  return ioman;
 }
 
 struct mugy_ad_file *ad_create_mugy_array_file(struct mugy_ioManager *ioman, char* fname,
@@ -205,4 +210,6 @@ void io_terminate(struct mugy_ioManager *ioman) {
 
   adios2_error ioerr = adios2_finalize(ioman->ctx);
   ad_check_error(ioerr, " ADIOS: Error finalizing.");
+
+  free(ioman);
 }

@@ -23,7 +23,7 @@ struct mugy_comms {
   struct mugy_comms_sub *sub1d, *sub2d, *sub3d, *sub4d; // 1D, 2D, 3D, 4d subcomms.
 };
 
-void comms_init(struct mugy_comms *comms, mint argc, char *argv[]);  // Initialize MPI.
+struct mugy_comms *comms_init(mint argc, char *argv[]);  // Initialize MPI.
 
 // Initialize sub-communicators.
 void comms_sub_init(struct mugy_comms *comms, struct mugy_grid grid, struct mugy_population pop);

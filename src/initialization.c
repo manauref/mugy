@@ -1,7 +1,8 @@
 /* mugy: initialization.c
-   
-   Functions used to initialize the simulation.
-*/
+ *
+ * Functions used to initialize the simulation.
+ *
+ */
 
 #include <string.h>   // e.g. for strcat, strlen.
 #include "mh_utilities.h"
@@ -248,6 +249,11 @@ void read_inputs(mint argc, char *argv[], struct mugy_ioSetup *ioSet, struct mug
 
 }
 
+// Initialize device
+void device_init(struct mugy_comms *comms) {
+  device_init_dev(comms);
+}
+
 void init_global_grids(struct mugy_grid *globalGrid, mint rank) {
   // Set number of cells in de-aliased, aliased and real space global grids.
 
@@ -489,39 +495,6 @@ void set_initialCondition(struct mugy_grid globalGrid, struct mugy_grid localGri
     mugy_array_hodevXfer(&momk, host2device);
   }
 
-}
-
-void init_all(mint argc, char *argv[], struct mugy_comms *comms, struct mugy_ioManager *ioman,
-  struct mugy_grid *gridG, struct mugy_grid *gridL, struct mugy_timeSetup *timePars,
-  struct mugy_population *popG, struct mugy_population *popL,
-  struct mugy_fieldParameters *fieldPars, struct mugy_ffts *fftMan) {
-  // Run the full initialization.
-
-  // Read inputs (from command line arguments and input file).
-  read_inputs(argc, argv, &ioman->setup, gridG, timePars, popG, fieldPars, comms->world.rank);
-
-#ifdef USE_GPU
-  // Initialize devices (GPUs) if any.
-  init_dev(comms->world.rank);
-#endif
-
-  init_io(ioman);  // Initialize IO interface.
-
-  comms_sub_init(comms, *gridG, *popG);  // Initialize sub-communicators.
-
-  // Set the number of cells in Fourier space and aliased real space.
-  init_global_grids(gridG, comms->world.rank);
-
-  // Decompose the x,y,z,s domains amongst MPI processes.
-  distributeDOFs(*comms, *gridG, *popG, gridL, popL);
-
-  allocate_dynfields(*gridL, popL);  // Allocate dynamic fields.
-
-  fft_init(fftMan, *gridG, *gridL, *comms);  // Initialize FFT infrastructure.
-
-  setup_files(ioman, *gridG, *gridL, *popG, *popL);  // Setup IO files.
-
-  set_initialCondition(*gridG, *gridL, *popG, popL, fftMan, ioman);  // Impose ICs.
 }
 
 void free_fields() {

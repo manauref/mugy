@@ -10,12 +10,14 @@
 #include "mh_io_tools.h"
 #include <string.h>   // e.g. for memcpy.
 
-void comms_init(struct mugy_comms *comms, mint argc, char *argv[]) {
+struct mugy_comms *comms_init(mint argc, char *argv[]) {
   // Initialize MPI, get rank of this process and total number of processes.
+  struct mugy_comms *comms = (struct mugy_comms *) malloc(sizeof(struct mugy_comms));
   comms->world.comm = MPI_COMM_WORLD;
   MPI_Init(&argc, &argv);  // Initialize MPI.
   MPI_Comm_rank(comms->world.comm, &comms->world.rank);  // Rank of this MPI process.
   MPI_Comm_size(comms->world.comm, &comms->world.size);  // Number of MPI processes.
+  return comms;
 }
 
 void comms_sub_init(struct mugy_comms *comms, struct mugy_grid grid, struct mugy_population pop) {
@@ -272,6 +274,8 @@ void comms_terminate(struct mugy_comms *comms) {
     MPI_Comm_free((MPI_Comm*) &scomm->comm);
   }
   free(comms->sub1d);
+
+  free(comms);
 
   MPI_Finalize();
 }

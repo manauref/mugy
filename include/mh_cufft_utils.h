@@ -48,6 +48,7 @@
  */
 
 #pragma once
+#include <stdio.h>    // e.g. for printf.
 
 // CUDA API error checking
 #ifndef CUDA_RT_CALL
@@ -55,7 +56,7 @@
     {                                                                                                                  \
         auto status = static_cast<cudaError_t>( call );                                                                \
         if ( status != cudaSuccess )                                                                                   \
-            fprintf( stderr,                                                                                           \
+            printf(                                                                                                    \
                      "ERROR: CUDA RT call \"%s\" in line %d of file %s failed "                                        \
                      "with "                                                                                           \
                      "%s (%d).\n",                                                                                     \
@@ -73,7 +74,7 @@
     {                                                                                                                  \
         auto status = static_cast<cufftResult>( call );                                                                \
         if ( status != CUFFT_SUCCESS )                                                                                 \
-            fprintf( stderr,                                                                                           \
+            printf(                                                                                                    \
                      "ERROR: CUFFT call \"%s\" in line %d of file %s failed "                                          \
                      "with "                                                                                           \
                      "code (%d).\n",                                                                                   \

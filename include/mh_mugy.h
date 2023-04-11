@@ -37,6 +37,9 @@
 // Functions used to initialize the simulation.
 #include "mh_initialization.h"
 
+// FFT operators.
+#include "mh_ffts.h"
+
 // Time integration objections and functions.
 #include "mh_timestepping.h"
 

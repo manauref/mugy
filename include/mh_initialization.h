@@ -3,9 +3,7 @@
  * Utility functions used in mugy.
  *
  */
-
-#ifndef MUGY_INITIALIZATION
-#define MUGY_INITIALIZATION
+#pragma once
 
 #include "mh_data.h"
 #include "mh_grid.h"
@@ -23,18 +21,21 @@ void readFileVar_mint(FILE *fp, const mint numElements, mint *var);
 void readFileSpeciesPar_mint(mint **var, FILE *fp, const mint sIdx, const mint numSpecies, const mint *numElements);
 void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint numSpecies, const mint *numElements);
 
+void read_inputs(mint argc, char *argv[], struct mugy_ioSetup *ioSet, struct mugy_grid *grid, struct mugy_timeSetup *time,
+                 struct mugy_population *pop, struct mugy_fieldParameters *field, mint rank);
+
+void device_init(struct mugy_comms *comms);
+
 // Allocate time dependent fields needed.
 void allocate_dynfields(struct mugy_grid localGrid, struct mugy_population *localPop);
 
-// Run the full initialization.
-void init_all(mint argc, char *argv[], struct mugy_comms *comms, struct mugy_ioManager *ioman,
-  struct mugy_grid *gridG, struct mugy_grid *gridL, struct mugy_timeSetup *timePars,
-  struct mugy_population *popG, struct mugy_population *popL,
-  struct mugy_fieldParameters *fieldPars, struct mugy_ffts *fftMan);
+void init_global_grids(struct mugy_grid *globalGrid, mint rank);
+
+void set_initialCondition(struct mugy_grid globalGrid, struct mugy_grid localGrid, struct mugy_population globalPop,
+  struct mugy_population *localPop, struct mugy_ffts *fftMan, struct mugy_ioManager *ioman);
 
 // Deallocate fields.
 void free_fields();
 
 void free_grid(struct mugy_grid *grid); // Free arrays in grids.
 void free_population(struct mugy_population *pop);  // Free arrays in population struct.
-#endif

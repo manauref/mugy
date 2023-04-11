@@ -1,14 +1,12 @@
 /* mugy: mh_initialization_dev.h
-
-   Functions used to initialize devices (GPUs).
-*/
-
-#ifndef MUGY_INITIALIZATION_DEV
-#define MUGY_INITIALIZATION_DEV
+ *
+ * Functions used to initialize devices (GPUs).
+ *
+ */
+#pragma once
 
 #include "mh_macros.h"
+#include "mh_comms.h"
 
 // Run the device initialization.
-void init_dev(mint mpirank);
-
-#endif
+void device_init_dev(struct mugy_comms *comms);
