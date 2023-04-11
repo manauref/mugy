@@ -3,6 +3,8 @@
  * Wrap FFTW functions depending on precision.
  *
  */
+#pragma once
+
 #include <fftw3-mpi.h>
 #include "mh_macros.h"
 

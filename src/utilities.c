@@ -76,4 +76,9 @@ real* getArray_real(real *arr, const mint *numElem, const mint i) {
   return newPtr+off;
 }
 
+//MUGY_CU_DH static inline mint mugy_div_up_mint(int a, int b) {
+//  // Divide mint a by mint b rounding up.
+//  return (a%b != 0) ? (a/b+1) : (a/b);
+//}
+
 

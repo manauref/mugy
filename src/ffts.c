@@ -98,11 +98,10 @@ struct mugy_ffts *fft_init(struct mugy_grid gridG, struct mugy_grid gridL, struc
 void fft_xy_c2r(struct mugy_ffts *ffts, struct mugy_array *fOut, struct mugy_array *fkIn, enum resource_comp res) {
 #if USE_GPU
 //  if (res == deviceComp)
-//    return mugy_fft_xy_c2r_dev(fOut, fkIn);
+//    return mugy_fft_xy_c2r_dev(ffts->dev, fOut, fkIn);
 #endif
   
   struct mugy_fft_ho *cfft = ffts->ho->xy;  // Temp pointer for convenience.
-
 
   // Copy data into buffer.
   memcpy_fourier(cfft->kbuf, fkIn->ho, fkIn->nelem, host2host);

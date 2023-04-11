@@ -22,6 +22,7 @@ const cudaDataType mugy_cufft_executiontype = CUDA_C_64F;
 #endif
 
 typedef cufftHandle mugy_cufft_plan;
+typedef cudaStream_t mugy_custream;
 
 // Info needed for a single FFT on the device.
 struct mugy_fft_dev {
@@ -29,8 +30,8 @@ struct mugy_fft_dev {
   real *rbuf;                // Real-space buffer (on device).
   real normFac;              // Normalization.
   bool forwardNorm;          // Normalize in r2c (true) or c2r (false) FFT.
-//  mugy_cufft_plan plan_r2c, plan_c2r;  // Plans.
-  cufftHandle plan_r2c, plan_c2r;  // Plans.
+  mugy_cufft_plan plan_r2c, plan_c2r;  // Plans.
+  mugy_custream stream;
 };
 
 struct mugy_fft_fam_dev {

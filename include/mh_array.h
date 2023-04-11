@@ -1,10 +1,9 @@
-/* mugy: array.c
+/* mugy: mh_array.h
  *  
  * Methods to allocate, use and free mugy_arrays.
  *
  */
-#ifndef MUGY_ARRAY
-#define MUGY_ARRAY
+#pragma once
 
 #include "mh_macros.h"
 #include <stddef.h>
@@ -35,5 +34,3 @@ void mugy_array_hodevXfer(struct mugy_array *arr, enum memcpy_dir_dev dir);
 
 // Scale an array by a factor 'fac'.
 void mugy_array_scale(struct mugy_array *arr, real fac, enum resource_comp res);
-
-#endif

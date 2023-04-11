@@ -35,7 +35,7 @@ ifeq ($(NVCC_TEST),nvcc)
     CUDA_LIBS = -L${CUDA_LIB} -lcufft
     CUDAFLAGS = -DUSE_GPU=$(USE_GPU) ${NVCCFLAGS}
     NVCC = ${NVCCCOMPILER}
-    CUDART = -lcudart -lcudadevrt
+    CUDART = -lcudart -lcudadevrt -lstdc++
     CFLAGS_DEV = -DUSE_GPU=$(USE_GPU) 
 else
     USE_GPU = false
@@ -73,7 +73,7 @@ LIBS =
 #[ Define the C source files.
 SRCS = data.c alloc.c array.c grid.c population.c ffts.c initialization.c io_adios.c io_tools.c comms.c mugy.c utilities.c finalize.c
 ifeq ($(USE_GPU),true)
-    SRCS_DEV = initialization_dev.cu alloc_dev.cu data_dev.cu ffts_dev.cu
+    SRCS_DEV = initialization_dev.cu alloc_dev.cu data_dev.cu array_dev.cu ffts_dev.cu
 else
     SRCS_DEV =
 endif

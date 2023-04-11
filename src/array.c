@@ -5,6 +5,7 @@
  */
 
 #include "mh_array.h"
+#include "mh_array_dev.h"
 #include "mh_alloc.h"
 #include "mh_fourier_ho.h"
 #include "mh_data.h"
@@ -47,10 +48,10 @@ void mugy_array_hodevXfer(struct mugy_array *arr, enum memcpy_dir_dev dir) {
 
 // Functions that scale real(Fourier)Arrays by a constant.
 void mugy_array_scale(struct mugy_array *arr, real fac, enum resource_comp res) {
-//#ifdef USE_GPU
-//  if (res == deviceComp)
-//    return mugy_array_scale_dev(arr, fac, res);
-//#endif
+#ifdef USE_GPU
+  if (res == deviceComp)
+    return mugy_array_scale_dev(arr, fac);
+#endif
 
   real *fk = arr->ho;
   for (mint linIdx=0; linIdx<arr->nelem; linIdx++) {

@@ -431,8 +431,8 @@ void set_initialCondition(struct mugy_grid globalGrid, struct mugy_grid localGri
     //......................................................
     // FFT test
     struct mugy_array fxy_r, fxy_k;
-    mugy_array_alloc(&fxy_r, real_enum, grid->NxTot, hostMem);
-    mugy_array_alloc(&fxy_k, fourier_enum, localGrid.fG.NekxTot, hostMem);
+    mugy_array_alloc(&fxy_r, real_enum, grid->NxTot, hostAndDeviceMem);
+    mugy_array_alloc(&fxy_k, fourier_enum, localGrid.fG.NekxTot, hostAndDeviceMem);
 
     // Assign real array to a linear combo of sines and cosines.
     real *fxy_rp = fxy_r.ho;
@@ -453,12 +453,17 @@ void set_initialCondition(struct mugy_grid globalGrid, struct mugy_grid localGri
     fft_xy_r2c(fftMan, &fxy_k, &fxy_r, hostComp);
     fft_xy_c2r(fftMan, &fxy_r, &fxy_k, hostComp);
 
+//    mugy_array_hodevXfer(&fxy_r, host2device);
+//    fft_xy_r2c(fftMan, &fxy_k, &fxy_r, deviceComp);
+//    fft_xy_c2r(fftMan, &fxy_r, &fxy_k, deviceComp);
+//    mugy_array_hodevXfer(&fxy_r, device2host);
+
     struct mugy_ad_file *fh = ad_create_mugy_array_file(ioman, "arr", globalGrid, localGrid, real_enum);
     write_mugy_array(NULL, "arr", fh, fxy_r);
     io_close_file(fh);
 
-    mugy_array_free(&fxy_r, hostMem);
-    mugy_array_free(&fxy_k, hostMem);
+    mugy_array_free(&fxy_r, hostAndDeviceMem);
+    mugy_array_free(&fxy_k, hostAndDeviceMem);
     //......................................................
 
     mugy_array_free(&momIC, hostMem);

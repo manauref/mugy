@@ -72,8 +72,8 @@ enum mugy_datatype {mint_enum, real_enum, fourier_enum};
 
 #include <cuda_runtime.h>
 
-#define CU_DH __device__ __host__
-#define CU_D __device__
+#define MUGY_CU_DH __device__ __host__
+#define MUGY_CU_D __device__
 
 // Directions of memcopy in host/device memory.
 enum memcpy_dir_dev {
@@ -87,8 +87,8 @@ enum memcpy_dir_dev {
 
 #else
 
-#define CU_DH
-#define CU_D
+#define MUGY_CU_DH
+#define MUGY_CU_D
 
 // Directions of memcopy in host/device memory.
 enum memcpy_dir_dev {
