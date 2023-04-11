@@ -7,11 +7,7 @@
 #ifndef MUGY_IO_TOOLS 
 #define MUGY_IO_TOOLS 
 
-#include <string.h>   // e.g. for memcpy.
-#include "mh_utilities.h"
-#include "mh_data.h"
-#include "mh_comms.h"
-#include "mh_io_adios.h"
+#include "mh_macros.h"
 
 // Print string out if this is the zeroth rank.
 void r0printf(char *str, mint rank);

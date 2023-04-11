@@ -1,11 +1,13 @@
 /* mugy: data.c
-   
-   Parameters and fields used throughout mugy.
-*/
+ *  
+ * Parameters and fields used throughout mugy.
+ *
+ */
 
 #include "mh_data.h"
 #include "mh_data_dev.h"
-#include <string.h>
+#include <string.h>  // For memcpy.
+#include "mh_fourier_ho.h"
 
 // Functions that copy memory on the host.
 void memcpy_mint_ho(mint *dest, mint *src, mint numElements) {
@@ -16,6 +18,9 @@ void memcpy_real_ho(real *dest, real *src, mint numElements) {
 }
 void memcpy_fourier_ho(fourier *dest, fourier *src, mint numElements) {
   memcpy(dest, src, numElements*sizeof(fourier));
+}
+void *mugy_memcpy_ho(void *dest, void *src, size_t sz) {
+  return memcpy(dest, src, sz);
 }
 
 // Functions that copy memory between host and device.
@@ -42,44 +47,10 @@ void memcpy_fourier(void *dest, void *src, mint numElements, enum memcpy_dir_dev
   memcpy_fourier_ho(dest, src, numElements);
 }
 
-// Functions that copy real(Fourier)Arrays betwen host and device.
-void hodevXfer_realArray(struct mugy_realArray *arr, enum memcpy_dir_dev dir) {
+void *mugy_memcpy(void *dest, void *src, size_t sz, enum memcpy_dir_dev dir) {
 #ifdef USE_GPU
-  if (dir == host2device)
-    memcpy_real_dev(arr->dev, arr->ho, arr->nelem, dir);
-  else if (dir == device2host)
-    memcpy_real_dev(arr->ho, arr->dev, arr->nelem, dir);
+  if (dir != host2host)
+    return mugy_memcpy_dev(dest, src, sz, dir);
 #endif
-}
-void hodevXfer_fourierArray(struct mugy_fourierArray *arr, enum memcpy_dir_dev dir) {
-#ifdef USE_GPU
-  if (dir == host2device)
-    memcpy_fourier_dev(arr->dev, arr->ho, arr->nelem, dir);
-  else if (dir == device2host)
-    memcpy_fourier_dev(arr->ho, arr->dev, arr->nelem, dir);
-#endif
-}
-
-// Functions that scale real(Fourier)Arrays by a constant.
-void scale_realArray(struct mugy_realArray *arr, real fac, enum resource_comp res) {
-#ifdef USE_GPU
-//  if (res == deviceComp)
-//    return scale_realArray_dev(arr, fac, res);
-#endif
-
-  real *fk = arr->ho;
-  for (mint linIdx=0; linIdx<arr->nelem; linIdx++) {
-    fk[0] *= fac;  fk++;
-  }
-}
-void scale_fourierArray(struct mugy_fourierArray *arrk, real fac, enum resource_comp res) {
-#ifdef USE_GPU
-//  if (res == deviceComp)
-//    return scale_fourierArray_dev(arr, fac, res);
-#endif
-
-  fourier *fk = arrk->ho;
-  for (mint linIdx=0; linIdx<arrk->nelem; linIdx++) {
-    fk[0] *= fac;  fk++;
-  }
+  return mugy_memcpy_ho(dest, src, sz);
 }

@@ -27,9 +27,9 @@ mint closest_power_of_two(const mint aIn) {
   mint prevDist = abs(prev_power_of_two - aIn);
   mint nextDist = abs(next_power_of_two - aIn);
   if (prevDist < nextDist) {
-    return max(1,prev_power_of_two);
+    return mugy_max(1,prev_power_of_two);
   } else {
-    return min(1,next_power_of_two);
+    return mugy_min(1,next_power_of_two);
   }
 }
 

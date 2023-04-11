@@ -9,6 +9,7 @@
 
 #include "mh_data.h"
 #include "mh_grid.h"
+#include "mh_array.h"
 
 struct mugy_species {
   mint numMoments;   // Number of moments.
@@ -40,11 +41,25 @@ struct mugy_population {
   mint globalMomOff;     // Offset of first moment in this process within global number of moments.
   struct mugy_species *spec;  // Pointer to array of species.
   mint numMomentsTot;    // Total number of moments across all species.
-  struct mugy_fourierArray *momk; // Moments in Fourier space. Possibly multiple copies (e.g. for time stepper).
+  struct mugy_array *momk;  // Moments in Fourier space. Possibly multiple copies (e.g. for time stepper).
 };
+
+// Allocate real-space moment vectors, on host and/or device.
+//   mom: struct mugy_holding the vector of moments.
+//   grid: grid on which to allocate the vector of moments.
+//   pop: population struct mugy_containing the number of species and moments.
+//   res: resource on which to allocate (host, device or both).
+void alloc_realMoments(struct mugy_array *mom, const struct mugy_realGrid grid, const struct mugy_population pop, enum resource_mem res);
+
+// Allocate Fourier-space moment vectors, on host and/or device.
+//   momk: struct mugy_holding the vector of moments.
+//   grid: grid on which to allocate the vector of moments.
+//   pop: population struct mugy_containing the number of species and moments.
+//   res: resource on which to allocate (host, device or both).
+void alloc_fourierMoments(struct mugy_array *momk, const struct mugy_fourierGrid grid, const struct mugy_population pop, enum resource_mem res);
 
 // Return a pointer to the momIdx-th moment of the sIdx-th species in mom/momk.
 real* getMoment_real(struct mugy_realGrid grid, struct mugy_population pop, mint sIdx, mint momIdx, real *momIn);
-fourier* getMoment_fourier(struct mugy_fourierGrid grid, struct mugy_population pop, mint sIdx, mint momIdx, fourier *momkIn);
+void* getMoment_fourier(struct mugy_fourierGrid grid, struct mugy_population pop, mint sIdx, mint momIdx, void *momkIn);
 
 #endif

@@ -1,12 +1,12 @@
 /* mugy: initialization_dev.c
-   
-   Functions used to initialize the device (GPU).
-*/
+ *
+ * Functions used to initialize the device (GPU).
+ *
+ */
 
 extern "C" {
-#include "mh_utilities_dev.h"
-#include "mh_data_dev.h"
 #include "mh_initialization_dev.h"
+#include "mh_utilities_dev.h"
 }
 
 void init_dev(mint mpiRank) {

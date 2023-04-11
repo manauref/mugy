@@ -6,6 +6,8 @@
 #ifndef MUGY_INITIALIZATION_DEV
 #define MUGY_INITIALIZATION_DEV
 
+#include "mh_macros.h"
+
 // Run the device initialization.
 void init_dev(mint mpirank);
 

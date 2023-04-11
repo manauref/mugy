@@ -6,7 +6,7 @@
 #ifndef MUGY_GRID
 #define MUGY_GRID
 
-#include "mh_data.h"
+#include "mh_macros.h"
 
 struct mugy_realGrid {
   mint Nx[nDim];        // Number of cells.

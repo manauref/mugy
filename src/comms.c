@@ -4,6 +4,10 @@
 */
 
 #include "mh_comms.h"
+#include <mpi.h>
+#include "mh_utilities.h"
+#include "mh_alloc.h"
+#include "mh_io_tools.h"
 #include <string.h>   // e.g. for memcpy.
 
 void comms_init(struct mugy_comms *comms, mint argc, char *argv[]) {
@@ -51,7 +55,7 @@ void comms_sub_init(struct mugy_comms *comms, struct mugy_grid grid, struct mugy
     decompOrg[commOrg[d]] = comms->world.decomp[d];
     bcOrg[commOrg[d]]     = bc[d];
   }
-  MPI_Cart_create(comms->world.comm, scomm->dim, decompOrg, bcOrg, reorder, &scomm->comm);
+  MPI_Cart_create(comms->world.comm, scomm->dim, decompOrg, bcOrg, reorder, (MPI_Comm*) &scomm->comm);
   MPI_Comm_size(scomm->comm, &scomm->size);
   MPI_Comm_rank(scomm->comm, &scomm->rank);
   MPI_Cart_coords(scomm->comm, scomm->rank, scomm->dim, scomm->coord);
@@ -69,7 +73,7 @@ void comms_sub_init(struct mugy_comms *comms, struct mugy_grid grid, struct mugy
     scomm->decomp    = alloc_mintArray_ho(scomm->dim);
     for (mint e=0; e<scomm->dim; e++)
       scomm->decomp[e] = comms->world.decomp[e];
-    MPI_Cart_sub(comms->sub4d[0].comm, remain, &scomm->comm);
+    MPI_Cart_sub(comms->sub4d[0].comm, remain, (MPI_Comm*) &scomm->comm);
     MPI_Comm_size(scomm->comm, &scomm->size);
     MPI_Comm_rank(scomm->comm, &scomm->rank);
     MPI_Cart_coords(scomm->comm, scomm->rank, scomm->dim, scomm->coord);
@@ -87,7 +91,7 @@ void comms_sub_init(struct mugy_comms *comms, struct mugy_grid grid, struct mugy
     scomm->decomp    = alloc_mintArray_ho(scomm->dim);
     for (mint e=0; e<scomm->dim; e++)
       scomm->decomp[e] = comms->world.decomp[e];
-    MPI_Cart_sub(comms->sub4d[0].comm, remain, &scomm->comm);
+    MPI_Cart_sub(comms->sub4d[0].comm, remain, (MPI_Comm*) &scomm->comm);
     MPI_Comm_size(scomm->comm, &scomm->size);
     MPI_Comm_rank(scomm->comm, &scomm->rank);
     MPI_Cart_coords(scomm->comm, scomm->rank, scomm->dim, scomm->coord);
@@ -105,7 +109,7 @@ void comms_sub_init(struct mugy_comms *comms, struct mugy_grid grid, struct mugy
     scomm->coord     = alloc_mintArray_ho(scomm->dim);
     scomm->decomp    = alloc_mintArray_ho(scomm->dim);
     scomm->decomp[0] = comms->world.decomp[d];
-    MPI_Cart_sub(comms->sub4d[0].comm, remain, &scomm->comm);
+    MPI_Cart_sub(comms->sub4d[0].comm, remain, (MPI_Comm*) &scomm->comm);
     MPI_Comm_size(scomm->comm, &scomm->size);
     MPI_Comm_rank(scomm->comm, &scomm->rank);
     MPI_Cart_coords(scomm->comm, scomm->rank, scomm->dim, scomm->coord);
@@ -244,20 +248,20 @@ void comms_terminate(struct mugy_comms *comms) {
   // Free 4d subcomm.
   scomm = &comms->sub4d[0];
   free(scomm->decomp);  free(scomm->coord);
-  MPI_Comm_free(&scomm->comm);
+  MPI_Comm_free((MPI_Comm*) &scomm->comm);
   free(scomm);
 
   // Free 3d subcomm.
   scomm = &comms->sub3d[0];
   free(scomm->decomp);  free(scomm->coord);
-  MPI_Comm_free(&scomm->comm);
+  MPI_Comm_free((MPI_Comm*) &scomm->comm);
   free(comms->sub3d);
 
   // Free 2d subcomms.
   for (mint d=0; d<nDim; d++) {
     scomm = &comms->sub2d[d];
     free(scomm->decomp);  free(scomm->coord);
-    MPI_Comm_free(&scomm->comm);
+    MPI_Comm_free((MPI_Comm*) &scomm->comm);
   }
   free(comms->sub2d);
 
@@ -265,7 +269,7 @@ void comms_terminate(struct mugy_comms *comms) {
   for (mint d=0; d<nDim+1; d++) {
     scomm = &comms->sub1d[d];
     free(scomm->decomp);  free(scomm->coord);
-    MPI_Comm_free(&scomm->comm);
+    MPI_Comm_free((MPI_Comm*) &scomm->comm);
   }
   free(comms->sub1d);
 

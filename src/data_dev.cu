@@ -7,6 +7,7 @@
 extern "C" {
 #include "mh_utilities_dev.h"
 #include "mh_data_dev.h"
+#include "mh_fourier_dev.h"
 }
 
 // MF 2023/03/30: for some reason we can't use memcpy_dir_dev directly cudaMemcpy.
@@ -20,4 +21,8 @@ void memcpy_real_dev(real *dest, real *src, mint numElements, enum memcpy_dir_de
 // MF 2023/03/29: Use void* because C doesn't know cuCumplex/cufourier the type.
 void memcpy_fourier_dev(void *dest, void *src, mint numElements, enum memcpy_dir_dev dir) {
   checkCudaErrors(cudaMemcpy(dest, src, numElements*sizeof(cufourier), (cudaMemcpyKind) dir));
+}
+void *mugy_memcpy_dev(void *dest, void *src, size_t sz, enum memcpy_dir_dev dir) {
+  checkCudaErrors(cudaMemcpy(dest, src, sz, (cudaMemcpyKind) dir));
+  return dest;
 }

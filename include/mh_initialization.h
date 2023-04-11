@@ -11,6 +11,7 @@
 #include "mh_grid.h"
 #include "mh_population.h"
 #include "mh_field.h"
+#include "mh_io_adios.h"
 #include "mh_ffts.h"
 #include "mh_timestepping.h"
 

@@ -4,7 +4,7 @@
  *
  */
 #include <fftw3-mpi.h>
-#include "mh_data.h"
+#include "mh_macros.h"
 
 #if USE_SINGLE_PRECISION
 // ............ SINGLE PRECISION ............ // 

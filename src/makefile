@@ -32,7 +32,7 @@ NVCC_TEST := $(notdir $(NVCC_RESULT))
 ifeq ($(NVCC_TEST),nvcc)
     USE_GPU = true
     CUDA_INCL = -I${CUDA_INC}
-    CUDA_LIBS = -L${CUDA_LIB}
+    CUDA_LIBS = -L${CUDA_LIB} -lcufft
     CUDAFLAGS = -DUSE_GPU=$(USE_GPU) ${NVCCFLAGS}
     NVCC = ${NVCCCOMPILER}
     CUDART = -lcudart -lcudadevrt
@@ -71,9 +71,9 @@ LFLAGS = -L../lib -L${MPI_LIB} $(CUDA_LIBS) ${ADIOS_LIB} -L${FFTW_LIB} $(FFTW_LI
 LIBS = 
 
 #[ Define the C source files.
-SRCS = alloc.c grid.c population.c ffts.c initialization.c io_adios.c io_tools.c comms.c mugy.c utilities.c data.c finalize.c
+SRCS = data.c alloc.c array.c grid.c population.c ffts.c initialization.c io_adios.c io_tools.c comms.c mugy.c utilities.c finalize.c
 ifeq ($(USE_GPU),true)
-    SRCS_DEV = initialization_dev.cu alloc_dev.cu data_dev.cu
+    SRCS_DEV = initialization_dev.cu alloc_dev.cu data_dev.cu ffts_dev.cu
 else
     SRCS_DEV =
 endif

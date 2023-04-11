@@ -6,17 +6,12 @@
 #ifndef MUGY_MPI_TOOLS 
 #define MUGY_MPI_TOOLS 
 
-#include <mpi.h>
-#include <stdbool.h>  // e.g. for bool, true, false.
-#include "mh_utilities.h"
-#include "mh_data.h"
+#include "mh_macros.h"
 #include "mh_grid.h"
 #include "mh_population.h"
-#include "mh_alloc.h"
-#include "mh_io_tools.h"
 
 struct mugy_comms_sub {
-  MPI_Comm comm;    // MPI communicator.
+  void* comm;       // MPI/NCCL communicator.
   mint dim, size;   // Dimensionality and size of the communicator.
   mint *decomp;     // Decomposition (number of processes) in each direction;
   mint rank;        // Rank ID within this communicator.

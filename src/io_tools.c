@@ -1,9 +1,11 @@
-/* mugy: i0_tools
-
-   IO module.
-*/
+/* mugy: i0_tools.c
+ *
+ * Extra generic IO functions.
+ *
+ */
 
 #include "mh_io_tools.h"
+#include "mh_utilities.h"
 
 void r0printf(char *str, mint rank) {
   // Print string out if this is the zeroth rank.

@@ -10,8 +10,8 @@
 #include "mh_io_tools.h"
 #include "mh_initialization.h"
 #include "mh_initialization_dev.h"
-#include <complex.h>  /* Needed by some fscanf below. */
 #include "mh_data.h"
+#include "mh_fourier_ho.h"
 #include "mh_grid.h"
 
 // Read an variable from input file.
@@ -364,18 +364,17 @@ void allocate_dynfields(struct mugy_grid localGrid, struct mugy_population *loca
 #endif
 
   // Allocate moments vector needed for time stepping.
-  localPop->momk = (struct mugy_fourierArray*) calloc(TIME_STEPPER_NUM_FIELDS, sizeof(struct mugy_fourierArray));
+  localPop->momk = (struct mugy_array*) calloc(TIME_STEPPER_NUM_FIELDS, sizeof(struct mugy_array));
   for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
     alloc_fourierMoments(&localPop->momk[s], localGrid.fG, *localPop, onResource);
 
-  // Allocate auxiliary arrays/fields.
 }
 
 void set_initialCondition(struct mugy_grid globalGrid, struct mugy_grid localGrid, struct mugy_population globalPop,
   struct mugy_population *localPop, struct mugy_ffts *fftMan, struct mugy_ioManager *ioman) {
   // Impose the initial conditions on the moments and thoe potential.
 
-  struct mugy_fourierArray momk = localPop->momk[0]; // Put ICs in first stepper field.
+  struct mugy_array momk = localPop->momk[0]; // Put ICs in first stepper field.
 
   // NOTE: For now assume initialOp is the same for all species.
   mint initialOp = localPop->spec[0].icOp; 
@@ -383,7 +382,7 @@ void set_initialCondition(struct mugy_grid globalGrid, struct mugy_grid localGri
   if (initialOp == 0) {
     // Initialize in real space and transform to Fourier.
     struct mugy_realGrid *grid = &localGrid.fG.dual;
-    struct mugy_realArray momIC;
+    struct mugy_array momIC;
     alloc_realMoments(&momIC, *grid, *localPop, hostAndDeviceMem);
 
     for (mint s=0; s<localPop->numSpecies; s++) {
@@ -418,17 +417,16 @@ void set_initialCondition(struct mugy_grid globalGrid, struct mugy_grid localGri
     }
 
     // Copy initialized moments from host to device.
-    hodevXfer_realArray(&momIC, host2device);
+    mugy_array_hodevXfer(&momIC, host2device);
 
     // FFT moments.
     //fft_moments_r2c(fftMan, &momk, &momIC, deviceComp)
 
     //......................................................
     // FFT test
-    struct mugy_realArray fxy_r;
-    struct mugy_fourierArray fxy_k;
-    alloc_realArray(&fxy_r, grid->NxTot, hostMem);
-    alloc_fourierArray(&fxy_k, localGrid.fG.NekxTot, hostMem);
+    struct mugy_array fxy_r, fxy_k;
+    mugy_array_alloc(&fxy_r, real_enum, grid->NxTot, hostMem);
+    mugy_array_alloc(&fxy_k, fourier_enum, localGrid.fG.NekxTot, hostMem);
 
     // Assign real array to a linear combo of sines and cosines.
     real *fxy_rp = fxy_r.ho;
@@ -449,15 +447,15 @@ void set_initialCondition(struct mugy_grid globalGrid, struct mugy_grid localGri
     fft_xy_r2c(fftMan, &fxy_k, &fxy_r, hostComp);
     fft_xy_c2r(fftMan, &fxy_r, &fxy_k, hostComp);
 
-    struct mugy_ad_file *fh = ad_create_file_realArray(ioman, "arr", globalGrid, localGrid);
-    write_realArray(NULL, "arr", fh, fxy_r);
+    struct mugy_ad_file *fh = ad_create_mugy_array_file(ioman, "arr", globalGrid, localGrid, real_enum);
+    write_mugy_array(NULL, "arr", fh, fxy_r);
     io_close_file(fh);
 
-    free_realArray(&fxy_r, hostMem);
-    free_fourierArray(&fxy_k, hostMem);
+    mugy_array_free(&fxy_r, hostMem);
+    mugy_array_free(&fxy_k, hostMem);
     //......................................................
 
-    free_realArray(&momIC, hostMem);
+    mugy_array_free(&momIC, hostMem);
 
   } else if (initialOp == 1) {
     // Initialize with a k-spce power law.
@@ -488,7 +486,7 @@ void set_initialCondition(struct mugy_grid globalGrid, struct mugy_grid localGri
     };
 
     // Copy initialized moments from host to device.
-    hodevXfer_fourierArray(&momk, host2device);
+    mugy_array_hodevXfer(&momk, host2device);
   }
 
 }
@@ -564,6 +562,6 @@ void free_population(struct mugy_population *pop) {
   // Free moments vector.
   if (pop->momk) {
     for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
-      free_fourierArray(&pop->momk[s], onResource);
+      mugy_array_free(&pop->momk[s], onResource);
   }
 }
