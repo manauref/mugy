@@ -82,11 +82,11 @@ struct mugy_ffts *fft_init(struct mugy_grid gridG, struct mugy_grid gridL, struc
   blockSize0in  = gridL.fG.dual.Nx[0];
   blockSize0out = blockSizek0;
   cfft->plan_r2c = mugy_fftw_mpi_plan_many_dft_r2c(fftDim, fftSize, fftNum, blockSize0in, blockSize0out,
-                                                      cfft->rbuf, cfft->kbuf, scomm->comm, FFTW_ESTIMATE);
+                                                   cfft->rbuf, cfft->kbuf, scomm->comm, FFTW_ESTIMATE);
   blockSize0in  = blockSizek0;
   blockSize0out = gridL.fG.dual.Nx[0];
   cfft->plan_c2r = mugy_fftw_mpi_plan_many_dft_c2r(fftDim, fftSize, fftNum, blockSize0in, blockSize0out,
-                                                      cfft->kbuf, cfft->rbuf, scomm->comm, FFTW_ESTIMATE);
+                                                   cfft->kbuf, cfft->rbuf, scomm->comm, FFTW_ESTIMATE);
 
   cfft->normFac = 1./((real)gridG.fG.dual.NxyTot);
   cfft->forwardNorm = false;  // This FFT is only used for ICs given in real-space.
