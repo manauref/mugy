@@ -97,20 +97,20 @@ struct mugy_ffts *fft_init(struct mugy_grid gridG, struct mugy_grid gridL, struc
 
 void fft_xy_c2r(struct mugy_ffts *ffts, struct mugy_array *fOut, struct mugy_array *fkIn, enum resource_comp res) {
 #if USE_GPU
-//  if (res == deviceComp)
-//    return mugy_fft_xy_c2r_dev(ffts->dev, fOut, fkIn);
+  if (res == deviceComp)
+    return mugy_fft_xy_c2r_dev(ffts->dev, fOut, fkIn);
 #endif
   
   struct mugy_fft_ho *cfft = ffts->ho->xy;  // Temp pointer for convenience.
 
   // Copy data into buffer.
-  memcpy_fourier(cfft->kbuf, fkIn->ho, fkIn->nelem, host2host);
+  mugy_memcpy(cfft->kbuf, fkIn->ho, fkIn->nelemsz, host2host);
 
   // Inverse FFT.
   mugy_fftw_mpi_execute_dft_c2r(cfft->plan_c2r, cfft->kbuf, cfft->rbuf);
 
   // Copy data from buffer.
-  memcpy_real(fOut->ho, cfft->rbuf, fOut->nelem, host2host);
+  mugy_memcpy(fOut->ho, cfft->rbuf, fOut->nelemsz, host2host);
 
   // Apply the nonunitary normalization.
   if (!cfft->forwardNorm)
@@ -119,20 +119,20 @@ void fft_xy_c2r(struct mugy_ffts *ffts, struct mugy_array *fOut, struct mugy_arr
 
 void fft_xy_r2c(struct mugy_ffts *ffts, struct mugy_array *fkOut, struct mugy_array *fIn, enum resource_comp res) {
 #if USE_GPU
-//  if (res == deviceComp)
-//    return mugy_fft_xy_r2c_dev(ffts->dev, fkOut, fIn);
+  if (res == deviceComp)
+    return mugy_fft_xy_r2c_dev(ffts->dev, fkOut, fIn);
 #endif
   
   struct mugy_fft_ho *cfft = ffts->ho->xy;  // Temp pointer for convenience.
 
   // Copy data into buffer.
-  memcpy_real(cfft->rbuf, fIn->ho, fIn->nelem, host2host);
+  mugy_memcpy(cfft->rbuf, fIn->ho, fIn->nelemsz, host2host);
 
   // Forward FFT.
   mugy_fftw_mpi_execute_dft_r2c(cfft->plan_r2c, cfft->rbuf, cfft->kbuf);
 
   // Copy data from buffer.
-  memcpy_fourier(fkOut->ho, cfft->kbuf, fkOut->nelem, host2host);
+  mugy_memcpy(fkOut->ho, cfft->kbuf, fkOut->nelemsz, host2host);
 
   // Apply the nonunitary normalization.
   if (cfft->forwardNorm)

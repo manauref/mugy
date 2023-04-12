@@ -12,7 +12,7 @@
 
 #include <cuComplex.h>  /* For complex data types. */
 
-#if USE_SINGLE_PRECISION
+#ifdef USE_SINGLE_PRECISION
 
 
 __host__ __device__ static __inline__ double mugy_cuCreal (cuFloatComplex x)
@@ -25,7 +25,7 @@ __host__ __device__ static __inline__ double mugy_cuCimag (cuFloatComplex x)
   return cuCimagf (x);
 }
 
-__host__ __device__ static __inline__ cuFloatComplex mugy_make_cuFloatComplex
+__host__ __device__ static __inline__ cuFloatComplex mugy_make_cuComplex
                                                            (double r, double i)
 {
   return make_cuFloatComplex (r, i);
@@ -86,7 +86,7 @@ __host__ __device__ static __inline__ double mugy_cuCimag (cuDoubleComplex x)
   return cuCimag (x);
 }
 
-__host__ __device__ static __inline__ cuDoubleComplex mugy_make_cuDoubleComplex
+__host__ __device__ static __inline__ cuDoubleComplex mugy_make_cuComplex
                                                            (double r, double i)
 {
   return make_cuDoubleComplex (r, i);

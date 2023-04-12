@@ -53,10 +53,10 @@ pm.varRead(varName, fileName=filePathName, select=varSelect, array=fldIn)
 xNodal = pm.xGrid(fileName=filePathName, nodal=True)
 X = [np.outer(xNodal[0],np.ones(np.size(xNodal[1]))),
      np.outer(np.ones(np.size(xNodal[0])),xNodal[1])]
-print(fldIn[:,21])
-plt.pcolormesh(X[0], X[1], fldIn)
-plt.colorbar()
-plt.show()
+print("fld[:,21] = ",fldIn[:,21])
+#plt.pcolormesh(X[0], X[1], fldIn)
+#plt.colorbar()
+#plt.show()
 
 # Test fft on 43x22 grid
 gld = np.zeros([varShape[1],varShape[2]], dtype=varType)
@@ -67,14 +67,15 @@ for i in range(varShape[1]):
     gld[i,j] += 2.5e-2*np.sin(kxMin[0]*xC[0][i])*np.cos(kxMin[1]*xC[1][j]);
 
 #print("gld[:,21] = ",gld[:,21])
-#gldk = np.fft.rfft2(gld)
+gldk = np.fft.rfft2(gld, s=gld.shape)
 #print(gldk)
-#gld = np.fft.irfft2(gldk)
-##print("gld[:,21] = ",gld[:,21])
+gld = np.fft.irfft2(gldk, s=gld.shape)
+print("gld[:,21] = ",gld[:,21])
 
-#plt.pcolormesh(X[0], X[1], fldIn-gld)
-#plt.colorbar()
-#plt.show()
+plt.pcolormesh(X[0], X[1], fldIn-gld)
+#plt.pcolormesh(X[0], X[1], gld)
+plt.colorbar()
+plt.show()
 
 #print("Lx = ",xC[0][-1]-xC[0][0],xC[1][-1]-xC[1][0],xC[2][-1]-xC[2][0])
 #print("x[0] = ",xC[0])

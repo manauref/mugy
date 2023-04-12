@@ -8,8 +8,9 @@
 #include <fftw3-mpi.h>
 #include "mh_macros.h"
 
-#if USE_SINGLE_PRECISION
+#ifdef USE_SINGLE_PRECISION
 // ............ SINGLE PRECISION ............ // 
+
 
 typedef fftwf_complex mugy_fftw_fourier;
 
@@ -58,14 +59,9 @@ static inline void mugy_fftw_free(void *p) {
 }
 
 
-
-// ............ END SINGLE PRECISION ............ // 
 #else
-
-
-
-
 // ............ DOUBLE PRECISION ............ // 
+
 
 typedef fftw_complex mugy_fftw_fourier;
 

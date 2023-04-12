@@ -21,7 +21,11 @@
 
 
 #.Extract macros from header file.
-USE_SINGLE_PRECISION := $(shell grep -e '\#define USE_SINGLE_PRECISION' ../include/mh_userFLAGS.h | sed 's/\#define USE_SINGLE_PRECISION //' | sed -r 's/\s+//g' )
+USE_SINGLE_PRECISION := false
+USE_SINGLE_PRECISION_H := $(shell grep -e '\#define USE_SINGLE_PRECISION' ../include/mh_userFLAGS.h | sed 's/ USE_SINGLE_PRECISION//' | sed -r 's/\s+//g' )
+ifeq ($(USE_SINGLE_PRECISION_H), \#define)
+    USE_SINGLE_PRECISION := true
+endif
 
 #[ Define the C compiler to use.
 CC = ${CCCOMPILER}

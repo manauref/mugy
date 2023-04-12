@@ -66,7 +66,7 @@ struct mugy_ad_file *ad_create_mugy_array_file(struct mugy_ioManager *ioman, cha
     }
     // Attributes
     adios2_define_attribute_array(adf->io, "Nekx", adios_mint, globalGrid.fG.Nekx, nDim);
-    adios2_define_attribute_array(adf->io, "kxMin", adios_fourier, globalGrid.fG.kxMin, nDim);
+    adios2_define_attribute_array(adf->io, "kxMin", adios_real, globalGrid.fG.kxMin, nDim);
     // Variables
     adf->var = adios2_define_variable(adf->io, "globalVariable", adios_fourier, nDim, shape,
                                       start, count, adios2_constant_dims_true);
@@ -150,7 +150,7 @@ void setup_files(struct mugy_ioManager *ioman, struct mugy_grid globalGrid, stru
   //   km_ : fourier moments.
   // If more, nonstandard files wish to be added, just put the name in flist and
   // be sure to use the correct create/write functions.
-  char *flist[] = {"ra_phi"};
+  char *flist[] = {"ra_phi", "ka_momk"};
 
   ioman->numfiles = sizeof(flist)/sizeof(flist[0]);
   ioman->files = (struct mugy_ad_file **)calloc(ioman->numfiles, sizeof(struct mugy_ad_file*));

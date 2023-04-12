@@ -36,25 +36,29 @@ void mugy_array_free(struct mugy_array *arr, enum resource_mem res) {
     mugy_free(arr->dev, deviceMem);  // Free device memory.
 }
 
-// Copy real(Fourier)Arrays betwen host and device.
-void mugy_array_hodevXfer(struct mugy_array *arr, enum memcpy_dir_dev dir) {
+// Copy arrays betwen host and device, or within host or device.
+void *mugy_array_copy(struct mugy_array *aout, struct mugy_array *ain, enum memcpy_dir_dev dir) {
 #ifdef USE_GPU
   if (dir == host2device)
-    mugy_memcpy(arr->dev, arr->ho, arr->nelemsz, dir);
+    return mugy_memcpy(aout->dev, ain->ho, ain->nelemsz, dir);
   else if (dir == device2host)
-    mugy_memcpy(arr->ho, arr->dev, arr->nelemsz, dir);
+    return mugy_memcpy(aout->ho, ain->dev, ain->nelemsz, dir);
+  else if (dir == device2device)
+    return mugy_memcpy(aout->dev, ain->dev, ain->nelemsz, dir);
 #endif
+
+  return mugy_memcpy(aout->ho, ain->ho, ain->nelemsz, host2host);
 }
 
-// Functions that scale real(Fourier)Arrays by a constant.
+// Scale array by a constant 'fac'.
 void mugy_array_scale(struct mugy_array *arr, real fac, enum resource_comp res) {
 #ifdef USE_GPU
   if (res == deviceComp)
     return mugy_array_scale_dev(arr, fac);
 #endif
 
-  real *fk = arr->ho;
+  real *ap = arr->ho;
   for (mint linIdx=0; linIdx<arr->nelem; linIdx++) {
-    fk[0] *= fac;  fk++;
+    ap[0] *= fac;  ap++;
   }
 }

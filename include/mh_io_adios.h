@@ -15,7 +15,7 @@
 #include "mh_population.h"
 #include "mh_utilities.h"
 
-#if USE_SINGLE_PRECISION
+#ifdef USE_SINGLE_PRECISION
 #define adios_real adios2_type_float
 #define adios_fourier adios2_type_float_complex
 #else

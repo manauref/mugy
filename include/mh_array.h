@@ -29,8 +29,8 @@ void mugy_array_alloc(struct mugy_array *arr, enum mugy_datatype type, mint numE
 //   res: resource where memory needs to be freed (host, device or both).
 void mugy_array_free(struct mugy_array *arr, enum resource_mem res);
 
-// Copy real/fourier array between host and device.
-void mugy_array_hodevXfer(struct mugy_array *arr, enum memcpy_dir_dev dir);
+// Copy arrays betwen host and device, or within host or device.
+void *mugy_array_copy(struct mugy_array *aout, struct mugy_array *ain, enum memcpy_dir_dev dir);
 
 // Scale an array by a factor 'fac'.
 void mugy_array_scale(struct mugy_array *arr, real fac, enum resource_comp res);

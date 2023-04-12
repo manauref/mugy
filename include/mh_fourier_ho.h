@@ -9,7 +9,7 @@
 #include "mh_userFLAGS.h"
 #include <complex.h>  /* For complex data types. */
 
-#if USE_SINGLE_PRECISION
+#ifdef USE_SINGLE_PRECISION
 typedef float complex fourier;
 #else
 typedef double complex fourier;

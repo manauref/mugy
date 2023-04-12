@@ -1,17 +1,16 @@
 /* mugy: mh_macros.h
-
-   A series of macros used throughout mugy.
-*/
-
-#ifndef MUGY_MACROS 
-#define MUGY_MACROS 
+ *
+ * A series of macros used throughout mugy.
+ *
+ */
+#pragma once
 
 #include "mh_userFLAGS.h"
 
 // Number of dimensions in the code.
 #define nDim 3
 
-#if USE_SINGLE_PRECISION
+#ifdef USE_SINGLE_PRECISION
 typedef float real;
 #define mpi_real MPI_FLOAT
 #define mpi_fourier MPI_C_COMPLEX
@@ -101,6 +100,3 @@ enum memcpy_dir_dev {
 #define DEFAULT_NUM_THREADS_DEV 1
 
 #endif  // GPU related macros.
-
-
-#endif

@@ -25,7 +25,7 @@ __global__ void
 mugy_array_set_fourier_cu(cufourier* out, mint nelem, real a, const cufourier* inp)
 {
   for (unsigned long linc = LINIDX0; linc < nelem; linc += blockDim.x*gridDim.x)
-    out[linc] = mugy_cuCmul(mugy_make_cuDoubleComplex(a,0.),inp[linc]);
+    out[linc] = mugy_cuCmul(mugy_make_cuComplex(a,0.), inp[linc]);
 }
 
 // Scale mugy_array data by a constant.

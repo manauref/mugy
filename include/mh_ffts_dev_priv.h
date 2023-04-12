@@ -9,7 +9,7 @@
 #include <cufftXt.h>
 #include "mh_cufft_utils.h"
 
-#if USE_SINGLE_PRECISION
+#ifdef USE_SINGLE_PRECISION
 typedef cufftComplex mugy_cufft_fourier;
 const cudaDataType mugy_cufft_real_enum = CUDA_R_32F;
 const cudaDataType mugy_cufft_fourier_enum = CUDA_C_32F;
