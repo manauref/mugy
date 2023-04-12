@@ -404,16 +404,9 @@ void set_initialCondition(struct mugy_grid globalGrid, struct mugy_grid localGri
         get_x(&x[0], xIdx, *grid);
 
         // Initial density: a superposition of sines and cosines.
-        den_p[0] = 0.;
-        double kx = 0.1;
-        for (int i; i<localGrid.fG.Nkx[0]; i++) {
-          kx += i*0.2;
-          double ky = 0.3;
-          for (int j; j<localGrid.fG.Nkx[1]; j++) {
-            ky += i*0.1;
-            den_p[0] += initA*sin(kx*x[0])*cos(ky*x[1]);
-          }
-        }
+        double kx = localGrid.fG.kxMin[0];
+        double ky = localGrid.fG.kxMin[1];
+        den_p[0] += initA*sin(kx*x[0])*cos(ky*x[1]);
         den_p++;
         
         // Initial temperature = 0.
@@ -425,48 +418,66 @@ void set_initialCondition(struct mugy_grid globalGrid, struct mugy_grid localGri
     // Copy initialized moments from host to device.
     mugy_array_copy(&momIC, &momIC, host2device);
 
-    // FFT moments.
-    //fft_moments_r2c(fftMan, &momk, &momIC, deviceComp)
+    // Forward FFT moments.
+    mugy_fft_r2c(fftMan, &momk, &momIC, mugy_fft_mom_xy, deviceComp);
 
-    //......................................................
-    // FFT test
-    struct mugy_array fxy_r, fxy_k;
-    mugy_array_alloc(&fxy_r, real_enum, grid->NxTot, hostAndDeviceMem);
-    mugy_array_alloc(&fxy_k, fourier_enum, localGrid.fG.NekxTot, hostAndDeviceMem);
+//    //......................................................
+//    // Test FFT of a moments.
+//    struct mugy_array momICk;
+//    alloc_fourierMoments(&momICk, localGrid.fG, *localPop, hostAndDeviceMem);
+//
+//    mugy_fft_r2c(fftMan, &momICk, &momIC, mugy_fft_mom_xy, hostComp);
+//    mugy_fft_c2r(fftMan, &momIC, &momICk, mugy_fft_mom_xy, hostComp);
+////    mugy_fft_r2c(fftMan, &momICk, &momIC, mugy_fft_mom_xy, deviceComp);
+////    mugy_fft_c2r(fftMan, &momIC, &momICk, mugy_fft_mom_xy, deviceComp);
+////    mugy_array_copy(&momIC, &momIC, device2host);
+//
+//    struct mugy_ad_file *fh = ad_create_moments_file(ioman, "mom", globalGrid, localGrid, globalPop, *localPop, real_enum);
+//    write_mugy_array(NULL, "mom", fh, momIC);
+//    io_close_file(fh);
+//
+//    mugy_array_free(&momICk, hostAndDeviceMem);
+//    //......................................................
 
-    // Assign real array to a linear combo of sines and cosines.
-    real *fxy_rp = fxy_r.ho;
-    for (mint linIdx=0; linIdx<grid->NxTot; linIdx++) {
-      real initA = localPop->spec[0].initA;
-      mint xIdx[nDim];
-      lin2sub_real(&xIdx[0], linIdx, *grid);  // Convert linear index to multidimensional x index.
-      real x[nDim];
-      get_x(&x[0], xIdx, *grid);
-
-      fxy_rp[0] = 0.;
-      double kx = localGrid.fG.kxMin[0];
-      double ky = localGrid.fG.kxMin[1];
-      fxy_rp[0] += initA*sin(kx*x[0])*cos(ky*x[1]);
-      fxy_rp++;
-    }
-
-    fft_xy_r2c(fftMan, &fxy_k, &fxy_r, hostComp);
-    fft_xy_c2r(fftMan, &fxy_r, &fxy_k, hostComp);
-
+//    //......................................................
+//    // Test FFT of a single array
+//    struct mugy_array fxy_r, fxy_k;
+//    mugy_array_alloc(&fxy_r, real_enum, grid->NxTot, hostAndDeviceMem);
+//    mugy_array_alloc(&fxy_k, fourier_enum, localGrid.fG.NekxTot, hostAndDeviceMem);
+//
+//    // Assign real array to a linear combo of sines and cosines.
+//    real *fxy_rp = fxy_r.ho;
+//    for (mint linIdx=0; linIdx<grid->NxTot; linIdx++) {
+//      real initA = localPop->spec[0].initA;
+//      mint xIdx[nDim];
+//      lin2sub_real(&xIdx[0], linIdx, *grid);  // Convert linear index to multidimensional x index.
+//      real x[nDim];
+//      get_x(&x[0], xIdx, *grid);
+//
+//      fxy_rp[0] = 0.;
+//      double kx = localGrid.fG.kxMin[0];
+//      double ky = localGrid.fG.kxMin[1];
+//      fxy_rp[0] += initA*sin(kx*x[0])*cos(ky*x[1]);
+//      fxy_rp++;
+//    }
+//
+////    mugy_fft_r2c(fftMan, &fxy_k, &fxy_r, mugy_fft_xy, hostComp);
+////    mugy_fft_c2r(fftMan, &fxy_r, &fxy_k, mugy_fft_xy, hostComp);
+//
 //    mugy_array_copy(&fxy_r, &fxy_r, host2device);
-//    fft_xy_r2c(fftMan, &fxy_k, &fxy_r, deviceComp);
-//    fft_xy_c2r(fftMan, &fxy_r, &fxy_k, deviceComp);
+//    mugy_fft_r2c(fftMan, &fxy_k, &fxy_r, mugy_fft_xy, deviceComp);
+//    mugy_fft_c2r(fftMan, &fxy_r, &fxy_k, mugy_fft_xy, deviceComp);
 //    mugy_array_copy(&fxy_r, &fxy_r, device2host);
+//
+//    struct mugy_ad_file *fhr = ad_create_mugy_array_file(ioman, "arr", globalGrid, localGrid, real_enum);
+//    write_mugy_array(NULL, "arr", fhr, fxy_r);
+//    io_close_file(fhr);
+//
+//    mugy_array_free(&fxy_r, hostAndDeviceMem);
+//    mugy_array_free(&fxy_k, hostAndDeviceMem);
+//    //......................................................
 
-    struct mugy_ad_file *fh = ad_create_mugy_array_file(ioman, "arr", globalGrid, localGrid, real_enum);
-    write_mugy_array(NULL, "arr", fh, fxy_r);
-    io_close_file(fh);
-
-    mugy_array_free(&fxy_r, hostAndDeviceMem);
-    mugy_array_free(&fxy_k, hostAndDeviceMem);
-    //......................................................
-
-    mugy_array_free(&momIC, hostMem);
+    mugy_array_free(&momIC, hostAndDeviceMem);
 
   } else if (initialOp == 1) {
     // Initialize with a k-spce power law.

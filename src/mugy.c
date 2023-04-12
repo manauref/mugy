@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 
   allocate_dynfields(gridL, &popL);  // Allocate dynamic fields.
 
-  struct mugy_ffts *fftMan = fft_init(gridG, gridL, *comms);  // Initialize FFT infrastructure.
+  struct mugy_ffts *fftMan = mugy_fft_init(gridG, gridL, popL, *comms);  // Initialize FFT infrastructure.
 
   setup_files(ioMan, gridG, gridL, popG, popL);  // Setup IO files.
 
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
   MPI_Barrier(MPI_COMM_WORLD); // To avoid premature deallocations.
 
   io_terminate(ioMan);  // Close IO interface. Need to do it before freeing fields.
-  fft_terminate(fftMan);  // Deallocate FFT memory.
+  mugy_fft_terminate(fftMan);  // Deallocate FFT memory.
 
   free_fields();
   free_grid(&gridL);

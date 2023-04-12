@@ -19,6 +19,7 @@
 #include "mh_fftw_wrap.h"
 #include "mh_ffts_dev.h"
 #include "mh_data.h"
+#include "mh_utilities.h"
 #include <stdbool.h>
 #include <stdlib.h>  // for malloc.
 
@@ -32,8 +33,12 @@ struct mugy_fft_ho {
 };
 
 struct mugy_fft_fam_ho {
-  struct mugy_fft_ho *xy;    // 2D FFT of x-y planes.
-  struct mugy_fft_ho *xy_a;  // 2D FFT of (aliased) x-y planes.
+  // FFTs on dealised grids.
+  struct mugy_fft_ho *xy;      // xy FFT of single 3D array.
+  struct mugy_fft_ho *mom_xy;  // xy FFT of all moments.
+  // FFTs on aliased grids.
+  struct mugy_fft_ho *xy_a;      // xy FFT of single 3D array.
+  struct mugy_fft_ho *mom_xy_a;  // xy FFT of all moments.
 };
 
 // Info needed for all FFTs in mugy.
@@ -42,14 +47,14 @@ struct mugy_ffts {
   struct mugy_fft_fam_dev *dev;
 };
 
-struct mugy_ffts *fft_init(struct mugy_grid gridG, struct mugy_grid gridL, struct mugy_comms comms) {
+struct mugy_ffts *mugy_fft_init(struct mugy_grid gridG, struct mugy_grid gridL, struct mugy_population popL, struct mugy_comms comms) {
 
   // Allocate space for the FFT manager.
   struct mugy_ffts *ffts = (struct mugy_ffts *) malloc(sizeof(struct mugy_ffts));
 
 #if USE_GPU
   // Initialize device FFTs.
-  ffts->dev = mugy_fft_init_dev(gridG, gridL, comms);
+  ffts->dev = mugy_fft_init_dev(gridG, gridL, popL, comms);
 #endif
 
   // Initialize host FFTs.
@@ -57,10 +62,13 @@ struct mugy_ffts *fft_init(struct mugy_grid gridG, struct mugy_grid gridL, struc
 
   ffts->ho = (struct mugy_fft_fam_ho *) malloc(sizeof(struct mugy_fft_fam_ho));
 
-  // ....... Setup for 2D FFTs of a single field ......... //
+  struct mugy_fft_ho *cfft;  // Temp pointer for convenience.
+  struct mugy_comms_sub *scomm;  // Temp pointer for convenience.
+
+  // ....... Setup for xy FFTs of a single 3D array ......... //
   ffts->ho->xy = (struct mugy_fft_ho *) malloc(sizeof(struct mugy_fft_ho));
-  struct mugy_fft_ho *cfft = ffts->ho->xy;  // Temp pointer for convenience.
-  struct mugy_comms_sub *scomm = &comms.sub2d[0];  // Temp pointer for convenience.
+  cfft  = ffts->ho->xy;
+  scomm = &comms.sub2d[0];
   // Get local data size.
   const mint fftDim = 2;
   ptrdiff_t fftSizek[fftDim], fftNum, blockSizek0;
@@ -90,18 +98,48 @@ struct mugy_ffts *fft_init(struct mugy_grid gridG, struct mugy_grid gridL, struc
 
   cfft->normFac = 1./((real)gridG.fG.dual.NxyTot);
   cfft->forwardNorm = false;  // This FFT is only used for ICs given in real-space.
-  // ....... End setup for 2D FFTs of a single field ......... //
+  // ....... End setup for xy FFTs of a single 3D array ......... //
+
+  // ....... Setup for xy FFTs of all moments ......... //
+  ffts->ho->mom_xy = (struct mugy_fft_ho *) malloc(sizeof(struct mugy_fft_ho));
+  cfft = ffts->ho->mom_xy;
+  fftNum      = popL.numMomentsTot * gridL.fG.Nekx[2];
+  alloc_local = mugy_fftw_mpi_local_size_many(fftDim, fftSizek, fftNum, blockSizek0, scomm->comm, &local_Nekx0, &local_kx0_start);
+
+  // Allocate buffers.
+  cfft->kbuf = mugy_fftw_alloc_complex(alloc_local);
+  cfft->rbuf = mugy_fftw_alloc_real(2*alloc_local);
+
+  // Create plans.
+  blockSize0in  = gridL.fG.dual.Nx[0];
+  blockSize0out = blockSizek0;
+  cfft->plan_r2c = mugy_fftw_mpi_plan_many_dft_r2c(fftDim, fftSize, fftNum, blockSize0in, blockSize0out,
+                                                   cfft->rbuf, cfft->kbuf, scomm->comm, FFTW_ESTIMATE);
+  blockSize0in  = blockSizek0;
+  blockSize0out = gridL.fG.dual.Nx[0];
+  cfft->plan_c2r = mugy_fftw_mpi_plan_many_dft_c2r(fftDim, fftSize, fftNum, blockSize0in, blockSize0out,
+                                                   cfft->kbuf, cfft->rbuf, scomm->comm, FFTW_ESTIMATE);
+
+  cfft->normFac = 1./((real)gridG.fG.dual.NxyTot);
+  cfft->forwardNorm = false;  // This FFT is only used for ICs given in real-space.
+  // ....... End setup for xy FFTs of all moments ......... //
 
   return ffts;
 }
 
-void fft_xy_c2r(struct mugy_ffts *ffts, struct mugy_array *fOut, struct mugy_array *fkIn, enum resource_comp res) {
+void mugy_fft_c2r(struct mugy_ffts *ffts, struct mugy_array *fOut, struct mugy_array *fkIn, enum mugy_fft_type ttype, enum resource_comp res) {
 #if USE_GPU
   if (res == deviceComp)
-    return mugy_fft_xy_c2r_dev(ffts->dev, fOut, fkIn);
+    return mugy_fft_c2r_dev(ffts->dev, fOut, fkIn, ttype);
 #endif
   
-  struct mugy_fft_ho *cfft = ffts->ho->xy;  // Temp pointer for convenience.
+  struct mugy_fft_ho *cfft;  // Temp pointer for convenience.
+  if (ttype == mugy_fft_xy)
+    cfft = ffts->ho->xy;
+  else if (ttype == mugy_fft_mom_xy)
+    cfft = ffts->ho->mom_xy;
+  else
+    abortSimulation(" mugy_fft_c2r: fft type not supported! Terminating...\n");
 
   // Copy data into buffer.
   mugy_memcpy(cfft->kbuf, fkIn->ho, fkIn->nelemsz, host2host);
@@ -117,13 +155,19 @@ void fft_xy_c2r(struct mugy_ffts *ffts, struct mugy_array *fOut, struct mugy_arr
     mugy_array_scale(fOut, cfft->normFac, hostComp);
 }
 
-void fft_xy_r2c(struct mugy_ffts *ffts, struct mugy_array *fkOut, struct mugy_array *fIn, enum resource_comp res) {
+void mugy_fft_r2c(struct mugy_ffts *ffts, struct mugy_array *fkOut, struct mugy_array *fIn, enum mugy_fft_type ttype, enum resource_comp res) {
 #if USE_GPU
   if (res == deviceComp)
-    return mugy_fft_xy_r2c_dev(ffts->dev, fkOut, fIn);
+    return mugy_fft_r2c_dev(ffts->dev, fkOut, fIn, ttype);
 #endif
   
-  struct mugy_fft_ho *cfft = ffts->ho->xy;  // Temp pointer for convenience.
+  struct mugy_fft_ho *cfft;  // Temp pointer for convenience.
+  if (ttype == mugy_fft_xy)
+    cfft = ffts->ho->xy;
+  else if (ttype == mugy_fft_mom_xy)
+    cfft = ffts->ho->mom_xy;
+  else
+    abortSimulation(" mugy_fft_r2c: fft type not supported! Terminating...\n");
 
   // Copy data into buffer.
   mugy_memcpy(cfft->rbuf, fIn->ho, fIn->nelemsz, host2host);
@@ -139,13 +183,23 @@ void fft_xy_r2c(struct mugy_ffts *ffts, struct mugy_array *fkOut, struct mugy_ar
     mugy_array_scale(fkOut, cfft->normFac, hostComp);
 }
 
-void fft_terminate(struct mugy_ffts *ffts) {
+void mugy_fft_terminate(struct mugy_ffts *ffts) {
 #if USE_GPU
   mugy_fft_terminate_dev(ffts->dev);  // Free memory for device FFTs.
 #endif
 
+  struct mugy_fft_ho *cfft;  // Temp pointer for convenience.
+
   // Deallocate objects for xy FFT of a single field.
-  struct mugy_fft_ho *cfft = ffts->ho->xy;  // Temp pointer for convenience.
+  cfft = ffts->ho->xy;
+  mugy_fftw_free(cfft->kbuf);
+  mugy_fftw_free(cfft->rbuf);
+  mugy_fftw_destroy_plan(cfft->plan_c2r);
+  mugy_fftw_destroy_plan(cfft->plan_r2c);
+  free(cfft);
+
+  // Deallocate objects for xy FFT of all moments.
+  cfft = ffts->ho->mom_xy;
   mugy_fftw_free(cfft->kbuf);
   mugy_fftw_free(cfft->rbuf);
   mugy_fftw_destroy_plan(cfft->plan_c2r);

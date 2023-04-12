@@ -10,9 +10,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 dataDir  = '/home/manaurer/multiscale/code/mugy/src/'
-#fileName = 'momk.bp'
-#varName  = 'momk'
-fileName = 'arr.bp'
+fileName = 'mom.bp'
+#fileName = 'arr.bp'
 varName  = 'globalVariable'
 
 
@@ -45,25 +44,49 @@ varType  = pm.varType(varName, fileName=filePathName, numpy=True)
 #plt.colorbar()
 #plt.show()
 
+#[ Moment variables have the shape [numMoments x Nz x Nx x Ny ],
+#[ where numMoments is the total number of moments across all species).
+#[ Select one x-y plane with varSelect = [starts, counts].
+varSelect = [[2,0,0,0], [1,1,varShape[2],varShape[3]]]
 
-##[ Real array.
-varSelect = [[0,0,0], [1,varShape[1],varShape[2]]]
-fldIn = np.zeros([varShape[1],varShape[2]], dtype=varType)
+#[ Read variable in.
+fldIn = np.zeros([varShape[2],varShape[3]], dtype=varType)
 pm.varRead(varName, fileName=filePathName, select=varSelect, array=fldIn)
+
 xNodal = pm.xGrid(fileName=filePathName, nodal=True)
 X = [np.outer(xNodal[0],np.ones(np.size(xNodal[1]))),
      np.outer(np.ones(np.size(xNodal[0])),xNodal[1])]
+
+#[ Create plot
 print("fld[:,21] = ",fldIn[:,21])
 #plt.pcolormesh(X[0], X[1], fldIn)
 #plt.colorbar()
 #plt.show()
 
+
+###[ Real array.
+#varSelect = [[0,0,0], [1,varShape[1],varShape[2]]]
+#fldIn = np.zeros([varShape[1],varShape[2]], dtype=varType)
+#pm.varRead(varName, fileName=filePathName, select=varSelect, array=fldIn)
+#xNodal = pm.xGrid(fileName=filePathName, nodal=True)
+#X = [np.outer(xNodal[0],np.ones(np.size(xNodal[1]))),
+#     np.outer(np.ones(np.size(xNodal[0])),xNodal[1])]
+#print("fld[:,21] = ",fldIn[:,21])
+#plt.pcolormesh(X[0], X[1], fldIn)
+#plt.colorbar()
+#plt.show()
+
 # Test fft on 43x22 grid
-gld = np.zeros([varShape[1],varShape[2]], dtype=varType)
+print(varType)
 kxMin = pm.attrRead('kxMin',fileName=dataDir+'momk.bp')
 xC = pm.xGrid(fileName=filePathName)
-for i in range(varShape[1]):
-  for j in range(varShape[2]):
+#gld = np.zeros([varShape[1],varShape[2]], dtype=varType)
+#for i in range(varShape[1]):
+#  for j in range(varShape[2]):
+#    gld[i,j] += 2.5e-2*np.sin(kxMin[0]*xC[0][i])*np.cos(kxMin[1]*xC[1][j]);
+gld = np.zeros([varShape[2],varShape[3]], dtype=varType)
+for i in range(varShape[2]):
+  for j in range(varShape[3]):
     gld[i,j] += 2.5e-2*np.sin(kxMin[0]*xC[0][i])*np.cos(kxMin[1]*xC[1][j]);
 
 #print("gld[:,21] = ",gld[:,21])
@@ -72,10 +95,10 @@ gldk = np.fft.rfft2(gld, s=gld.shape)
 gld = np.fft.irfft2(gldk, s=gld.shape)
 print("gld[:,21] = ",gld[:,21])
 
-plt.pcolormesh(X[0], X[1], fldIn-gld)
-#plt.pcolormesh(X[0], X[1], gld)
-plt.colorbar()
-plt.show()
+#plt.pcolormesh(X[0], X[1], fldIn-gld)
+##plt.pcolormesh(X[0], X[1], gld)
+#plt.colorbar()
+#plt.show()
 
 #print("Lx = ",xC[0][-1]-xC[0][0],xC[1][-1]-xC[1][0],xC[2][-1]-xC[2][0])
 #print("x[0] = ",xC[0])

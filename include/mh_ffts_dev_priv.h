@@ -35,6 +35,10 @@ struct mugy_fft_dev {
 };
 
 struct mugy_fft_fam_dev {
-  struct mugy_fft_dev *xy;    // 2D FFT of x-y planes.
-  struct mugy_fft_dev *xy_a;  // 2D FFT of (aliased) x-y planes.
+  // FFTs on dealised grids.
+  struct mugy_fft_dev *xy;      // xy FFT of single 3D array.
+  struct mugy_fft_dev *mom_xy;  // xy FFT of all moments.
+  // FFTs on aliased grids.
+  struct mugy_fft_dev *xy_a;      // xy FFT of single 3D array.
+  struct mugy_fft_dev *mom_xy_a;  // xy FFT of all moments.
 };

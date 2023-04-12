@@ -19,11 +19,18 @@
 #include "mh_array.h"
 #include "mh_grid.h"
 
+// Type of FFTs supported:
+//   xy:       xy FFT of single 3D array on dealiased grids.
+//   xy_a:     xy FFT of single 3D array on aliased grids.
+//   mom_xy:   xy FFT of all moments on dealiased grids.
+//   mom_xy_a: xy FFT of all moments on aliased grids.
+enum mugy_fft_type {mugy_fft_xy, mugy_fft_mom_xy, mugy_fft_xy_a, mugy_fft_mom_xy_a};
+
 typedef struct mugy_ffts mugy_ffts;
 
-struct mugy_ffts *fft_init(struct mugy_grid gridG, struct mugy_grid gridL, struct mugy_comms comms);
+struct mugy_ffts *mugy_fft_init(struct mugy_grid gridG, struct mugy_grid gridL, struct mugy_population popL, struct mugy_comms comms);
 
-void fft_xy_c2r(struct mugy_ffts *ffts, struct mugy_array *fOut, struct mugy_array *fkIn, enum resource_comp res);
-void fft_xy_r2c(struct mugy_ffts *ffts, struct mugy_array *fkOut, struct mugy_array *fIn, enum resource_comp res);
+void mugy_fft_c2r(struct mugy_ffts *ffts, struct mugy_array *fOut, struct mugy_array *fkIn, enum mugy_fft_type ttype, enum resource_comp res);
+void mugy_fft_r2c(struct mugy_ffts *ffts, struct mugy_array *fkOut, struct mugy_array *fIn, enum mugy_fft_type ttype, enum resource_comp res);
 
-void fft_terminate(struct mugy_ffts *ffts);
+void mugy_fft_terminate(struct mugy_ffts *ffts);
