@@ -74,8 +74,15 @@ struct mugy_ad_file *ad_create_mugy_array_file(struct mugy_ioManager *ioman, cha
   }
   ad_check_handler(adf->var, " ADIOS: Error defining variable.");
 
-  adf->eng = adios2_open(adf->io, strcat(adf->fname,".bp"), adios2_mode_write);
+  // Append .bp to file name
+  char *fnamebp = alloc_charArray_ho(strlen(adf->fname)+3+1);
+  strcpy(fnamebp, adf->fname);
+  strcat(fnamebp,".bp");
+
+  adf->eng = adios2_open(adf->io, fnamebp, adios2_mode_write);
   ad_check_handler(adf->eng, " ADIOS: Error creating engine/opening file.");
+
+  free(fnamebp);
 
   return adf;
 }
@@ -134,8 +141,15 @@ struct mugy_ad_file *ad_create_moments_file(struct mugy_ioManager *ioman, char* 
 
   ad_check_handler(adf->var, " ADIOS: Error defining variable.");
 
-  adf->eng = adios2_open(adf->io, strcat(adf->fname,".bp"), adios2_mode_write);
+  // Append .bp to file name
+  char *fnamebp = alloc_charArray_ho(strlen(adf->fname)+3+1);
+  strcpy(fnamebp, adf->fname);
+  strcat(fnamebp,".bp");
+
+  adf->eng = adios2_open(adf->io, fnamebp, adios2_mode_write);
   ad_check_handler(adf->eng, " ADIOS: Error creating engine/opening file.");
+
+  free(fnamebp);
 
   return adf;
 }

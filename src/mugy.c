@@ -46,6 +46,9 @@ int main(int argc, char *argv[]) {
 
   set_initialCondition(gridG, gridL, popG, &popL, fftMan, ioMan);  // Impose ICs.
 
+  // Write initial conditions.
+  write_mugy_array(ioMan, "momk", NULL, *popL.momk);
+
   // ............ END OF INITIALIZATION ............ //
 
   MPI_Barrier(MPI_COMM_WORLD); // To avoid premature deallocations.
