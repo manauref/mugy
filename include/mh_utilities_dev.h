@@ -1,10 +1,9 @@
 /* mugy: mh_utilities_dev.h
-   
-  Handy device (GPU) functions.
-*/
-
-#ifndef MUGY_UTILITIES_DEV
-#define MUGY_UTILITIES_DEV
+ *
+ * Handy device (GPU) functions.
+ *
+ */
+#pragma once
 
 #include <stdio.h>
 #include <stdint.h>
@@ -530,7 +529,4 @@ inline int findCudaDevice(int argc, const char **argv) {
 
   return devID;
 }
-#endif
-
-
 #endif

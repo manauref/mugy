@@ -3,9 +3,7 @@
  * IO module header file.
  *
  */
-
-#ifndef MUGY_IO_TOOLS 
-#define MUGY_IO_TOOLS 
+#pragma once
 
 #include "mh_macros.h"
 
@@ -19,7 +17,3 @@ void arrPrint_real(const real *arr, mint numElements, const char *preStr, const 
 // Only let a single rank print.
 void arrPrintS_mint(const mint *arr, mint numElements, const char *preStr, const char *postStr, mint rank);
 void arrPrintS_real(const real *arr, mint numElements, const char *preStr, const char *postStr, mint rank);
-
-//void writeFields(); 
-
-#endif

@@ -3,9 +3,7 @@
  * Utility functions used in mugy.
  *
  */
-
-#ifndef MUGY_UTILITIES
-#define MUGY_UTILITIES
+#pragma once
 
 #include <math.h>     // e.g. for pow.
 #include <stdlib.h>   // e.g. for abs.
@@ -41,4 +39,3 @@ MUGY_CU_DH static inline mint mugy_div_up_mint(int a, int b) {
   // Divide mint a by mint b rounding up.
   return (a%b != 0) ? (a/b+1) : (a/b);
 }
-#endif

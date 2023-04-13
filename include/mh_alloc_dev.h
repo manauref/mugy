@@ -3,9 +3,7 @@
  * Functions used to allocate arrays on device (GPU).
  *
  */
-  
-#ifndef MUGY_ALLOC_DEV
-#define MUGY_ALLOC_DEV
+#pragma once
 
 #include "mh_macros.h"
 
@@ -16,5 +14,3 @@ void *mugy_alloc_dev(mint numElements, size_t elemsz);
 void free_realArray_dev(real *arr);
 void free_fourierArray_dev(void *arrk);
 void mugy_free_dev(void *arr);
-
-#endif

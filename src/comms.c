@@ -10,7 +10,7 @@
 #include "mh_io_tools.h"
 #include <string.h>   // e.g. for memcpy.
 
-struct mugy_comms *comms_init(mint argc, char *argv[]) {
+struct mugy_comms *mugy_comms_init(mint argc, char *argv[]) {
   // Initialize MPI, get rank of this process and total number of processes.
   struct mugy_comms *comms = (struct mugy_comms *) malloc(sizeof(struct mugy_comms));
   comms->world.comm = MPI_COMM_WORLD;
@@ -20,7 +20,7 @@ struct mugy_comms *comms_init(mint argc, char *argv[]) {
   return comms;
 }
 
-void comms_sub_init(struct mugy_comms *comms, struct mugy_grid grid, struct mugy_population pop) {
+void mugy_comms_sub_init(struct mugy_comms *comms, struct mugy_grid grid, struct mugy_population pop) {
   // Initialize the various sub-communicators needed.
   
   // Check the number of MPI processes is correct.
@@ -69,10 +69,10 @@ void comms_sub_init(struct mugy_comms *comms, struct mugy_grid grid, struct mugy
     mint remain[nDim+1] = {true,true,true,true};
     remain[commOrg[d]] = false;
 
-    scomm            = &comms->sub3d[0]; 
-    scomm->dim       = 3;
-    scomm->coord     = alloc_mintArray_ho(scomm->dim);
-    scomm->decomp    = alloc_mintArray_ho(scomm->dim);
+    scomm         = &comms->sub3d[0]; 
+    scomm->dim    = 3;
+    scomm->coord  = alloc_mintArray_ho(scomm->dim);
+    scomm->decomp = alloc_mintArray_ho(scomm->dim);
     for (mint e=0; e<scomm->dim; e++)
       scomm->decomp[e] = comms->world.decomp[e];
     MPI_Cart_sub(comms->sub4d[0].comm, remain, (MPI_Comm*) &scomm->comm);
@@ -87,10 +87,10 @@ void comms_sub_init(struct mugy_comms *comms, struct mugy_grid grid, struct mugy
     mint remain[nDim+1] = {true,true,true,true};
     remain[commOrg[d]] = false;  remain[commOrg[nDim]] = false;
 
-    scomm            = &comms->sub2d[d]; 
-    scomm->dim       = 2;
-    scomm->coord     = alloc_mintArray_ho(scomm->dim);
-    scomm->decomp    = alloc_mintArray_ho(scomm->dim);
+    scomm         = &comms->sub2d[d]; 
+    scomm->dim    = 2;
+    scomm->coord  = alloc_mintArray_ho(scomm->dim);
+    scomm->decomp = alloc_mintArray_ho(scomm->dim);
     for (mint e=0; e<scomm->dim; e++)
       scomm->decomp[e] = comms->world.decomp[e];
     MPI_Cart_sub(comms->sub4d[0].comm, remain, (MPI_Comm*) &scomm->comm);
@@ -147,97 +147,98 @@ void distribute1dDOFs(const mint procs, const mint procID, const mint globalDOFs
 
 }
 
-void distributeDOFs(struct mugy_comms comms, struct mugy_grid globalGrid, struct mugy_population globalPop,
-  struct mugy_grid *localGrid, struct mugy_population *localPop) {
+void mugy_comms_distributeDOFs(struct mugy_comms comms, struct mugy_grid *grid, struct mugy_population *pop) {
   // Distribute s,Z,X,Y amongst MPI processes.
   
   // Distribute the species.
   mint rank_s = comms.sub1d[nDim].rank;
-  distribute1dDOFs(globalPop.mpiProcs, rank_s, globalPop.numSpecies, &localPop->numSpecies, &localPop->globalSpecOff);
-  localPop->globalMomOff = 0;
-  for (mint s=0; s<localPop->globalSpecOff; s++) localPop->globalMomOff += globalPop.spec[s].numMoments;
-  localPop->spec = (struct mugy_species*) calloc(localPop->numSpecies, sizeof(struct mugy_species));
-  for (mint s=0; s<localPop->numSpecies; s++) {
-    localPop->spec[s].numMoments = globalPop.spec[s+localPop->globalSpecOff].numMoments;
+  distribute1dDOFs(pop->mpiProcs, rank_s, pop->global.numSpecies, &pop->local.numSpecies, &pop->local.globalSpecOff);
+  pop->local.globalMomOff = 0;
+  for (mint s=0; s<pop->local.globalSpecOff; s++) pop->local.globalMomOff += pop->global.spar[s].numMoments;
+  pop->local.spar = (struct mugy_species_pars*) calloc(pop->local.numSpecies, sizeof(struct mugy_species_pars));
+  for (mint s=0; s<pop->local.numSpecies; s++) {
+    pop->local.spar[s].numMoments = pop->global.spar[s+pop->local.globalSpecOff].numMoments;
 
-    localPop->spec[s].alpha      = alloc_realArray_ho(localPop->spec[s].numMoments);
-    localPop->spec[s].nu         = alloc_realArray_ho(localPop->spec[s].numMoments);
-    localPop->spec[s].hDiffOrder = alloc_realArray_ho(nDim);
-    localPop->spec[s].hDiff      = alloc_realArray_ho(nDim);
-    localPop->spec[s].kDiffMin   = alloc_realArray_ho(nDim);
-    localPop->spec[s].initAux    = alloc_realArray_ho(nDim);
+    pop->local.spar[s].alpha      = alloc_realArray_ho(pop->local.spar[s].numMoments);
+    pop->local.spar[s].nu         = alloc_realArray_ho(pop->local.spar[s].numMoments);
+    pop->local.spar[s].hDiffOrder = alloc_realArray_ho(nDim);
+    pop->local.spar[s].hDiff      = alloc_realArray_ho(nDim);
+    pop->local.spar[s].kDiffMin   = alloc_realArray_ho(nDim);
+    pop->local.spar[s].initAux    = alloc_realArray_ho(nDim);
 
-    localPop->spec[s].qCharge    = globalPop.spec[s+localPop->globalSpecOff].qCharge   ;
-    localPop->spec[s].muMass     = globalPop.spec[s+localPop->globalSpecOff].muMass    ;
-    localPop->spec[s].tau        = globalPop.spec[s+localPop->globalSpecOff].tau       ;
-    localPop->spec[s].omSt       = globalPop.spec[s+localPop->globalSpecOff].omSt      ;
-    localPop->spec[s].omd        = globalPop.spec[s+localPop->globalSpecOff].omd       ;
-    localPop->spec[s].delta      = globalPop.spec[s+localPop->globalSpecOff].delta     ;
-    localPop->spec[s].deltaPerp  = globalPop.spec[s+localPop->globalSpecOff].deltaPerp ;
-    localPop->spec[s].eta        = globalPop.spec[s+localPop->globalSpecOff].eta       ;
-    memcpy(localPop->spec[s].alpha, globalPop.spec[s+localPop->globalSpecOff].alpha, localPop->spec[s].numMoments*sizeof(real));
-    memcpy(localPop->spec[s].nu   , globalPop.spec[s+localPop->globalSpecOff].nu   , localPop->spec[s].numMoments*sizeof(real));
-    localPop->spec[s].delta0     = globalPop.spec[s+localPop->globalSpecOff].delta0    ;
-    memcpy(localPop->spec[s].hDiffOrder, globalPop.spec[s+localPop->globalSpecOff].hDiffOrder, nDim*sizeof(real));
-    memcpy(localPop->spec[s].hDiff     , globalPop.spec[s+localPop->globalSpecOff].hDiff     , nDim*sizeof(real));
-    memcpy(localPop->spec[s].kDiffMin  , globalPop.spec[s+localPop->globalSpecOff].kDiffMin  , nDim*sizeof(real));
-    localPop->spec[s].icOp       = globalPop.spec[s+localPop->globalSpecOff].icOp      ;
-    memcpy(localPop->spec[s].initAux, globalPop.spec[s+localPop->globalSpecOff].initAux, nDim*sizeof(real));
-    localPop->spec[s].initA      = globalPop.spec[s+localPop->globalSpecOff].initA     ;
-    localPop->spec[s].noiseA     = globalPop.spec[s+localPop->globalSpecOff].noiseA    ;
+    pop->local.spar[s].qCharge    = pop->global.spar[s+pop->local.globalSpecOff].qCharge   ;
+    pop->local.spar[s].muMass     = pop->global.spar[s+pop->local.globalSpecOff].muMass    ;
+    pop->local.spar[s].tau        = pop->global.spar[s+pop->local.globalSpecOff].tau       ;
+    pop->local.spar[s].omSt       = pop->global.spar[s+pop->local.globalSpecOff].omSt      ;
+    pop->local.spar[s].omd        = pop->global.spar[s+pop->local.globalSpecOff].omd       ;
+    pop->local.spar[s].delta      = pop->global.spar[s+pop->local.globalSpecOff].delta     ;
+    pop->local.spar[s].deltaPerp  = pop->global.spar[s+pop->local.globalSpecOff].deltaPerp ;
+    pop->local.spar[s].eta        = pop->global.spar[s+pop->local.globalSpecOff].eta       ;
+    memcpy(pop->local.spar[s].alpha, pop->global.spar[s+pop->local.globalSpecOff].alpha, pop->local.spar[s].numMoments*sizeof(real));
+    memcpy(pop->local.spar[s].nu   , pop->global.spar[s+pop->local.globalSpecOff].nu   , pop->local.spar[s].numMoments*sizeof(real));
+    pop->local.spar[s].delta0     = pop->global.spar[s+pop->local.globalSpecOff].delta0    ;
+    memcpy(pop->local.spar[s].hDiffOrder, pop->global.spar[s+pop->local.globalSpecOff].hDiffOrder, nDim*sizeof(real));
+    memcpy(pop->local.spar[s].hDiff     , pop->global.spar[s+pop->local.globalSpecOff].hDiff     , nDim*sizeof(real));
+    memcpy(pop->local.spar[s].kDiffMin  , pop->global.spar[s+pop->local.globalSpecOff].kDiffMin  , nDim*sizeof(real));
+    pop->local.spar[s].icOp       = pop->global.spar[s+pop->local.globalSpecOff].icOp      ;
+    memcpy(pop->local.spar[s].initAux, pop->global.spar[s+pop->local.globalSpecOff].initAux, nDim*sizeof(real));
+    pop->local.spar[s].initA      = pop->global.spar[s+pop->local.globalSpecOff].initA     ;
+    pop->local.spar[s].noiseA     = pop->global.spar[s+pop->local.globalSpecOff].noiseA    ;
   }
   // Set the total number of moments.
-  localPop->numMomentsTot = 0;
-  for (int s=0; s<localPop->numSpecies; s++) localPop->numMomentsTot += localPop->spec[s].numMoments;
+  pop->local.numMomentsTot = 0;
+  for (int s=0; s<pop->local.numSpecies; s++) pop->local.numMomentsTot += pop->local.spar[s].numMoments;
 
   // Distribute the real-space and Fourier-space points. 
+  struct mugy_grid_ada *gridG = &grid->global;
+  struct mugy_grid_ada *gridL = &grid->local;
   for (mint d=0; d<nDim; d++) {
     mint rank_i = comms.sub1d[d].rank;
-    distribute1dDOFs(globalGrid.mpiProcs[d], rank_i, globalGrid.fG.Nekx[d],
-                     &localGrid->fG.Nekx[d], &localGrid->fG.globalOff[d]);
-    distribute1dDOFs(globalGrid.mpiProcs[d], rank_i, globalGrid.fG.dual.Nx[d],
-                     &localGrid->fG.dual.Nx[d], &localGrid->fG.dual.globalOff[d]);
-    distribute1dDOFs(globalGrid.mpiProcs[d], rank_i, globalGrid.fGa.Nekx[d],
-                     &localGrid->fGa.Nekx[d], &localGrid->fGa.globalOff[d]);
-    distribute1dDOFs(globalGrid.mpiProcs[d], rank_i, globalGrid.fGa.dual.Nx[d],
-                     &localGrid->fGa.dual.Nx[d], &localGrid->fGa.dual.globalOff[d]);
+    distribute1dDOFs(grid->mpiProcs[d], rank_i, gridG->deal.Nekx[d],
+                     &gridL->deal.Nekx[d], &gridL->deal.globalOff[d]);
+    distribute1dDOFs(grid->mpiProcs[d], rank_i, gridG->deal.dual.Nx[d],
+                     &gridL->deal.dual.Nx[d], &gridL->deal.dual.globalOff[d]);
+    distribute1dDOFs(grid->mpiProcs[d], rank_i, gridG->al.Nekx[d],
+                     &gridL->al.Nekx[d], &gridL->al.globalOff[d]);
+    distribute1dDOFs(grid->mpiProcs[d], rank_i, gridG->al.dual.Nx[d],
+                     &gridL->al.dual.Nx[d], &gridL->al.dual.globalOff[d]);
   }
-  localGrid->fG.NekxTot      = prod_mint(localGrid->fG.Nekx,nDim);
-  localGrid->fG.dual.NxTot   = prod_mint(localGrid->fG.dual.Nx,nDim);
-  localGrid->fG.NekxyTot     = prod_mint(localGrid->fG.Nekx,2);
-  localGrid->fG.dual.NxyTot  = prod_mint(localGrid->fG.dual.Nx,2);
-  localGrid->fGa.NekxTot     = prod_mint(localGrid->fGa.Nekx,nDim);
-  localGrid->fGa.dual.NxTot  = prod_mint(localGrid->fGa.dual.Nx,nDim);
-  localGrid->fGa.NekxyTot    = prod_mint(localGrid->fGa.Nekx,2);
-  localGrid->fGa.dual.NxyTot = prod_mint(localGrid->fGa.dual.Nx,2);
+  gridL->deal.NekxTot      = prod_mint(gridL->deal.Nekx,nDim);
+  gridL->deal.dual.NxTot   = prod_mint(gridL->deal.dual.Nx,nDim);
+  gridL->deal.NekxyTot     = prod_mint(gridL->deal.Nekx,2);
+  gridL->deal.dual.NxyTot  = prod_mint(gridL->deal.dual.Nx,2);
+  gridL->al.NekxTot     = prod_mint(gridL->al.Nekx,nDim);
+  gridL->al.dual.NxTot  = prod_mint(gridL->al.dual.Nx,nDim);
+  gridL->al.NekxyTot    = prod_mint(gridL->al.Nekx,2);
+  gridL->al.dual.NxyTot = prod_mint(gridL->al.dual.Nx,2);
 
   // Create local real-space and Fourier-space coordinate arrays.
-  localGrid->fG.kx     = alloc_realArray_ho(sum_mint(localGrid->fG.Nekx, nDim));
-  localGrid->fG.dual.x = alloc_realArray_ho(sum_mint(localGrid->fG.dual.Nx, nDim));
-  localGrid->fGa.kx     = alloc_realArray_ho(sum_mint(localGrid->fGa.Nekx, nDim));
-  localGrid->fGa.dual.x = alloc_realArray_ho(sum_mint(localGrid->fGa.dual.Nx, nDim));
+  gridL->deal.kx     = alloc_realArray_ho(sum_mint(gridL->deal.Nekx, nDim));
+  gridL->deal.dual.x = alloc_realArray_ho(sum_mint(gridL->deal.dual.Nx, nDim));
+  gridL->al.kx     = alloc_realArray_ho(sum_mint(gridL->al.Nekx, nDim));
+  gridL->al.dual.x = alloc_realArray_ho(sum_mint(gridL->al.dual.Nx, nDim));
   for (mint d=0; d<nDim; d++) {
-    memcpy(getArray_real(localGrid->fG.kx,localGrid->fG.Nekx,d),
-           getArray_real(globalGrid.fG.kx,globalGrid.fG.Nekx,d)+localGrid->fG.globalOff[d], localGrid->fG.Nekx[d]*sizeof(real));
-    memcpy(getArray_real(localGrid->fG.dual.x,localGrid->fG.dual.Nx,d),
-           getArray_real(globalGrid.fG.dual.x,globalGrid.fG.dual.Nx,d)+localGrid->fG.dual.globalOff[d], localGrid->fG.dual.Nx[d]*sizeof(real));
-    memcpy(getArray_real(localGrid->fGa.kx,localGrid->fGa.Nekx,d),
-           getArray_real(globalGrid.fGa.kx,globalGrid.fGa.Nekx,d)+localGrid->fGa.globalOff[d], localGrid->fGa.Nekx[d]*sizeof(real));
-    memcpy(getArray_real(localGrid->fGa.dual.x,localGrid->fGa.dual.Nx,d),
-           getArray_real(globalGrid.fGa.dual.x,globalGrid.fGa.dual.Nx,d)+localGrid->fGa.dual.globalOff[d], localGrid->fGa.dual.Nx[d]*sizeof(real));
+    memcpy(getArray_real(gridL->deal.kx,gridL->deal.Nekx,d),
+           getArray_real(gridG->deal.kx,gridG->deal.Nekx,d)+gridL->deal.globalOff[d], gridL->deal.Nekx[d]*sizeof(real));
+    memcpy(getArray_real(gridL->deal.dual.x,gridL->deal.dual.Nx,d),
+           getArray_real(gridG->deal.dual.x,gridG->deal.dual.Nx,d)+gridL->deal.dual.globalOff[d], gridL->deal.dual.Nx[d]*sizeof(real));
+    memcpy(getArray_real(gridL->al.kx,gridL->al.Nekx,d),
+           getArray_real(gridG->al.kx,gridG->al.Nekx,d)+gridL->al.globalOff[d], gridL->al.Nekx[d]*sizeof(real));
+    memcpy(getArray_real(gridL->al.dual.x,gridL->al.dual.Nx,d),
+           getArray_real(gridG->al.dual.x,gridG->al.dual.Nx,d)+gridL->al.dual.globalOff[d], gridL->al.dual.Nx[d]*sizeof(real));
   }
 
   // Copy global scalars into local grids.
   for (mint d=0; d<nDim; d++) {
-    localGrid->fG.kxMin[d]    = globalGrid.fG.kxMin[d];
-    localGrid->fGa.kxMin[d]   = globalGrid.fGa.kxMin[d];
-    localGrid->fG.dual.dx[d]  = globalGrid.fG.dual.dx[d];
-    localGrid->fGa.dual.dx[d] = globalGrid.fGa.dual.dx[d];
+    gridL->deal.kxMin[d]    = gridG->deal.kxMin[d];
+    gridL->al.kxMin[d]   = gridG->al.kxMin[d];
+    gridL->deal.dual.dx[d]  = gridG->deal.dual.dx[d];
+    gridL->al.dual.dx[d] = gridG->al.dual.dx[d];
   }
 
 }
 
-void comms_terminate(struct mugy_comms *comms) {
+void mugy_comms_terminate(struct mugy_comms *comms) {
   // Close MPI up, thoroughly.
   MPI_Barrier(comms->world.comm); // To avoid premature deallocations.
 

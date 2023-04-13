@@ -4,8 +4,7 @@
  * and functions to use/change it.
  *
  */
-#ifndef MUGY_FIELD
-#define MUGY_FIELD
+#pragma once
 
 #include "mh_data.h"
 
@@ -15,5 +14,3 @@ struct mugy_fieldParameters {
   // The following are used by initial conditions.
   mint icOp;      // IC option.
 };
-
-#endif

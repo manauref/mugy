@@ -3,9 +3,7 @@
  * Header file for ADIOS IO module.
  *
  */
-
-#ifndef MUGY_IO_ADIOS
-#define MUGY_IO_ADIOS
+#pragma once
 
 #include "adios2_c.h"
 #include "mh_userFLAGS.h"
@@ -50,28 +48,24 @@ struct mugy_ioManager {
 };
 
 // Start the IO interface.
-struct mugy_ioManager *io_init(struct mugy_comms comms); 
+struct mugy_ioManager *mugy_io_init(struct mugy_comms comms); 
 
 // Create a file holding global real(Fourier)Arrays.
-struct mugy_ad_file *ad_create_mugy_array_file(struct mugy_ioManager *ioman, char* fname,
-  struct mugy_grid globalGrid, struct mugy_grid localGrid, enum mugy_datatype dtype);
+struct mugy_ad_file *mugy_io_create_mugy_array_file(struct mugy_ioManager *ioman, char* fname,
+  struct mugy_grid grid, enum mugy_datatype dtype);
 
 // Create a file holding global real(Fourier) moments.
-struct mugy_ad_file *ad_create_moments_file(struct mugy_ioManager *ioman, char* fname,
-  struct mugy_grid globalGrid, struct mugy_grid localGrid, struct mugy_population globalPop,
-  struct mugy_population localPop, enum mugy_datatype dtype);
+struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, char* fname,
+  struct mugy_grid grid, struct mugy_population pop, enum mugy_datatype dtype);
 
 // Create files for IO.
-void setup_files(struct mugy_ioManager *ioman, struct mugy_grid globalGrid, struct mugy_grid localGrid,
-  struct mugy_population globalPop, struct mugy_population localPop);
+void mugy_io_setup_files(struct mugy_ioManager *ioman, struct mugy_grid grid, struct mugy_population pop);
 
 // Output real(Fourier)-space array.
-void write_mugy_array(struct mugy_ioManager *ioman, char* fname, struct mugy_ad_file *fh, struct mugy_array arr);
+void mugy_io_write_mugy_array(struct mugy_ioManager *ioman, char* fname, struct mugy_ad_file *fh, struct mugy_array arr);
 
 // Close a file given its mugy file handle.
-void io_close_file(struct mugy_ad_file *fh);
+void mugy_io_close_file(struct mugy_ad_file *fh);
 
 // Finalize ADIOS IO.
-void io_terminate(struct mugy_ioManager *ioman);
-
-#endif
+void mugy_io_terminate(struct mugy_ioManager *ioman);

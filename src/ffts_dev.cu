@@ -11,7 +11,7 @@ extern "C" {
 }
 #include "mh_ffts_dev_priv.h"
 
-struct mugy_fft_fam_dev *mugy_fft_init_dev(struct mugy_grid gridG, struct mugy_grid gridL, struct mugy_population popL, struct mugy_comms comms) {
+struct mugy_fft_fam_dev *mugy_fft_init_dev(struct mugy_grid grid, struct mugy_pop popL, struct mugy_comms comms) {
 
   struct mugy_fft_fam_dev *ffts = (struct mugy_fft_fam_dev *) malloc(sizeof(struct mugy_fft_fam_dev));
 
@@ -28,18 +28,18 @@ struct mugy_fft_fam_dev *mugy_fft_init_dev(struct mugy_grid gridG, struct mugy_g
   long long int fftSize[fftDim], fftNum;
   long long int inembed[fftDim], istride, idist;
   long long int onembed[fftDim], ostride, odist;
-  fftSize[0] = gridG.fG.dual.Nx[0];
-  fftSize[1] = gridG.fG.dual.Nx[1];
-  fftNum     = gridL.fG.Nekx[2];
+  fftSize[0] = grid.global.deal.dual.Nx[0];
+  fftSize[1] = grid.global.deal.dual.Nx[1];
+  fftNum     = grid.local.deal.Nekx[2];
   istride    = 1;
   ostride    = 1;
 
-  inembed[0] = gridL.fG.dual.Nx[0];
-  inembed[1] = gridL.fG.dual.Nx[1];
-  idist      = gridL.fG.dual.NxyTot;
-  onembed[0] = gridL.fG.Nekx[0];
-  onembed[1] = gridL.fG.Nekx[1];
-  odist      = gridL.fG.NekxyTot;
+  inembed[0] = grid.local.deal.dual.Nx[0];
+  inembed[1] = grid.local.deal.dual.Nx[1];
+  idist      = grid.local.deal.dual.NxyTot;
+  onembed[0] = grid.local.deal.Nekx[0];
+  onembed[1] = grid.local.deal.Nekx[1];
+  odist      = grid.local.deal.NekxyTot;
   CUFFT_CALL(cufftCreate(&cfft->plan_r2c));
   CUFFT_CALL(cufftXtMakePlanMany(cfft->plan_r2c, fftDim, fftSize,
     inembed, istride, idist, mugy_cufft_real_enum,
@@ -47,12 +47,12 @@ struct mugy_fft_fam_dev *mugy_fft_init_dev(struct mugy_grid gridG, struct mugy_g
     fftNum, workSizes_r2c, mugy_cufft_executiontype));
   CUFFT_CALL(cufftSetStream(cfft->plan_r2c, cfft->stream));
 
-  inembed[0] = gridL.fG.Nekx[0];
-  inembed[1] = gridL.fG.Nekx[1];
-  idist      = gridL.fG.NekxyTot;
-  onembed[0] = gridL.fG.dual.Nx[0];
-  onembed[1] = gridL.fG.dual.Nx[1];
-  odist      = gridL.fG.dual.NxyTot;
+  inembed[0] = grid.local.deal.Nekx[0];
+  inembed[1] = grid.local.deal.Nekx[1];
+  idist      = grid.local.deal.NekxyTot;
+  onembed[0] = grid.local.deal.dual.Nx[0];
+  onembed[1] = grid.local.deal.dual.Nx[1];
+  odist      = grid.local.deal.dual.NxyTot;
   CUFFT_CALL(cufftCreate(&cfft->plan_c2r));
   CUFFT_CALL(cufftXtMakePlanMany(cfft->plan_c2r, fftDim, fftSize,
     inembed, istride, idist, mugy_cufft_fourier_enum,
@@ -62,10 +62,10 @@ struct mugy_fft_fam_dev *mugy_fft_init_dev(struct mugy_grid gridG, struct mugy_g
 
   // Allocate buffers.
   // Switch these mallocs to mugy functions.
-  CUDA_RT_CALL(cudaMalloc(&cfft->rbuf, gridL.fG.dual.NxTot*sizeof(real)));
-  CUDA_RT_CALL(cudaMalloc(&cfft->kbuf, gridL.fG.NekxTot*sizeof(mugy_cufft_fourier)));
+  CUDA_RT_CALL(cudaMalloc(&cfft->rbuf, grid.local.deal.dual.NxTot*sizeof(real)));
+  CUDA_RT_CALL(cudaMalloc(&cfft->kbuf, grid.local.deal.NekxTot*sizeof(mugy_cufft_fourier)));
 
-  cfft->normFac = 1./((real)gridG.fG.dual.NxyTot);
+  cfft->normFac = 1./((real)grid.global.deal.dual.NxyTot);
   cfft->forwardNorm = false;  // This FFT is only used for ICs given in real-space.
 
   // ....... End setup for 2D FFTs of a single field ......... //
@@ -76,14 +76,14 @@ struct mugy_fft_fam_dev *mugy_fft_init_dev(struct mugy_grid gridG, struct mugy_g
 
   CUDA_RT_CALL(cudaStreamCreateWithFlags(&cfft->stream, cudaStreamNonBlocking));
 
-  fftNum     = popL.numMomentsTot*gridL.fG.Nekx[2];
+  fftNum     = popL.numMomentsTot*grid.local.deal.Nekx[2];
 
-  inembed[0] = gridL.fG.dual.Nx[0];
-  inembed[1] = gridL.fG.dual.Nx[1];
-  idist      = gridL.fG.dual.NxyTot;
-  onembed[0] = gridL.fG.Nekx[0];
-  onembed[1] = gridL.fG.Nekx[1];
-  odist      = gridL.fG.NekxyTot;
+  inembed[0] = grid.local.deal.dual.Nx[0];
+  inembed[1] = grid.local.deal.dual.Nx[1];
+  idist      = grid.local.deal.dual.NxyTot;
+  onembed[0] = grid.local.deal.Nekx[0];
+  onembed[1] = grid.local.deal.Nekx[1];
+  odist      = grid.local.deal.NekxyTot;
   CUFFT_CALL(cufftCreate(&cfft->plan_r2c));
   CUFFT_CALL(cufftXtMakePlanMany(cfft->plan_r2c, fftDim, fftSize,
     inembed, istride, idist, mugy_cufft_real_enum,
@@ -91,12 +91,12 @@ struct mugy_fft_fam_dev *mugy_fft_init_dev(struct mugy_grid gridG, struct mugy_g
     fftNum, workSizes_r2c, mugy_cufft_executiontype));
   CUFFT_CALL(cufftSetStream(cfft->plan_r2c, cfft->stream));
 
-  inembed[0] = gridL.fG.Nekx[0];
-  inembed[1] = gridL.fG.Nekx[1];
-  idist      = gridL.fG.NekxyTot;
-  onembed[0] = gridL.fG.dual.Nx[0];
-  onembed[1] = gridL.fG.dual.Nx[1];
-  odist      = gridL.fG.dual.NxyTot;
+  inembed[0] = grid.local.deal.Nekx[0];
+  inembed[1] = grid.local.deal.Nekx[1];
+  idist      = grid.local.deal.NekxyTot;
+  onembed[0] = grid.local.deal.dual.Nx[0];
+  onembed[1] = grid.local.deal.dual.Nx[1];
+  odist      = grid.local.deal.dual.NxyTot;
   CUFFT_CALL(cufftCreate(&cfft->plan_c2r));
   CUFFT_CALL(cufftXtMakePlanMany(cfft->plan_c2r, fftDim, fftSize,
     inembed, istride, idist, mugy_cufft_fourier_enum,
@@ -106,10 +106,10 @@ struct mugy_fft_fam_dev *mugy_fft_init_dev(struct mugy_grid gridG, struct mugy_g
 
   // Allocate buffers.
   // Switch these mallocs to mugy functions.
-  CUDA_RT_CALL(cudaMalloc(&cfft->rbuf, popL.numMomentsTot*gridL.fG.dual.NxTot*sizeof(real)));
-  CUDA_RT_CALL(cudaMalloc(&cfft->kbuf, popL.numMomentsTot*gridL.fG.NekxTot*sizeof(mugy_cufft_fourier)));
+  CUDA_RT_CALL(cudaMalloc(&cfft->rbuf, popL.numMomentsTot*grid.local.deal.dual.NxTot*sizeof(real)));
+  CUDA_RT_CALL(cudaMalloc(&cfft->kbuf, popL.numMomentsTot*grid.local.deal.NekxTot*sizeof(mugy_cufft_fourier)));
 
-  cfft->normFac = 1./((real)gridG.fG.dual.NxyTot);
+  cfft->normFac = 1./((real)grid.global.deal.dual.NxyTot);
   cfft->forwardNorm = false;  // This FFT is only used for ICs given in real-space.
 
   // ....... End setup for xy FFTs of all moments ......... //

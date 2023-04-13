@@ -3,9 +3,7 @@
  * Functions used to allocate arrays.
  *
  */
-
-#ifndef MUGY_ALLOC
-#define MUGY_ALLOC
+#pragma once
 
 #include "mh_data.h"
 #include "mh_grid.h"
@@ -24,4 +22,3 @@ void *mugy_alloc(mint numElements, size_t elemsz, enum resource_mem res);
 
 void mugy_free_ho(void *arr);
 void mugy_free(void *arr, enum resource_mem res);
-#endif

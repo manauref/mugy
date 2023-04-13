@@ -3,8 +3,7 @@
  * MPI-related operations.
  *
  */
-#ifndef MUGY_MPI_TOOLS 
-#define MUGY_MPI_TOOLS 
+#pragma once
 
 #include "mh_macros.h"
 #include "mh_grid.h"
@@ -23,17 +22,12 @@ struct mugy_comms {
   struct mugy_comms_sub *sub1d, *sub2d, *sub3d, *sub4d; // 1D, 2D, 3D, 4d subcomms.
 };
 
-struct mugy_comms *comms_init(mint argc, char *argv[]);  // Initialize MPI.
+struct mugy_comms *mugy_comms_init(mint argc, char *argv[]);  // Initialize MPI.
 
 // Initialize sub-communicators.
-void comms_sub_init(struct mugy_comms *comms, struct mugy_grid grid, struct mugy_population pop);
-
-// Distribute degrees of freedom amongst MPI processes in 1D.
-void distribute1dDOFs(const mint procs, const mint procID, const mint globalDOFs, mint *localDOFs, mint *firstDOF);
+void mugy_comms_sub_init(struct mugy_comms *comms, struct mugy_grid grid, struct mugy_population pop);
 
 // Distribute s,Z,X,Y degrees of freedom amongst MPI processes.
-void distributeDOFs(struct mugy_comms comms, struct mugy_grid globalGrid, struct mugy_population globalPop, struct mugy_grid *localGrid, struct mugy_population *localPop);
+void mugy_comms_distributeDOFs(struct mugy_comms comms, struct mugy_grid *grid, struct mugy_population *pop);
 
-void comms_terminate(struct mugy_comms *comms);  // Terminate communications.
-
-#endif
+void mugy_comms_terminate(struct mugy_comms *comms);  // Terminate communications.

@@ -42,6 +42,3 @@
 
 // Time integration objections and functions.
 #include "mh_timestepping.h"
-
-// Module in charge of closing mugy sim.
-#include "mh_finalize.h"

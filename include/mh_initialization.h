@@ -26,16 +26,5 @@ void read_inputs(mint argc, char *argv[], struct mugy_ioSetup *ioSet, struct mug
 
 void device_init(struct mugy_comms *comms);
 
-// Allocate time dependent fields needed.
-void allocate_dynfields(struct mugy_grid localGrid, struct mugy_population *localPop);
-
-void init_global_grids(struct mugy_grid *globalGrid, mint rank);
-
-void set_initialCondition(struct mugy_grid globalGrid, struct mugy_grid localGrid, struct mugy_population globalPop,
-  struct mugy_population *localPop, struct mugy_ffts *fftMan, struct mugy_ioManager *ioman);
-
-// Deallocate fields.
-void free_fields();
-
-void free_grid(struct mugy_grid *grid); // Free arrays in grids.
-void free_population(struct mugy_population *pop);  // Free arrays in population struct.
+void set_initialCondition(struct mugy_grid grid, struct mugy_population *pop,
+  struct mugy_ffts *fftMan, struct mugy_ioManager *ioman);

@@ -3,8 +3,7 @@
  * Structs and functions in time integration.
  *
  */
-#ifndef MUGY_TIMESTEPPING
-#define MUGY_TIMESTEPPING
+#pragma once
 
 #include "mh_data.h"
 
@@ -30,5 +29,3 @@ struct mugy_timeState {
   mint dtAdjusts;
   real dt;
 };
-
-#endif
