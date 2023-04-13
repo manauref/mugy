@@ -22,7 +22,7 @@ struct mugy_array {
 //   arr: pointer to array to be allocated (really a struct mugy_with ho/dev pointers).
 //   numElements: number of elements in the array.
 //   res: indicates which resource to use (host, device, both).
-void mugy_array_alloc(struct mugy_array *arr, enum mugy_datatype type, mint numElements, enum resource_mem res);
+struct mugy_array *mugy_array_alloc(enum mugy_datatype type, mint numElements, enum resource_mem res);
 
 // Function to free memory associated used for mugy_array. 
 //   arr: array to free.

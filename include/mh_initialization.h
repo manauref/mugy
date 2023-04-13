@@ -22,9 +22,9 @@ void readFileSpeciesPar_mint(mint **var, FILE *fp, const mint sIdx, const mint n
 void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint numSpecies, const mint *numElements);
 
 void read_inputs(mint argc, char *argv[], struct mugy_ioSetup *ioSet, struct mugy_grid *grid, struct mugy_timeSetup *time,
-                 struct mugy_population *pop, struct mugy_fieldParameters *field, mint rank);
+                 struct mugy_population *pop, struct mugy_field *field, mint rank);
 
 void device_init(struct mugy_comms *comms);
 
-void set_initialCondition(struct mugy_grid grid, struct mugy_population *pop,
+void set_initialConditions(struct mugy_population *pop, struct mugy_grid grid,
   struct mugy_ffts *fftMan, struct mugy_ioManager *ioman);

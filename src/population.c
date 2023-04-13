@@ -19,18 +19,22 @@ struct mugy_population *mugy_population_alloc() {
 }
 
 // Functions that allocate moment vectors.
-void alloc_realMoments(struct mugy_array *mom, const struct mugy_realGrid grid,
+struct mugy_array *mugy_population_alloc_realMoments(const struct mugy_realGrid grid,
   const struct mugy_pop pop, enum resource_mem res) {
+
   mint nelem = pop.numMomentsTot*grid.NxTot;
-  mugy_array_alloc(mom, real_enum, nelem, res);
+  struct mugy_array *mom = mugy_array_alloc(real_enum, nelem, res);
+  return mom;
 }
-void alloc_fourierMoments(struct mugy_array *momk, const struct mugy_fourierGrid grid,
+struct mugy_array *mugy_population_alloc_fourierMoments(const struct mugy_fourierGrid grid,
   const struct mugy_pop pop, enum resource_mem res) {
+
   mint nelem = pop.numMomentsTot*grid.NekxTot;
-  mugy_array_alloc(momk, fourier_enum, nelem, res);
+  struct mugy_array *momk = mugy_array_alloc(fourier_enum, nelem, res);
+  return momk;
 }
 
-void mugy_population_allocate_moments(struct mugy_population *pop, struct mugy_grid grid) {
+void mugy_population_alloc_moments(struct mugy_population *pop, struct mugy_grid grid) {
   // Allocate various fields needed.
 #ifdef USE_GPU
   enum resource_mem onResource = hostAndDeviceMem;
@@ -39,9 +43,9 @@ void mugy_population_allocate_moments(struct mugy_population *pop, struct mugy_g
 #endif
 
   // Allocate moments vector needed for time stepping.
-  pop->local.momk = (struct mugy_array*) calloc(TIME_STEPPER_NUM_FIELDS, sizeof(struct mugy_array));
+  pop->local.momk = (struct mugy_array**) calloc(TIME_STEPPER_NUM_FIELDS, sizeof(struct mugy_array *));
   for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
-    alloc_fourierMoments(&pop->local.momk[s], grid.local.deal, pop->local, onResource);
+    pop->local.momk[s] = mugy_population_alloc_fourierMoments(grid.local.deal, pop->local, onResource);
 
 }
 
@@ -84,8 +88,6 @@ void mugy_population_free(struct mugy_population *pop) {
 #endif
 
   // Free moments vector.
-  if (pop->local.momk) {
-    for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
-      mugy_array_free(&pop->local.momk[s], onResource);
-  }
+  for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
+    mugy_array_free(pop->local.momk[s], onResource);
 }

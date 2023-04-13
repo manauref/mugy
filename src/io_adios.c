@@ -200,11 +200,11 @@ struct mugy_ad_file *get_fileHandle(struct mugy_ioManager *ioman, char* fname) {
   return ioman->files[fIdx];
 }
 
-void mugy_io_write_mugy_array(struct mugy_ioManager *ioman, char* fname, struct mugy_ad_file *fin, struct mugy_array arr) {
+void mugy_io_write_mugy_array(struct mugy_ioManager *ioman, char* fname, struct mugy_ad_file *fin, struct mugy_array *arr) {
   // Write out real space array.
   adios2_error ioerr;
   struct mugy_ad_file *fh = fin == NULL ? get_fileHandle(ioman, fname) : fin;
-  if (arr.ho) ioerr = adios2_put(fh->eng, fh->var, arr.ho, adios2_mode_deferred);
+  if (arr->ho) ioerr = adios2_put(fh->eng, fh->var, arr->ho, adios2_mode_deferred);
   ad_check_error(ioerr, " ADIOS: Error in putting mugy array.");
 }
 

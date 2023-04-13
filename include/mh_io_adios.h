@@ -62,7 +62,7 @@ struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, c
 void mugy_io_setup_files(struct mugy_ioManager *ioman, struct mugy_grid grid, struct mugy_population pop);
 
 // Output real(Fourier)-space array.
-void mugy_io_write_mugy_array(struct mugy_ioManager *ioman, char* fname, struct mugy_ad_file *fh, struct mugy_array arr);
+void mugy_io_write_mugy_array(struct mugy_ioManager *ioman, char* fname, struct mugy_ad_file *fh, struct mugy_array *arr);
 
 // Close a file given its mugy file handle.
 void mugy_io_close_file(struct mugy_ad_file *fh);

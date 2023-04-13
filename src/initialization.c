@@ -74,7 +74,7 @@ void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint n
 }
 
 void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_timeSetup *time,
-                    struct mugy_population *pop, struct mugy_fieldParameters *field, mint rank) {
+                    struct mugy_population *pop, struct mugy_field *field, mint rank) {
   // Read input values from input file.
 
   struct mugy_pop *popG = &pop->global;
@@ -146,9 +146,9 @@ void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_
     fscanf(file_p, "%*s");  // /.
   
     fscanf(file_p, "%*s");  // &field.
-    readFileVar_real(file_p, 1, &field->lambdaD);
-    readFileVar_mint(file_p, 1, &field->pade);
-    readFileVar_mint(file_p, 1, &field->icOp);
+    readFileVar_real(file_p, 1, &field->pars.lambdaD);
+    readFileVar_mint(file_p, 1, &field->pars.pade);
+    readFileVar_mint(file_p, 1, &field->pars.icOp);
     fscanf(file_p, "%*s");  // /.
 
     fclose(file_p);
@@ -205,14 +205,14 @@ void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_
     MPI_Bcast(&popG->spar[s].noiseA    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
   }
 
-  MPI_Bcast(&field->lambdaD, 1, mpi_real, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&field->pade   , 1, mpi_mint, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&field->icOp   , 1, mpi_mint, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&field->pars.lambdaD, 1, mpi_real, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&field->pars.pade   , 1, mpi_mint, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&field->pars.icOp   , 1, mpi_mint, ioRank, MPI_COMM_WORLD);
 
 }
 
 void read_inputs(mint argc, char *argv[], struct mugy_ioSetup *ioSet, struct mugy_grid *grid, struct mugy_timeSetup *time,
-                 struct mugy_population *pop, struct mugy_fieldParameters *field, mint rank) {
+                 struct mugy_population *pop, struct mugy_field *field, mint rank) {
   // Read inputs from command line arguments and input file.
 
   // Check for commandline arguments.
@@ -254,11 +254,11 @@ void device_init(struct mugy_comms *comms) {
   device_init_dev(comms);
 }
 
-void set_initialCondition(struct mugy_grid grid, struct mugy_population *pop,
+void set_initialConditions(struct mugy_population *pop, struct mugy_grid grid,
   struct mugy_ffts *fftMan, struct mugy_ioManager *ioman) {
   // Impose the initial conditions on the moments and thoe potential.
 
-  struct mugy_array momk = pop->local.momk[0]; // Put ICs in first stepper field.
+  struct mugy_array *momk = pop->local.momk[0]; // Put ICs in first stepper field.
 
   // NOTE: For now assume initialOp is the same for all species.
   mint initialOp = pop->local.spar[0].icOp; 
@@ -266,14 +266,13 @@ void set_initialCondition(struct mugy_grid grid, struct mugy_population *pop,
   if (initialOp == 0) {
     // Initialize in real space and transform to Fourier.
     struct mugy_realGrid *gridL = &grid.local.deal.dual;
-    struct mugy_array momIC;
-    alloc_realMoments(&momIC, *gridL, pop->local, hostAndDeviceMem);
+    struct mugy_array *momIC = mugy_population_alloc_realMoments(*gridL, pop->local, hostAndDeviceMem);
 
     for (mint s=0; s<pop->local.numSpecies; s++) {
       real initA = pop->local.spar[s].initA;
 
-      real *den_p  = getMoment_real(*gridL, pop->local, s, denIdx, momIC.ho);  // Get density of species s.
-      real *temp_p = getMoment_real(*gridL, pop->local, s, tempIdx, momIC.ho);  // Get temperature of species s.
+      real *den_p  = getMoment_real(*gridL, pop->local, s, denIdx, momIC->ho);  // Get density of species s.
+      real *temp_p = getMoment_real(*gridL, pop->local, s, tempIdx, momIC->ho);  // Get temperature of species s.
 
       for (mint linIdx=0; linIdx<gridL->NxTot; linIdx++) {
         mint xIdx[nDim];
@@ -294,37 +293,35 @@ void set_initialCondition(struct mugy_grid grid, struct mugy_population *pop,
     }
 
     // Copy initialized moments from host to device.
-    mugy_array_copy(&momIC, &momIC, host2device);
+    mugy_array_copy(momIC, momIC, host2device);
 
     // Forward FFT moments.
-    mugy_fft_r2c(fftMan, &momk, &momIC, mugy_fft_mom_xy, deviceComp);
+    mugy_fft_r2c(fftMan, momk, momIC, mugy_fft_mom_xy, deviceComp);
 
 //    //......................................................
 //    // Test FFT of a moments.
-//    struct mugy_array momICk;
-//    alloc_fourierMoments(&momICk, grid.local.deal, pop->local, hostAndDeviceMem);
+//    struct mugy_array *momICk = mugy_population_alloc_fourierMoments(grid.local.deal, pop->local, hostAndDeviceMem);
 //
-////    mugy_fft_r2c(fftMan, &momICk, &momIC, mugy_fft_mom_xy, hostComp);
-////    mugy_fft_c2r(fftMan, &momIC, &momICk, mugy_fft_mom_xy, hostComp);
-//    mugy_fft_r2c(fftMan, &momICk, &momIC, mugy_fft_mom_xy, deviceComp);
-//    mugy_fft_c2r(fftMan, &momIC, &momICk, mugy_fft_mom_xy, deviceComp);
-//    mugy_array_copy(&momIC, &momIC, device2host);
+////    mugy_fft_r2c(fftMan, momICk, momIC, mugy_fft_mom_xy, hostComp);
+////    mugy_fft_c2r(fftMan, momIC, momICk, mugy_fft_mom_xy, hostComp);
+//    mugy_fft_r2c(fftMan, momICk, momIC, mugy_fft_mom_xy, deviceComp);
+//    mugy_fft_c2r(fftMan, momIC, momICk, mugy_fft_mom_xy, deviceComp);
+//    mugy_array_copy(momIC, momIC, device2host);
 //
 //    struct mugy_ad_file *fh = mugy_io_create_moments_file(ioman, "mom", grid, *pop, real_enum);
 //    mugy_io_write_mugy_array(NULL, "mom", fh, momIC);
 //    mugy_io_close_file(fh);
 //
-//    mugy_array_free(&momICk, hostAndDeviceMem);
+//    mugy_array_free(momICk, hostAndDeviceMem);
 //    //......................................................
 //
 //    //......................................................
 //    // Test FFT of a single array
-//    struct mugy_array fxy_r, fxy_k;
-//    mugy_array_alloc(&fxy_r, real_enum, grid->NxTot, hostAndDeviceMem);
-//    mugy_array_alloc(&fxy_k, fourier_enum, grid.local.deal.NekxTot, hostAndDeviceMem);
+//    struct mugy_array *fxy_r = mugy_array_alloc(real_enum, grid->NxTot, hostAndDeviceMem);
+//    struct mugy_array *fxy_k = mugy_array_alloc(fourier_enum, grid.local.deal.NekxTot, hostAndDeviceMem);
 //
 //    // Assign real array to a linear combo of sines and cosines.
-//    real *fxy_rp = fxy_r.ho;
+//    real *fxy_rp = fxy_r->ho;
 //    for (mint linIdx=0; linIdx<gridL->NxTot; linIdx++) {
 //      real initA = pop->local.spar[0].initA;
 //      mint xIdx[nDim];
@@ -339,23 +336,23 @@ void set_initialCondition(struct mugy_grid grid, struct mugy_population *pop,
 //      fxy_rp++;
 //    }
 //
-////    mugy_fft_r2c(fftMan, &fxy_k, &fxy_r, mugy_fft_xy, hostComp);
-////    mugy_fft_c2r(fftMan, &fxy_r, &fxy_k, mugy_fft_xy, hostComp);
+////    mugy_fft_r2c(fftMan, fxy_k, fxy_r, mugy_fft_xy, hostComp);
+////    mugy_fft_c2r(fftMan, fxy_r, fxy_k, mugy_fft_xy, hostComp);
 //
-//    mugy_array_copy(&fxy_r, &fxy_r, host2device);
-//    mugy_fft_r2c(fftMan, &fxy_k, &fxy_r, mugy_fft_xy, deviceComp);
-//    mugy_fft_c2r(fftMan, &fxy_r, &fxy_k, mugy_fft_xy, deviceComp);
-//    mugy_array_copy(&fxy_r, &fxy_r, device2host);
+//    mugy_array_copy(fxy_r, fxy_r, host2device);
+//    mugy_fft_r2c(fftMan, fxy_k, fxy_r, mugy_fft_xy, deviceComp);
+//    mugy_fft_c2r(fftMan, fxy_r, fxy_k, mugy_fft_xy, deviceComp);
+//    mugy_array_copy(fxy_r, fxy_r, device2host);
 //
 //    struct mugy_ad_file *fhr = mugy_io_create_mugy_array_file(ioman, "arr", gridL, real_enum);
 //    mugy_io_write_mugy_array(NULL, "arr", fhr, fxy_r);
 //    mugy_io_close_file(fhr);
 //
-//    mugy_array_free(&fxy_r, hostAndDeviceMem);
-//    mugy_array_free(&fxy_k, hostAndDeviceMem);
+//    mugy_array_free(fxy_r, hostAndDeviceMem);
+//    mugy_array_free(fxy_k, hostAndDeviceMem);
 //    //......................................................
 
-    mugy_array_free(&momIC, hostAndDeviceMem);
+    mugy_array_free(momIC, hostAndDeviceMem);
 
   } else if (initialOp == 1) {
     // Initialize with a k-spce power law.
@@ -365,8 +362,8 @@ void set_initialCondition(struct mugy_grid grid, struct mugy_population *pop,
       real initA    = pop->local.spar[s].initA;
       real *initAux = &pop->local.spar[s].initAux[0];
 
-      fourier *den_p  = getMoment_fourier(grid.local.deal, pop->local, s, denIdx, momk.ho);  // Get density of species s.
-      fourier *temp_p = getMoment_fourier(grid.local.deal, pop->local, s, tempIdx, momk.ho);  // Get temperature of species s.
+      fourier *den_p  = getMoment_fourier(grid.local.deal, pop->local, s, denIdx, momk->ho);  // Get density of species s.
+      fourier *temp_p = getMoment_fourier(grid.local.deal, pop->local, s, tempIdx, momk->ho);  // Get temperature of species s.
 
       for (mint linIdx=0; linIdx<grid.local.deal.NekxTot; linIdx++) {
         mint kxIdx[nDim];
@@ -386,7 +383,7 @@ void set_initialCondition(struct mugy_grid grid, struct mugy_population *pop,
     };
 
     // Copy initialized moments from host to device.
-    mugy_array_copy(&momk, &momk, host2device);
+    mugy_array_copy(momk, momk, host2device);
   }
 
 }

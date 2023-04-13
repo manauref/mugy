@@ -9,9 +9,12 @@
 #include "mh_alloc.h"
 #include "mh_fourier_ho.h"
 #include "mh_data.h"
+#include <stdlib.h>  // for malloc.
 
 // Allocate array on host, device, or both.
-void mugy_array_alloc(struct mugy_array *arr, enum mugy_datatype type, mint numElements, enum resource_mem res) {
+struct mugy_array *mugy_array_alloc(enum mugy_datatype type, mint numElements, enum resource_mem res) {
+
+  struct mugy_array *arr = (struct mugy_array *) malloc(sizeof(struct mugy_array));
   arr->type  = type;
   arr->nelem = numElements;
 
@@ -25,6 +28,8 @@ void mugy_array_alloc(struct mugy_array *arr, enum mugy_datatype type, mint numE
 
   if ((res == deviceMem) || (res == hostAndDeviceMem))
     arr->dev = mugy_alloc(arr->nelem, arr->elemsz, deviceMem);  // Allocate on device.
+
+  return arr;
 }
 
 // Free memory associated with arrays on host, device or both.
