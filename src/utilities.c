@@ -27,9 +27,9 @@ mint closest_power_of_two(const mint aIn) {
   mint prevDist = abs(prev_power_of_two - aIn);
   mint nextDist = abs(next_power_of_two - aIn);
   if (prevDist < nextDist) {
-    return max(1,prev_power_of_two);
+    return mugy_max(1,prev_power_of_two);
   } else {
-    return min(1,next_power_of_two);
+    return mugy_min(1,next_power_of_two);
   }
 }
 
@@ -75,5 +75,10 @@ real* getArray_real(real *arr, const mint *numElem, const mint i) {
   for (mint d=0; d<i; d++) off += numElem[d];
   return newPtr+off;
 }
+
+//MUGY_CU_DH static inline mint mugy_div_up_mint(int a, int b) {
+//  // Divide mint a by mint b rounding up.
+//  return (a%b != 0) ? (a/b+1) : (a/b);
+//}
 
 

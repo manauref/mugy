@@ -7,6 +7,21 @@
 #[ Some basic editing rules:
 #[   - Use 2 spaces for indenting (no tab preferably).
 #[
+#[ Functions in this file
+#[   declareIO
+#[   fOpen
+#[   fClose
+#[   removeIOobject
+#[   attrInquire
+#[   varInquire
+#[   varShape
+#[   adType2npType
+#[   varType
+#[   varRead
+#[   
+#[   
+#[   
+#[
 #[ ................................................................ ]#
 
 
@@ -18,7 +33,7 @@ import sys
 class pmIO:
   def __init__(self, **kwargs):
     self.ad = adios2.ADIOS()
-    self.ioCounter = 0
+    self.ioCounter = 0 #[ Counts the IO engines created.
     pass
 
   #[ Create an IO object:
@@ -26,25 +41,27 @@ class pmIO:
     if 'name' in kwargs:
       return kwargs['name'], self.ad.DeclareIO(kwargs['name'])
     else:
-      ob_name = 'ad_ioOb'+str(self.ioCounter) 
+      ob_name = 'ad_io'+str(self.ioCounter) 
       self.ioCounter = self.ioCounter+1
       return ob_name, self.ad.DeclareIO(ob_name)
   #[ .......... end of declareIO method ........... ]#
 
   #[ Open a data file and return a handle to it.
   def fOpen(self, fileName, **kwargs):
-    if 'ioObject' in kwargs:
-      return _, kwargs['ioObject'],  kwargs['ioObject'].Open(fileName, adios2.Mode.Read)
+    if 'io' in kwargs:
+      #[ The return argument here is the name, but not sure if can extract from io.
+      return _, kwargs['io'],  kwargs['io'].Open(fileName, adios2.Mode.Read)
     else:
-      reader_name = kwargs.get('readerName', 'ad_reader'+str(self.ioCounter)) 
+      ad_io_name = kwargs.get('readerName', 'ad_reader_io'+str(self.ioCounter)) 
       self.ioCounter = self.ioCounter+1
-      ad_read = self.ad.DeclareIO(reader_name)
-      return reader_name, ad_read, ad_read.Open(fileName, adios2.Mode.Read)
+      ad_io = self.ad.DeclareIO(ad_io_name)
+      ad_eng = ad_io.Open(fileName, adios2.Mode.Read)
+      return ad_io_name, ad_io, ad_eng
   #[ .......... end of fOpen method ........... ]#
 
-  #[ Close a file/stream.
-  def fClose(self, stream):
-    stream.Close()
+  #[ Close a file/engine.
+  def fClose(self, engine):
+    engine.Close()
   #[ .......... end of fClose method ........... ]#
 
   #[ Remove IO object:
@@ -52,26 +69,52 @@ class pmIO:
     return self.ad.RemoveIO(ioObName)
   #[ .......... end of removeIOobject method ........... ]#
 
+  #[ Inquire an attribute.
+  def attrInquire(self, attrName, **kwargs):
+    ad_attr, openedFile = 0, False
+    if 'fileName' in kwargs:
+      ad_ioNm, ad_io, ad_eng = self.fOpen(kwargs['fileName'])
+      ad_attr = ad_io.InquireAttribute(attrName)
+    elif 'io' in kwargs:
+      ad_attr = kwargs['io'].InquireAttribute(attrName)
+    else:
+      sys.exit("attrInquire requires 'fileName' or 'io' input.")
+    return ad_attr, openedFile, ad_ioNm, ad_io, ad_eng
+  #[ .......... end of attrInquire method ...... ]#
+
   #[ Inquire a variable.
-  def varInquire(self, varName):
-    return self.ad_read.InquireVariable(varName)
+  def varInquire(self, varName, **kwargs):
+    ad_var, openedFile = 0, False
+    if 'fileName' in kwargs:
+      ad_ioNm, ad_io, ad_eng = self.fOpen(kwargs['fileName'])
+      ad_var = ad_io.InquireVariable(varName)
+      openedFile = True
+    elif 'io' in kwargs:
+      ad_var = kwargs['io'].InquireVariable(varName)
+    else:
+      sys.exit("varInquire requires 'fileName' or 'io' input.")
+    return ad_var, openedFile, ad_ioNm, ad_io, ad_eng
   #[ .......... end of varInquire method ...... ]#
+
+  #[ Read an attribute.
+  def attrRead(self, attrName, **kwargs):
+    #[ Establish file handle.
+    ad_attr, openedFile, ad_ioNm, ad_io, ad_eng = self.attrInquire(attrName, **kwargs)
+    val = ad_attr.Data()
+    if openedFile:
+      self.fClose(ad_eng)
+      closed = self.ad.RemoveIO(ad_ioNm)
+    return val
+  #[ .......... end of attrRead .............. ]#
 
   #[ Get the shape of a variable.
   def varShape(self, varName, **kwargs):
-    shapeOut = 0
-    if 'fileName' in kwargs:
-      ad_readNm, ad_read, ad_istream = self.fOpen(kwargs['fileName'])
-      ad_varin = ad_read.InquireVariable(varName)
-      shapeOut = ad_varin.Shape()
-      self.fClose(ad_istream)
-      closed = self.ad.RemoveIO(ad_readNm)
-    elif 'ioObject' in kwargs:
-      ad_varin = kwargs['ioObject'].InquireVariable(varName)
-      shapeOut = ad_varin.Shape()
-    else:
-      sys.exit("varShape requires 'fileName' or 'ioObject' input.")
-    return shapeOut
+    ad_var, openedFile, ad_ioNm, ad_io, ad_eng = self.varInquire(varName, **kwargs)
+    shape = ad_var.Shape()
+    if openedFile:
+      self.fClose(ad_eng)
+      closed = self.ad.RemoveIO(ad_ioNm)
+    return shape 
   #[ .......... end of varShape method ...... ]#
 
   #[ Translate an adios datatype to a numpy datatype.
@@ -84,96 +127,94 @@ class pmIO:
       return np.double
     elif adtype == 'double complex':
       return np.cdouble
-  #[ .......... end of adTyope2npType ....... ]#
+  #[ .......... end of adType2npType ....... ]#
 
   #[ Get the data type of a variable.
   def varType(self, varName, **kwargs):
-    typeOut = ''
-    if 'fileName' in kwargs:
-      ad_readNm, ad_read, ad_istream = self.fOpen(kwargs['fileName'])
-      ad_varin = ad_read.InquireVariable(varName)
-      typeOut = ad_varin.Type()
-      self.fClose(ad_istream)
-      closed = self.ad.RemoveIO(ad_readNm)
-    elif 'ioObject' in kwargs:
-      ad_varin = kwargs['ioObject'].InquireVariable(varName)
-      typeOut = ad_varin.Type()
-    else:
-      sys.exit("varType requires 'fileName' or 'ioObject' input.")
+    ad_var, openedFile, ad_ioNm, ad_io, ad_eng = self.varInquire(varName, **kwargs)
+    typeOut  = ad_var.Type()
+    if openedFile:
+      self.fClose(ad_eng)
+      closed = self.ad.RemoveIO(ad_ioNm)
 
     numpyOut = kwargs.get('numpy', False)
     if numpyOut:
       return self.adType2npType(typeOut)
     else:
       return typeOut
-  #[ .......... end of varShape method ...... ]#
+  #[ .......... end of varType method ...... ]#
 
   #[ Read a variable.
   def varRead(self, varName, **kwargs):
-    #[ Establish file handle.
-    closeFile = False
-    if 'fileName' in kwargs:
-      ad_readNm, ad_read, ad_iStream = self.fOpen(kwargs['fileName'])
-      closeFile = True
-    elif ('ioObject' in kwargs) and ('fileStream' in kwargs):
-      ad_read    = kwargs['ioObject']
-      ad_iStream = kwargs['fileStream']
-    else:
-      sys.exit("varRead requires 'fileName' or ('ioObject' and 'fileStream') input.")
+    if 'io' in kwargs:
+      if not ('eng' in kwargs):
+        sys.exit("varRead: is providing 'io' must also provide 'eng'.")
+    ad_var, openedFile, ad_ioNm, ad_io, ad_eng = self.varInquire(varName, **kwargs)
 
     #[ Establish data selection shape.
-    ad_varin = ad_read.InquireVariable(varName)
     if 'select' in kwargs:
       #[ 'select' argument must be a two-list list of starts and counts.
-      ad_varin.SetSelection([kwargs['select'][0], kwargs['select'][1]])
+      ad_var.SetSelection([kwargs['select'][0], kwargs['select'][1]])
     else:
-      ad_varshape = ad_varin.Shape()
-      ad_varin.SetSelection([[0 for i in range(len(ad_varshape))], ad_varshape])
+      shape = ad_var.Shape()
+      ad_var.SetSelection([[0 for i in range(len(shape))], shape])
 
     #[ Read variable.
-    if 'array' in kwargs:
-      ad_iStream.Get(ad_varin, kwargs['array'], adios2.Mode.Sync)
-      if closeFile:
-        self.fClose(ad_iStream)
-        self.removeIOobject(ad_readNm)
-    else:
-      inSize = ad_varin.SelectionSize()
-      var = np.zeros(inSize, dtype=self.adType2npType(ad_varin.Type()))
-      ad_iStream.Get(ad_varin, var, adios2.Mode.Sync)
-      if closeFile:
-        self.fClose(ad_iStream)
-        self.removeIOobject(ad_readNm)
-      return var
+    var = kwargs.get('array',0)
+    if not ('array' in kwargs):
+      inSize = ad_var.SelectionSize()
+      var = np.zeros(inSize, dtype=self.adType2npType(ad_var.Type()))
+
+    ad_eng.Get(ad_var, var, adios2.Mode.Sync)
+    if openedFile:
+      self.fClose(ad_eng)
+      self.removeIOobject(ad_ioNm)
+    return var
   #[ .......... end of varRead .............. ]#
 
-#dataDir = '/Users/manaure/Documents/multiscale/code/mugy/src/'
-#fileName = 'momk.bp'
-#
-##  debug mode
-#adios = adios2.ADIOS(adios2.DebugON)
-#ioRead = adios.DeclareIO("ioReader")
-#
-## ADIOS Engine
-#ibpStream = ioRead.Open(dataDir + fileName, adios2.Mode.Read)
-#
-#advarin = ioRead.InquireVariable("momk")
-#if advarin is not None:
-#    advar_shape = advarin.Shape()
-#    print(advar_shape)
-#    advarin.SetSelection([[0 for i in range(4)], advar_shape])
-#    inSize = advarin.SelectionSize()
-#    print('Incoming size ' + str(inSize))
-#
-#    var_k = np.zeros(inSize, dtype=np.single)
-#
-#    ibpStream.Get(advarin, var_k, adios2.Mode.Sync)
-#
-##    print('Incoming temperature map')
-##
-##    for i in range(0, inTemperatures.size):
-##        print(str(inTemperatures[i]) + ' ')
-##
-##        if (i + 1) % 4 == 0:
-##            print()
-#
-#ibpStream.Close()
+#[ Moment variables have the shape [numMoments x Nkz x Nkx x Nky ],
+#[ where numMoments is the total number of moments across all species).
+
+  #[ Generate the Fourier space grid (note that for colorplots
+  #[ matplotlib expects a nodal grid).
+  def kGrid(self, **kwargs):
+    Nekx  = self.attrRead('Nekx', **kwargs)
+    kxMin = self.attrRead('kxMin', **kwargs)
+    dim   = np.size(Nekx)
+    Nkx   = (Nekx+1)//2;  Nkx[1] = Nekx[1]; #[ Nekx[1] doesn't include negative ky's.
+    kx    = [ np.array([kxMin[d]*i for i in range(Nekx[d])]) for d in range(dim) ]
+    #[ Negative kx modes in increasing order:
+    for i in range(Nkx[0],Nekx[0]):
+      kx[0][i] = -(Nkx[0]-1-(i-Nkx[0]))*kxMin[0]
+
+    if 'nodal' in kwargs:
+      kxN = [ np.concatenate(([kx[d][0]-kxMin[d]/2.],
+                              (0.5*(kx[d][:-1]+kx[d][1:])).tolist(),
+                              [kx[d][-1]+kxMin[d]/2.])) for d in range(dim)]
+      if kwargs['nodal']:
+        return kxN
+      else:
+        return kx
+    else:
+      return kx
+  #[ .......... end of kGrid .............. ]#
+
+  #[ Generate the real space grid (note that for colorplots
+  #[ matplotlib expects a nodal grid).
+  def xGrid(self, **kwargs):
+    Nx  = self.attrRead('Nx', **kwargs)
+    dx  = self.attrRead('dx', **kwargs)
+    dim = np.size(Nx)
+    x   = [ np.array([(i-Nx[d]*0.5)*dx[0] for i in range(Nx[d])]) for d in range(dim) ]
+
+    if 'nodal' in kwargs:
+      xN = [ np.concatenate(([x[d][0]-dx[d]/2.],
+                             (0.5*(x[d][:-1]+x[d][1:])).tolist(),
+                             [x[d][-1]+dx[d]/2.])) for d in range(dim)]
+      if kwargs['nodal']:
+        return xN
+      else:
+        return x
+    else:
+      return x
+  #[ .......... end of xGrid .............. ]#

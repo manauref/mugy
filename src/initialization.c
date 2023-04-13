@@ -1,18 +1,19 @@
 /* mugy: initialization.c
-   
-   Functions used to initialize the simulation.
-*/
+ *
+ * Functions used to initialize the simulation.
+ *
+ */
 
 #include <string.h>   // e.g. for strcat, strlen.
-#include "mh_parameters.h"
 #include "mh_utilities.h"
 #include "mh_alloc.h"
-#include "mh_mpi_tools.h"
+#include "mh_comms.h"
 #include "mh_io_tools.h"
 #include "mh_initialization.h"
 #include "mh_initialization_dev.h"
-#include <complex.h>  /* Needed by some fscanf below. */
 #include "mh_data.h"
+#include "mh_fourier_ho.h"
+#include "mh_grid.h"
 
 // Read an variable from input file.
 void readFileVar_mint(FILE *fp, const mint numElements, mint *var) {
@@ -72,19 +73,21 @@ void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint n
   }
 }
 
-void read_inputFile(const char *fileNameIn, struct grid *grid, struct timeSetup *time,
-                    struct population *pop, struct fieldParameters *field) {
+void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_timeSetup *time,
+                    struct mugy_population *pop, struct mugy_fieldParameters *field, mint rank) {
   // Read input values from input file.
 
-  if (myRank == ioRank) {  // Only ioRank reads from input file.
+  struct mugy_pop *popG = &pop->global;
+
+  if (rank == ioRank) {  // Only ioRank reads from input file.
     printf(" Reading inputs from %s\n\n",fileNameIn);
 
     FILE *file_p = fopen(fileNameIn, "r");  // Open for read only.
 
     fscanf(file_p, "%*s");  // &space.
-    readFileVar_mint(file_p, nDim, &grid->fG.Nkx[0]);
-    readFileVar_real(file_p, nDim, &grid->fG.kxMin[0]);
-    readFileVar_real(file_p, nDim, grid->fG.kxMaxDyn);
+    readFileVar_mint(file_p, nDim, &grid->global.deal.Nkx[0]);
+    readFileVar_real(file_p, nDim, &grid->global.deal.kxMin[0]);
+    readFileVar_real(file_p, nDim, grid->global.deal.kxMaxDyn);
     readFileVar_mint(file_p, nDim, grid->mpiProcs);
     fscanf(file_p, "%*s");  // /.
 
@@ -104,40 +107,40 @@ void read_inputFile(const char *fileNameIn, struct grid *grid, struct timeSetup 
     fscanf(file_p, "%*s");  // /.
 
     fscanf(file_p, "%*s");  // &species.
-    readFileVar_mint(file_p, 1, &pop->numSpecies);
+    readFileVar_mint(file_p, 1, &popG->numSpecies);
     readFileVar_mint(file_p, 1, &pop->mpiProcs);
-    pop->spec = (struct species*) calloc(pop->numSpecies, sizeof(struct species));
-    mint *specNumMoms = (mint*) calloc(pop->numSpecies, sizeof(mint));
-    mint *specOnes    = (mint*) calloc(pop->numSpecies, sizeof(mint));
-    mint *specnDim    = (mint*) calloc(pop->numSpecies, sizeof(mint));
-    readFileVar_mint(file_p, pop->numSpecies, specNumMoms);
+    popG->spar = (struct mugy_species_pars*) calloc(popG->numSpecies, sizeof(struct mugy_species_pars));
+    mint *specNumMoms = (mint*) calloc(popG->numSpecies, sizeof(mint));
+    mint *specOnes    = (mint*) calloc(popG->numSpecies, sizeof(mint));
+    mint *specnDim    = (mint*) calloc(popG->numSpecies, sizeof(mint));
+    readFileVar_mint(file_p, popG->numSpecies, specNumMoms);
     mint filePos = ftell(file_p);
-    for (mint s=0; s<pop->numSpecies; s++) {
-      pop->spec[s].numMoments = specNumMoms[s];
+    for (mint s=0; s<popG->numSpecies; s++) {
+      popG->spar[s].numMoments = specNumMoms[s];
       specOnes[s] = 1;
       specnDim[s] = nDim;
     }
     real* real_p; real** real_pp; mint* mint_p;
-    for (mint s=0; s<pop->numSpecies; s++) {
+    for (mint s=0; s<popG->numSpecies; s++) {
       fseek(file_p, filePos, SEEK_SET);
-      real_p  =    &pop->spec[s].qCharge; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
-      real_p  =     &pop->spec[s].muMass; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
-      real_p  =        &pop->spec[s].tau; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
-      real_p  =       &pop->spec[s].omSt; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
-      real_p  =        &pop->spec[s].omd; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
-      real_p  =      &pop->spec[s].delta; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
-      real_p  =  &pop->spec[s].deltaPerp; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
-      real_p  =        &pop->spec[s].eta; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
-      real_pp =      &pop->spec[s].alpha; readFileSpeciesPar_real(real_pp, file_p, s, pop->numSpecies, specNumMoms);
-      real_pp =         &pop->spec[s].nu; readFileSpeciesPar_real(real_pp, file_p, s, pop->numSpecies, specNumMoms);
-      real_p  =     &pop->spec[s].delta0; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
-      real_pp = &pop->spec[s].hDiffOrder; readFileSpeciesPar_real(real_pp, file_p, s, pop->numSpecies, specnDim   );
-      real_pp =      &pop->spec[s].hDiff; readFileSpeciesPar_real(real_pp, file_p, s, pop->numSpecies, specnDim   );
-      real_pp =   &pop->spec[s].kDiffMin; readFileSpeciesPar_real(real_pp, file_p, s, pop->numSpecies, specnDim   );
-      mint_p  =       &pop->spec[s].icOp; readFileSpeciesPar_mint(&mint_p, file_p, s, pop->numSpecies, specOnes   );
-      real_pp =    &pop->spec[s].initAux; readFileSpeciesPar_real(real_pp, file_p, s, pop->numSpecies, specnDim   );
-      real_p  =      &pop->spec[s].initA; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
-      real_p  =     &pop->spec[s].noiseA; readFileSpeciesPar_real(&real_p, file_p, s, pop->numSpecies, specOnes   );
+      real_p  =    &popG->spar[s].qCharge; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_p  =     &popG->spar[s].muMass; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_p  =        &popG->spar[s].tau; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_p  =       &popG->spar[s].omSt; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_p  =        &popG->spar[s].omd; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_p  =      &popG->spar[s].delta; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_p  =  &popG->spar[s].deltaPerp; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_p  =        &popG->spar[s].eta; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_pp =      &popG->spar[s].alpha; readFileSpeciesPar_real(real_pp, file_p, s, popG->numSpecies, specNumMoms);
+      real_pp =         &popG->spar[s].nu; readFileSpeciesPar_real(real_pp, file_p, s, popG->numSpecies, specNumMoms);
+      real_p  =     &popG->spar[s].delta0; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_pp = &popG->spar[s].hDiffOrder; readFileSpeciesPar_real(real_pp, file_p, s, popG->numSpecies, specnDim   );
+      real_pp =      &popG->spar[s].hDiff; readFileSpeciesPar_real(real_pp, file_p, s, popG->numSpecies, specnDim   );
+      real_pp =   &popG->spar[s].kDiffMin; readFileSpeciesPar_real(real_pp, file_p, s, popG->numSpecies, specnDim   );
+      mint_p  =       &popG->spar[s].icOp; readFileSpeciesPar_mint(&mint_p, file_p, s, popG->numSpecies, specOnes   );
+      real_pp =    &popG->spar[s].initAux; readFileSpeciesPar_real(real_pp, file_p, s, popG->numSpecies, specnDim   );
+      real_p  =      &popG->spar[s].initA; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_p  =     &popG->spar[s].noiseA; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
     }
     free(specnDim); free(specOnes); free(specNumMoms);
     fscanf(file_p, "%*s");  // /.
@@ -152,9 +155,9 @@ void read_inputFile(const char *fileNameIn, struct grid *grid, struct timeSetup 
   }
 
   // Broadcast to other processes.
-  MPI_Bcast(&grid->fG.Nkx     , nDim, mpi_mint, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&grid->fG.kxMin   , nDim, mpi_real, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&grid->fG.kxMaxDyn, nDim, mpi_real, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&grid->global.deal.Nkx     , nDim, mpi_mint, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&grid->global.deal.kxMin   , nDim, mpi_real, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&grid->global.deal.kxMaxDyn, nDim, mpi_real, ioRank, MPI_COMM_WORLD);
   MPI_Bcast(&grid->mpiProcs   , nDim, mpi_mint, ioRank, MPI_COMM_WORLD);
 
   MPI_Bcast(&time->dt              , 1, mpi_real, ioRank, MPI_COMM_WORLD);
@@ -169,37 +172,37 @@ void read_inputFile(const char *fileNameIn, struct grid *grid, struct timeSetup 
   MPI_Bcast(&time->ark_atol        , 1, mpi_real, ioRank, MPI_COMM_WORLD);
   MPI_Bcast(&time->ark_ewtScaling  , 1, mpi_mint, ioRank, MPI_COMM_WORLD);
 
-  MPI_Bcast(&pop->numSpecies, 1, mpi_mint, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&pop->mpiProcs  , 1, mpi_mint, ioRank, MPI_COMM_WORLD);
-  if (myRank != ioRank) pop->spec = (struct species*) calloc(pop->numSpecies, sizeof(struct species));
-  for (mint s=0; s<pop->numSpecies; s++) {
-    MPI_Bcast(&pop->spec[s].numMoments,                       1, mpi_mint, ioRank, MPI_COMM_WORLD);
-    if (myRank != ioRank) {
-      pop->spec[s].alpha      = alloc_realArray_ho(pop->spec[s].numMoments);
-      pop->spec[s].nu         = alloc_realArray_ho(pop->spec[s].numMoments);
-      pop->spec[s].hDiffOrder = alloc_realArray_ho(nDim);
-      pop->spec[s].hDiff      = alloc_realArray_ho(nDim);
-      pop->spec[s].kDiffMin   = alloc_realArray_ho(nDim);
-      pop->spec[s].initAux    = alloc_realArray_ho(nDim);
+  MPI_Bcast(&popG->numSpecies, 1, mpi_mint, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&pop->mpiProcs   , 1, mpi_mint, ioRank, MPI_COMM_WORLD);
+  if (rank != ioRank) popG->spar = (struct mugy_species_pars*) calloc(popG->numSpecies, sizeof(struct mugy_species_pars));
+  for (mint s=0; s<popG->numSpecies; s++) {
+    MPI_Bcast(&popG->spar[s].numMoments,                       1, mpi_mint, ioRank, MPI_COMM_WORLD);
+    if (rank != ioRank) {
+      popG->spar[s].alpha      = alloc_realArray_ho(popG->spar[s].numMoments);
+      popG->spar[s].nu         = alloc_realArray_ho(popG->spar[s].numMoments);
+      popG->spar[s].hDiffOrder = alloc_realArray_ho(nDim);
+      popG->spar[s].hDiff      = alloc_realArray_ho(nDim);
+      popG->spar[s].kDiffMin   = alloc_realArray_ho(nDim);
+      popG->spar[s].initAux    = alloc_realArray_ho(nDim);
     }
-    MPI_Bcast(&pop->spec[s].qCharge   ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&pop->spec[s].muMass    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&pop->spec[s].tau       ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&pop->spec[s].omSt      ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&pop->spec[s].omd       ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&pop->spec[s].delta     ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&pop->spec[s].deltaPerp ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&pop->spec[s].eta       ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(pop->spec[s].alpha      , pop->spec[s].numMoments, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(pop->spec[s].nu         , pop->spec[s].numMoments, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&pop->spec[s].delta0    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(pop->spec[s].hDiffOrder ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(pop->spec[s].hDiff      ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(pop->spec[s].kDiffMin   ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&pop->spec[s].icOp      ,                       1, mpi_mint, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(pop->spec[s].initAux    ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&pop->spec[s].initA     ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&pop->spec[s].noiseA    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->spar[s].qCharge   ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->spar[s].muMass    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->spar[s].tau       ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->spar[s].omSt      ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->spar[s].omd       ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->spar[s].delta     ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->spar[s].deltaPerp ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->spar[s].eta       ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(popG->spar[s].alpha      , popG->spar[s].numMoments, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(popG->spar[s].nu         , popG->spar[s].numMoments, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->spar[s].delta0    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(popG->spar[s].hDiffOrder ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(popG->spar[s].hDiff      ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(popG->spar[s].kDiffMin   ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->spar[s].icOp      ,                       1, mpi_mint, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(popG->spar[s].initAux    ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->spar[s].initA     ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->spar[s].noiseA    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
   }
 
   MPI_Bcast(&field->lambdaD, 1, mpi_real, ioRank, MPI_COMM_WORLD);
@@ -208,8 +211,8 @@ void read_inputFile(const char *fileNameIn, struct grid *grid, struct timeSetup 
 
 }
 
-void read_inputs(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *grid, struct timeSetup *time,
-                 struct population *pop, struct fieldParameters *field) {
+void read_inputs(mint argc, char *argv[], struct mugy_ioSetup *ioSet, struct mugy_grid *grid, struct mugy_timeSetup *time,
+                 struct mugy_population *pop, struct mugy_fieldParameters *field, mint rank) {
   // Read inputs from command line arguments and input file.
 
   // Check for commandline arguments.
@@ -237,177 +240,51 @@ void read_inputs(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gr
     }
   }
 
-  read_inputFile(ioSet->inputFile, grid, time, pop, field);
+  read_inputFile(ioSet->inputFile, grid, time, pop, field, rank);
 
   // Set the total number of moments.
-  pop->numMomentsTot = 0;
-  for (mint s=0; s<pop->numSpecies; s++) pop->numMomentsTot += pop->spec[s].numMoments;
-
-  // Set the moments pointer in the global population to NULL (we don't store global moments).
-  pop->momk = NULL;
+  struct mugy_pop *popG = &pop->global;
+  popG->numMomentsTot = 0;
+  for (mint s=0; s<popG->numSpecies; s++) popG->numMomentsTot += popG->spar[s].numMoments;
 
 }
 
-void init_global_grids(struct grid *globalGrid) {
-  // Set number of cells in de-aliased, aliased and real space global grids.
-
-  /* Given user-input number of distinct dealised wavenumbers, Nkx,
-     the number of real-space cells is Nx = 3*(Nkx-1). We prefer this
-     to be a power of 2, so we may need to adjust Nkx. */
-  arrPrint_mint(globalGrid->fG.Nkx, nDim, " User requested  NkxG=("," ) distinct wavenumbers (absolute magnitude)\n");
-  for (mint d=0; d<nDim; d++) globalGrid->fGa.dual.Nx[d]  = closest_power_of_two(3*(globalGrid->fG.Nkx[d]-1));
-  globalGrid->fGa.dual.NxTot  = prod_mint(globalGrid->fGa.dual.Nx,nDim);
-  globalGrid->fGa.dual.NxyTot = prod_mint(globalGrid->fGa.dual.Nx,2);
-
-  // Number of distinct aliased (absolute) wavenumbers.
-  for (mint d=0; d<nDim; d++) globalGrid->fGa.Nkx[d] = globalGrid->fGa.dual.Nx[d]/2+1;
-  // Length of aliased arrays along kx and ky.
-  for (mint d=0; d<nDim; d++) globalGrid->fGa.Nekx[d] = globalGrid->fGa.Nkx[d];
-  globalGrid->fGa.Nekx[0] += globalGrid->fGa.Nkx[0]-1;  // Add the negative kx's:
-  globalGrid->fGa.NekxTot  = prod_mint(globalGrid->fGa.Nekx,nDim);
-  globalGrid->fGa.NekxyTot = prod_mint(globalGrid->fGa.Nekx,2);
-
-  // Recompute the number of distinct de-aliased (absolute) wavenumbers.
-  for (mint d=0; d<nDim; d++) globalGrid->fG.Nkx[d] = 2*(globalGrid->fGa.Nkx[d]-1)/3+1;
-  // Length of de-aliased arrays along kx and ky.
-  for (mint d=0; d<nDim; d++) globalGrid->fG.Nekx[d] = globalGrid->fG.Nkx[d];
-  globalGrid->fG.Nekx[0] += globalGrid->fG.Nkx[0]-1;  // Add the negative kx's:
-  globalGrid->fG.NekxTot  = prod_mint(globalGrid->fG.Nekx,nDim);
-  globalGrid->fG.NekxyTot = prod_mint(globalGrid->fG.Nekx,2);
-
-  // Number of cells in de-aliased real-space.
-  for (mint d=0; d<nDim; d++) globalGrid->fG.dual.Nx[d]  = 2*(globalGrid->fG.Nkx[d]-1)+1;
-  globalGrid->fG.dual.NxTot  = prod_mint(globalGrid->fG.dual.Nx,nDim);
-  globalGrid->fG.dual.NxyTot = prod_mint(globalGrid->fG.dual.Nx,2);
-
-  real Lx[nDim] = {2.0*M_PI/globalGrid->fG.kxMin[0], 2.0*M_PI/globalGrid->fG.kxMin[1], 2.0*M_PI/globalGrid->fG.kxMin[2]};
-
-  // Length of dealised and aliased real-space cell.
-  for (mint d=0; d<nDim; d++) {
-    globalGrid->fG.dual.dx[d]  = Lx[d]/fmax(1.,(real)(globalGrid->fG.dual.Nx[d]-globalGrid->fG.dual.Nx[d] % 2));
-    globalGrid->fGa.dual.dx[d] = Lx[d]/fmax(1.,(real)(globalGrid->fGa.dual.Nx[d]-globalGrid->fGa.dual.Nx[d] % 2));
-  }
-
-  // Global de-aliased real-space grids
-  globalGrid->fG.dual.x = alloc_realArray_ho(sum_mint(globalGrid->fG.dual.Nx, nDim));
-  real *dx = globalGrid->fG.dual.dx;
-  mint *Nx = globalGrid->fG.dual.Nx; 
-  mint xOff = 0;
-  for (mint d=0; d<nDim; d++) {
-    for (mint i=0; i<Nx[d]; i++)
-      globalGrid->fG.dual.x[i+xOff] = (real)(i)*dx[d]+(real)(1-Nx[d] % 2-1)*0.5*dx[d]-0.5*Lx[d];
-    globalGrid->fG.dual.xMin[d] = globalGrid->fG.dual.x[0+xOff];
-    globalGrid->fG.dual.xMax[d] = globalGrid->fG.dual.x[Nx[d]-1+xOff];
-    xOff += Nx[d];
-  }
-  // Global aliased real-space grids (may not be needed).
-  globalGrid->fGa.dual.x = alloc_realArray_ho(sum_mint(globalGrid->fGa.dual.Nx, 3));
-  real *dxa = globalGrid->fGa.dual.dx;
-  mint *Nxa = globalGrid->fGa.dual.Nx; 
-  mint xaOff = 0;
-  for (mint d=0; d<nDim; d++) {
-    for (mint i=0; i<Nxa[d]; i++)
-      globalGrid->fGa.dual.x[i+xaOff] = (real)(i)*dxa[d]+(real)(1-Nxa[d] % 2-1)*0.5*dxa[d]-0.5*Lx[d];
-    globalGrid->fGa.dual.xMin[d] = globalGrid->fGa.dual.x[0+xaOff];
-    globalGrid->fGa.dual.xMax[d] = globalGrid->fGa.dual.x[Nxa[d]-1+xaOff];
-    xaOff += Nxa[d];
-  }
-
-  // Global dealiased k-space grids.
-  for (mint d=0; d<nDim; d++) globalGrid->fGa.kxMin[d] = globalGrid->fG.kxMin[d];
-  globalGrid->fG.kx  = alloc_realArray_ho(sum_mint(globalGrid->fG.Nekx, 3));
-  real *kxMin = globalGrid->fG.kxMin;
-  mint *Nkx = globalGrid->fG.Nkx; 
-  mint kxOff = 0;
-  for (mint d=0; d<nDim; d++) {
-    for (mint i=0; i<Nkx[d]; i++)
-      globalGrid->fG.kx[i+kxOff] = (real)(i)*kxMin[d];
-    kxOff += globalGrid->fG.Nekx[d];
-  }
-  // Negative kx modes in increasing order.
-  for (mint i=Nkx[0]; i<globalGrid->fG.Nekx[0]; i++)
-    globalGrid->fG.kx[i] = -(real)(Nkx[0]-1-(i-Nkx[0]))*kxMin[0];
-
-  // Global aliased k-space grids.
-  globalGrid->fGa.kx = alloc_realArray_ho(sum_mint(globalGrid->fGa.Nekx, 3));
-  real *kxaMin = globalGrid->fGa.kxMin;
-  mint *Nkxa = globalGrid->fGa.Nkx; 
-  mint kxaOff = 0;
-  for (mint d=0; d<nDim; d++) {
-    for (mint i=0; i<Nkxa[d]; i++)
-      globalGrid->fGa.kx[i+kxaOff] = (real)(i)*kxaMin[d];
-    kxaOff += globalGrid->fGa.Nekx[d];
-  }
-  // Negative kx modes in increasing order.
-  for (mint i=Nkxa[0]; i<globalGrid->fGa.Nekx[0]; i++)
-    globalGrid->fGa.kx[i] = -(real)(Nkxa[0]-1-(i-Nkxa[0]))*kxaMin[0];
-
-  r0printf("\n Proceeding with :\n");
-  arrPrint_mint(globalGrid->fG.Nkx,      nDim, " Number of distinct de-aliased absolute wavenumbers: NkxG   =", "\n");
-  arrPrint_mint(globalGrid->fG.Nekx,     nDim, " Length of de-aliased k-space arrays:                NekxG  =", "\n");
-  arrPrint_mint(globalGrid->fGa.Nkx,     nDim, " Number of distinct aliased absolute wavenumbers:    NkxaG  =", "\n");
-  arrPrint_mint(globalGrid->fGa.Nekx,    nDim, " Length of aliased k-space arrays:                   NekxaG =", "\n");
-  arrPrint_mint(globalGrid->fGa.dual.Nx, nDim, " Number of aliased real space cells:                 NxaG   =", "\n");
-  arrPrint_mint(globalGrid->fG.dual.Nx,  nDim, " Number of de-aliased real space cells:              NxG    =", "\n");
-
-  arrPrint_real(globalGrid->fG.kxMin,    nDim, " Minimum absolute magnitude of wavenumbers: kxMin    =", "\n");
-  arrPrint_real(globalGrid->fG.kxMaxDyn, nDim, " Largest wavenumbers evolved:               kxMaxDyn =", "\n");
-
+// Initialize device
+void device_init(struct mugy_comms *comms) {
+  device_init_dev(comms);
 }
 
-void allocate_dynfields(struct grid localGrid, struct population *localPop) {
-  // Allocate various fields needed.
-#ifdef USE_GPU
-  enum resource_mem onResource = hostAndDeviceMem;
-#else
-  enum resource_mem onResource = hostMem;
-#endif
-
-  // Allocate moments vector needed for time stepping.
-  localPop->momk = (struct fourierArray*) calloc(TIME_STEPPER_NUM_FIELDS, sizeof(struct fourierArray));
-  for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
-    alloc_fourierMoments(&localPop->momk[s], localGrid.fG, *localPop, onResource);
-
-  // Allocate auxiliary arrays/fields.
-}
-
-void set_initialCondition(struct grid localGrid, struct population *localPop) {
+void set_initialCondition(struct mugy_grid grid, struct mugy_population *pop,
+  struct mugy_ffts *fftMan, struct mugy_ioManager *ioman) {
   // Impose the initial conditions on the moments and thoe potential.
 
-  struct fourierArray momk = localPop->momk[0]; // Put ICs in first stepper field.
+  struct mugy_array momk = pop->local.momk[0]; // Put ICs in first stepper field.
 
   // NOTE: For now assume initialOp is the same for all species.
-  mint initialOp = localPop->spec[0].icOp; 
+  mint initialOp = pop->local.spar[0].icOp; 
 
   if (initialOp == 0) {
     // Initialize in real space and transform to Fourier.
-    struct realGrid *grid = &localGrid.fG.dual;
-    struct realArray momIC;
-    alloc_realMoments(&momIC, *grid, *localPop, hostMem);
+    struct mugy_realGrid *gridL = &grid.local.deal.dual;
+    struct mugy_array momIC;
+    alloc_realMoments(&momIC, *gridL, pop->local, hostAndDeviceMem);
 
-    for (mint s=0; s<localPop->numSpecies; s++) {
-      real initA    = localPop->spec[s].initA;
+    for (mint s=0; s<pop->local.numSpecies; s++) {
+      real initA = pop->local.spar[s].initA;
 
-      real *den_p  = getMoment_real(*grid, *localPop, s, denIdx, momIC.ho);  // Get density of species s.
-      real *temp_p = getMoment_real(*grid, *localPop, s, tempIdx, momIC.ho);  // Get temperature of species s.
+      real *den_p  = getMoment_real(*gridL, pop->local, s, denIdx, momIC.ho);  // Get density of species s.
+      real *temp_p = getMoment_real(*gridL, pop->local, s, tempIdx, momIC.ho);  // Get temperature of species s.
 
-      for (mint linIdx=0; linIdx<grid->NxTot; linIdx++) {
+      for (mint linIdx=0; linIdx<gridL->NxTot; linIdx++) {
         mint xIdx[nDim];
-        lin2sub_real(&xIdx[0], linIdx, *grid);  // Convert linear index to multidimensional x index.
+        lin2sub_real(&xIdx[0], linIdx, *gridL);  // Convert linear index to multidimensional x index.
         real x[nDim];
-        get_x(&x[0], xIdx, *grid);
+        get_x(&x[0], xIdx, *gridL);
 
         // Initial density: a superposition of sines and cosines.
-        den_p[0] = 0.;
-          double kx = 0.1;
-          for (int i; i<localGrid.fG.Nkx[0]; i++) {
-            kx += i*0.2;
-            double ky = 0.3;
-            for (int j; j<localGrid.fG.Nkx[1]; j++) {
-              ky += i*0.1;
-              den_p[0] += initA*sin(kx*x[0])*cos(ky*x[1]);
-            }
-          }
+        double kx = grid.local.deal.kxMin[0];
+        double ky = grid.local.deal.kxMin[1];
+        den_p[0] += initA*sin(kx*x[0])*cos(ky*x[1]);
         den_p++;
         
         // Initial temperature = 0.
@@ -417,29 +294,85 @@ void set_initialCondition(struct grid localGrid, struct population *localPop) {
     }
 
     // Copy initialized moments from host to device.
-    hodevXfer_realArray(&momIC, host2device);
+    mugy_array_copy(&momIC, &momIC, host2device);
 
-    // FFT moments.
-    //fft_moments_r2c(&momk, &momIC, deviceComp)
+    // Forward FFT moments.
+    mugy_fft_r2c(fftMan, &momk, &momIC, mugy_fft_mom_xy, deviceComp);
 
-    free_realArray(&momIC, hostMem);
+//    //......................................................
+//    // Test FFT of a moments.
+//    struct mugy_array momICk;
+//    alloc_fourierMoments(&momICk, grid.local.deal, pop->local, hostAndDeviceMem);
+//
+////    mugy_fft_r2c(fftMan, &momICk, &momIC, mugy_fft_mom_xy, hostComp);
+////    mugy_fft_c2r(fftMan, &momIC, &momICk, mugy_fft_mom_xy, hostComp);
+//    mugy_fft_r2c(fftMan, &momICk, &momIC, mugy_fft_mom_xy, deviceComp);
+//    mugy_fft_c2r(fftMan, &momIC, &momICk, mugy_fft_mom_xy, deviceComp);
+//    mugy_array_copy(&momIC, &momIC, device2host);
+//
+//    struct mugy_ad_file *fh = mugy_io_create_moments_file(ioman, "mom", grid, *pop, real_enum);
+//    mugy_io_write_mugy_array(NULL, "mom", fh, momIC);
+//    mugy_io_close_file(fh);
+//
+//    mugy_array_free(&momICk, hostAndDeviceMem);
+//    //......................................................
+//
+//    //......................................................
+//    // Test FFT of a single array
+//    struct mugy_array fxy_r, fxy_k;
+//    mugy_array_alloc(&fxy_r, real_enum, grid->NxTot, hostAndDeviceMem);
+//    mugy_array_alloc(&fxy_k, fourier_enum, grid.local.deal.NekxTot, hostAndDeviceMem);
+//
+//    // Assign real array to a linear combo of sines and cosines.
+//    real *fxy_rp = fxy_r.ho;
+//    for (mint linIdx=0; linIdx<gridL->NxTot; linIdx++) {
+//      real initA = pop->local.spar[0].initA;
+//      mint xIdx[nDim];
+//      lin2sub_real(&xIdx[0], linIdx, *gridL);  // Convert linear index to multidimensional x index.
+//      real x[nDim];
+//      get_x(&x[0], xIdx, *gridL);
+//
+//      fxy_rp[0] = 0.;
+//      double kx = grid.local.deal.kxMin[0];
+//      double ky = grid.local.deal.kxMin[1];
+//      fxy_rp[0] += initA*sin(kx*x[0])*cos(ky*x[1]);
+//      fxy_rp++;
+//    }
+//
+////    mugy_fft_r2c(fftMan, &fxy_k, &fxy_r, mugy_fft_xy, hostComp);
+////    mugy_fft_c2r(fftMan, &fxy_r, &fxy_k, mugy_fft_xy, hostComp);
+//
+//    mugy_array_copy(&fxy_r, &fxy_r, host2device);
+//    mugy_fft_r2c(fftMan, &fxy_k, &fxy_r, mugy_fft_xy, deviceComp);
+//    mugy_fft_c2r(fftMan, &fxy_r, &fxy_k, mugy_fft_xy, deviceComp);
+//    mugy_array_copy(&fxy_r, &fxy_r, device2host);
+//
+//    struct mugy_ad_file *fhr = mugy_io_create_mugy_array_file(ioman, "arr", gridL, real_enum);
+//    mugy_io_write_mugy_array(NULL, "arr", fhr, fxy_r);
+//    mugy_io_close_file(fhr);
+//
+//    mugy_array_free(&fxy_r, hostAndDeviceMem);
+//    mugy_array_free(&fxy_k, hostAndDeviceMem);
+//    //......................................................
+
+    mugy_array_free(&momIC, hostAndDeviceMem);
 
   } else if (initialOp == 1) {
     // Initialize with a k-spce power law.
-    real *kxMin = &localGrid.fG.kxMin[0];
+    real *kxMin = &grid.local.deal.kxMin[0];
 
-    for (mint s=0; s<localPop->numSpecies; s++) {
-      real initA    = localPop->spec[s].initA;
-      real *initAux = &localPop->spec[s].initAux[0];
+    for (mint s=0; s<pop->local.numSpecies; s++) {
+      real initA    = pop->local.spar[s].initA;
+      real *initAux = &pop->local.spar[s].initAux[0];
 
-      fourier *den_p  = getMoment_fourier(localGrid.fG, *localPop, s, denIdx, momk.ho);  // Get density of species s.
-      fourier *temp_p = getMoment_fourier(localGrid.fG, *localPop, s, tempIdx, momk.ho);  // Get temperature of species s.
+      fourier *den_p  = getMoment_fourier(grid.local.deal, pop->local, s, denIdx, momk.ho);  // Get density of species s.
+      fourier *temp_p = getMoment_fourier(grid.local.deal, pop->local, s, tempIdx, momk.ho);  // Get temperature of species s.
 
-      for (mint linIdx=0; linIdx<localGrid.fG.NekxTot; linIdx++) {
+      for (mint linIdx=0; linIdx<grid.local.deal.NekxTot; linIdx++) {
         mint kxIdx[nDim];
-        lin2sub_fourier(&kxIdx[0], linIdx, localGrid.fG);  // Convert linear index to multidimensional kx index.
+        lin2sub_fourier(&kxIdx[0], linIdx, grid.local.deal);  // Convert linear index to multidimensional kx index.
         real kx[nDim];
-        get_kx(&kx[0], kxIdx, localGrid.fG);
+        get_kx(&kx[0], kxIdx, grid.local.deal);
   
         // Set density to a power-law in k-space.
         den_p[0] = initA*(pow((kxMin[0]+fabs(kx[0]))/kxMin[0],initAux[0]))
@@ -453,81 +386,7 @@ void set_initialCondition(struct grid localGrid, struct population *localPop) {
     };
 
     // Copy initialized moments from host to device.
-    hodevXfer_fourierArray(&momk, host2device);
-
+    mugy_array_copy(&momk, &momk, host2device);
   }
 
-}
-
-void init_all(mint argc, char *argv[], struct ioSetup *ioSet, struct grid *gridG, struct grid *gridL, struct timeSetup *timePars,
-              struct population *popG, struct population *popL, struct fieldParameters *fieldPars) {
-  // Run the full initialization.
-
-  // Read inputs (from command line arguments and input file).
-  read_inputs(argc, argv, ioSet, gridG, timePars, popG, fieldPars);
-
-#ifdef USE_GPU
-  // Initialize devices (GPUs) if any.
-  init_dev(myRank);
-#endif
-
-  init_io();  // Initialize IO interface.
-
-  init_comms(*gridG, *popG);
-
-  // Set the number of cells in Fourier space and aliased real space.
-  init_global_grids(gridG);
-
-  // Decompose the x,y,z,s domains amongst MPI processes.
-  distributeDOFs(*gridG, *popG, gridL, popL);
-
-  allocate_dynfields(*gridL, popL);  // Allocate dynamic fields.
-
-  set_initialCondition(*gridL, popL);  // Impose ICs.
-
-  setup_files(*gridG, *gridL, *popG, *popL);  // Setup IO files.
-
-  write_fourierArray(popL->momk[0]);
-}
-
-void free_fields() {
-  // Deallocate fields.
-//#ifdef USE_GPU
-//  enum resource_mem onResource = hostAndDeviceMem;
-//#else
-//  enum resource_mem onResource = hostMem;
-//#endif
-}
-
-void free_grid(struct grid *grid) {
-  // Deallocate memory used by grids.
-  free(grid->fG.dual.x);
-  free(grid->fG.kx);
-  free(grid->fGa.dual.x);
-  free(grid->fGa.kx);
-}
-
-void free_population(struct population *pop) {
-  // Deallocate memory used in species struct.
-  for (mint s=0; s<pop->numSpecies; s++) {
-    free(pop->spec[s].alpha);
-    free(pop->spec[s].nu);
-    free(pop->spec[s].hDiffOrder);
-    free(pop->spec[s].hDiff);
-    free(pop->spec[s].kDiffMin);
-    free(pop->spec[s].initAux);
-  }
-  free(pop->spec);
-
-#ifdef USE_GPU
-  enum resource_mem onResource = hostAndDeviceMem;
-#else
-  enum resource_mem onResource = hostMem;
-#endif
-
-  // Free moments vector.
-  if (pop->momk) {
-    for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
-      free_fourierArray(&pop->momk[s], onResource);
-  }
 }

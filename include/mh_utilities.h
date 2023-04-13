@@ -1,10 +1,9 @@
 /* mugy: mh_utilities.h
-
-   Utility functions used in mugy.
-*/
-
-#ifndef MUGY_UTILITIES
-#define MUGY_UTILITIES
+ *
+ * Utility functions used in mugy.
+ *
+ */
+#pragma once
 
 #include <math.h>     // e.g. for pow.
 #include <stdlib.h>   // e.g. for abs.
@@ -34,4 +33,9 @@ void arr2str_real(char *str, const real *arr, const mint numElements, const char
 mint* getArray_mint(mint *arr, const mint *numElem, const mint i);
 real* getArray_real(real *arr, const mint *numElem, const mint i);
 
-#endif
+// Divide mint a by mint b rounding up.
+//MUGY_CU_DH static inline mint mugy_div_up_mint(int a, int b);
+MUGY_CU_DH static inline mint mugy_div_up_mint(int a, int b) {
+  // Divide mint a by mint b rounding up.
+  return (a%b != 0) ? (a/b+1) : (a/b);
+}

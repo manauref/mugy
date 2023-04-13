@@ -9,63 +9,97 @@ import pmugy as pmc
 import numpy as np
 import matplotlib.pyplot as plt
 
-#dataDir = '/Users/manaure/Documents/multiscale/code/mugy/src/'
-dataDir = '/home/manaurer/multiscale/code/mugy/src/'
-fileName = 'momk.bp'
-#fileName = 'phik.bp'
-
-varName = 'momk'
-
-kxMin = [0.12566, 0.12566, 1.0]
+dataDir  = '/home/manaurer/multiscale/code/mugy/src/'
+fileName = 'mom.bp'
+#fileName = 'arr.bp'
+varName  = 'globalVariable'
 
 
 #[ .......... End of user inputs (MAYBE) ............. ]#
 
-fileRoot = dataDir + fileName
-
+filePathName = dataDir + fileName
 
 pm = pmc.pmIO()  #[ Initialize the pmugy class
 
 #[ Shape and datatype of the variable.
-varShape = pm.varShape(varName, fileName=fileRoot)
-varType  = pm.varType(varName, fileName=fileRoot, numpy=True)
+varShape = pm.varShape(varName, fileName=filePathName)
+varType  = pm.varType(varName, fileName=filePathName, numpy=True)
 
-#[ Moment variables have the shape [num moments x Nkz x Nkx x Nky ].
-#[ Select one x-y plane:
-varSelect = [[0,0,0,0], [1,1,varShape[2],varShape[3]]]
+#[ Moment variables have the shape [numMoments x Nkz x Nkx x Nky ],
+#[ where numMoments is the total number of moments across all species).
+#[ Select one x-y plane with varSelect = [starts, counts].
+#varSelect = [[0,0,0,0], [1,1,varShape[2],varShape[3]]]
+#
+##[ Read variable in.
+#fldIn = np.zeros([varShape[2],varShape[3]], dtype=varType)
+#pm.varRead(varName, fileName=filePathName, select=varSelect, array=fldIn)
+#
+##[ Assuming the data is in Fourier space, plot the square amplitude.
+#kxNodal = pm.kGrid(fileName=filePathName, nodal=True)
+#X = [np.outer(kxNodal[0],np.ones(np.size(kxNodal[1]))),
+#     np.outer(np.ones(np.size(kxNodal[0])),kxNodal[1])]
+#
+##[ Create plot
+#plt.pcolormesh(X[0], X[1], np.abs(fldIn))
+#plt.colorbar()
+#plt.show()
 
-print(varShape, varType)
+#[ Moment variables have the shape [numMoments x Nz x Nx x Ny ],
+#[ where numMoments is the total number of moments across all species).
+#[ Select one x-y plane with varSelect = [starts, counts].
+varSelect = [[2,0,0,0], [1,1,varShape[2],varShape[3]]]
+
 #[ Read variable in.
 fldIn = np.zeros([varShape[2],varShape[3]], dtype=varType)
-pm.varRead(varName, fileName=fileRoot, select=varSelect, array=fldIn)
-print(fldIn)
+pm.varRead(varName, fileName=filePathName, select=varSelect, array=fldIn)
 
-#[ Assuming the data is in Fourier space, plot the square amplitude.
-kx = [kxMin[0]*np.arange(varShape[2]), kxMin[1]*np.arange(varShape[3]), kxMin[2]*np.arange(varShape[1])]
-kxNodal = [ np.append([kx[i][0]-kxMin[i]/2], 
-            (0.5*(kx[i][:-1]+kx[i][1:])).tolist() + [kx[i][0]-kxMin[i]/2]) for i in range(len(kxMin))]
-X = [np.outer(kxNodal[0],np.ones(np.size(kxNodal[1]))),
-     np.outer(np.ones(np.size(kxNodal[0])),kxNodal[1])]
+xNodal = pm.xGrid(fileName=filePathName, nodal=True)
+X = [np.outer(xNodal[0],np.ones(np.size(xNodal[1]))),
+     np.outer(np.ones(np.size(xNodal[0])),xNodal[1])]
 
-plt.pcolormesh(X[0], X[1], np.abs(fldIn))
+#[ Create plot
+print("fld[:,21] = ",fldIn[:,21])
+#plt.pcolormesh(X[0], X[1], fldIn)
+#plt.colorbar()
+#plt.show()
+
+
+###[ Real array.
+#varSelect = [[0,0,0], [1,varShape[1],varShape[2]]]
+#fldIn = np.zeros([varShape[1],varShape[2]], dtype=varType)
+#pm.varRead(varName, fileName=filePathName, select=varSelect, array=fldIn)
+#xNodal = pm.xGrid(fileName=filePathName, nodal=True)
+#X = [np.outer(xNodal[0],np.ones(np.size(xNodal[1]))),
+#     np.outer(np.ones(np.size(xNodal[0])),xNodal[1])]
+#print("fld[:,21] = ",fldIn[:,21])
+#plt.pcolormesh(X[0], X[1], fldIn)
+#plt.colorbar()
+#plt.show()
+
+# Test fft on 43x22 grid
+print(varType)
+kxMin = pm.attrRead('kxMin',fileName=dataDir+'momk.bp')
+xC = pm.xGrid(fileName=filePathName)
+#gld = np.zeros([varShape[1],varShape[2]], dtype=varType)
+#for i in range(varShape[1]):
+#  for j in range(varShape[2]):
+#    gld[i,j] += 2.5e-2*np.sin(kxMin[0]*xC[0][i])*np.cos(kxMin[1]*xC[1][j]);
+gld = np.zeros([varShape[2],varShape[3]], dtype=varType)
+for i in range(varShape[2]):
+  for j in range(varShape[3]):
+    gld[i,j] += 2.5e-2*np.sin(kxMin[0]*xC[0][i])*np.cos(kxMin[1]*xC[1][j]);
+
+#print("gld[:,21] = ",gld[:,21])
+gldk = np.fft.rfft2(gld, s=gld.shape)
+#print(gldk)
+gld = np.fft.irfft2(gldk, s=gld.shape)
+print("gld[:,21] = ",gld[:,21])
+
+plt.pcolormesh(X[0], X[1], fldIn-gld)
+#plt.pcolormesh(X[0], X[1], gld)
 plt.colorbar()
 plt.show()
 
-#[ Below we test opening and reading two files at the same time.
-
-ad_readerNm, ad_reader, ad_stream = pm.fOpen(fileRoot)  #[ Open file.
-ad_readerNm_phi, ad_reader_phi, ad_stream_phi = pm.fOpen(dataDir + 'phik.bp')  #[ Open file.
-
-dataShape = pm.varShape(varName, ioObject=ad_reader)  #[ Variable shape.
-#dataShape = pm.varShape(varName, fileName=fileRoot, readerName='read3')
-#dataShape = pm.varShape(varName, fileName=fileRoot)
-print(dataShape)
-#
-#dataShape = pm.varShape(varName, fileName=dataDir + 'phik.bp')  #[ Variable shape.
-dataShape = pm.varShape(varName, ioObject=ad_reader_phi)  #[ Variable shape.
-print(dataShape)
-
-pm.fClose(ad_stream_phi)  #[ Close file.
-pm.removeIOobject(ad_readerNm_phi)
-pm.fClose(ad_stream)  #[ Close file.
-pm.removeIOobject(ad_readerNm)
+#print("Lx = ",xC[0][-1]-xC[0][0],xC[1][-1]-xC[1][0],xC[2][-1]-xC[2][0])
+#print("x[0] = ",xC[0])
+#print("x[1] = ",xC[1])

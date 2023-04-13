@@ -4,7 +4,10 @@
 #[
 #[ Users need to set the following environment variables:
 #[
-#[      CCOMPILER, ADIOS_DIR
+#[      CCOMPILER,
+#[      FFTW_INC, FFTW_LIB,
+#[      ADIOS_DIR, ADIOS_INC, ADIOS_FLAGS,
+#[      NVCCCOMPILER, NVCCFLAGS, CUDA_INC, CUDA_LIB, 
 #[
 #[ This is done in setup.sh, which is invoked using ". setup.sh"
 #[ Below, defaults are used if the variables are not set.
@@ -17,6 +20,12 @@
 #[
 
 
+#.Extract macros from header file.
+USE_SINGLE_PRECISION := false
+USE_SINGLE_PRECISION_H := $(shell grep -e '\#define USE_SINGLE_PRECISION' ../include/mh_userFLAGS.h | sed 's/ USE_SINGLE_PRECISION//' | sed -r 's/\s+//g' )
+ifeq ($(USE_SINGLE_PRECISION_H), \#define)
+    USE_SINGLE_PRECISION := true
+endif
 
 #[ Define the C compiler to use.
 CC = ${CCCOMPILER}
@@ -27,10 +36,10 @@ NVCC_TEST := $(notdir $(NVCC_RESULT))
 ifeq ($(NVCC_TEST),nvcc)
     USE_GPU = true
     CUDA_INCL = -I${CUDA_INC}
-    CUDA_LIBS = -L${CUDA_LIB}
+    CUDA_LIBS = -L${CUDA_LIB} -lcufft
     CUDAFLAGS = -DUSE_GPU=$(USE_GPU) ${NVCCFLAGS}
     NVCC = ${NVCCCOMPILER}
-    CUDART = -lcudart -lcudadevrt
+    CUDART = -lcudart -lcudadevrt -lstdc++
     CFLAGS_DEV = -DUSE_GPU=$(USE_GPU) 
 else
     USE_GPU = false
@@ -42,16 +51,23 @@ else
     CFLAGS_DEV =
 endif
 
+#[ Use a different FFTW library depending on precision.
+ifeq ($(USE_SINGLE_PRECISION), true)
+    FFTW_LIB_FLAGS = -lfftw3f_mpi -lfftw3f -lm
+else
+    FFTW_LIB_FLAGS = -lfftw3_mpi -lfftw3 -lm
+endif
+
 #[ Define any compile-time flags.
 #CFLAGS = -Wall -std=c11 -lm $(ADIOS_FLAGS)
 #CFLAGS = -Wall -std=c11 -lm
 CFLAGS = $(CFLAGS_DEV) -Wall -std=c11 ${CCFLAGS}
 
 #[ Define any directories containing header files.
-INCLUDES = -I../include -I${MPI_INC} $(CUDA_INCL) ${ADIOS_INC}
+INCLUDES = -I../include -I${MPI_INC} $(CUDA_INCL) ${ADIOS_INC} -I${FFTW_INC}
 
 #[ Define library paths.
-LFLAGS = -L../lib -L${MPI_LIB} $(CUDA_LIBS) ${ADIOS_LIB}
+LFLAGS = -L../lib -L${MPI_LIB} $(CUDA_LIBS) ${ADIOS_LIB} -L${FFTW_LIB} $(FFTW_LIB_FLAGS)
 
 #[ Define any libraries to link into executable:
 #[   if I want to link in libraries (libx.so or libx.a) I use the -llibname
@@ -59,9 +75,9 @@ LFLAGS = -L../lib -L${MPI_LIB} $(CUDA_LIBS) ${ADIOS_LIB}
 LIBS = 
 
 #[ Define the C source files.
-SRCS = alloc.c initialization.c io_adios.c io_tools.c mpi_tools.c mugy.c utilities.c data.c finalize.c
+SRCS = data.c alloc.c array.c grid.c population.c ffts.c initialization.c io_adios.c io_tools.c comms.c mugy.c utilities.c
 ifeq ($(USE_GPU),true)
-    SRCS_DEV = initialization_dev.cu alloc_dev.cu data_dev.cu
+    SRCS_DEV = initialization_dev.cu alloc_dev.cu data_dev.cu array_dev.cu ffts_dev.cu
 else
     SRCS_DEV =
 endif

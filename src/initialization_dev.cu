@@ -1,20 +1,21 @@
 /* mugy: initialization_dev.c
-   
-   Functions used to initialize the device (GPU).
-*/
+ *
+ * Functions used to initialize the device (GPU).
+ *
+ */
 
 extern "C" {
-#include "mh_utilities_dev.h"
-#include "mh_data_dev.h"
 #include "mh_initialization_dev.h"
+#include "mh_utilities_dev.h"
 }
 
-void init_dev(mint mpiRank) {
+void device_init_dev(struct mugy_comms *comms) {
 
   // Set the device of this MPI rank.
   int devCount = 0;
   checkCudaErrors(cudaGetDeviceCount(&devCount));
-  int devID = mpiRank % devCount;
+  mint mpiRank = comms->world.rank;
+  mint devID = mpiRank % devCount;
   checkCudaErrors(cudaSetDevice(devID));
   printf("  My rank: %d | # of GPUs: %d | my GPU: %d\n", mpiRank, devCount, devID);
   printf("\n");
