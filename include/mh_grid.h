@@ -25,6 +25,7 @@ struct mugy_fourierGrid {
   mint NekxyTot;         // Total number of cells in an kx-ky plane.
   real kxMin[nDim];      // Minimum finite absolute amplitude wavenumbers.
   real *kx;              // Coordinates along each direction.
+  real *kperpSq;         // k_perp^2.
   struct mugy_realGrid dual;  // Real grid dual to this Fourier grid.
   real kxMaxDyn[nDim];   // Maximum k evolved. Above this we multiply time rates of change by zero.
   mint globalOff[nDim];  // Offset of first element in this process within the global domain.
@@ -48,16 +49,19 @@ struct mugy_grid *mugy_grid_alloc();
 void mugy_grid_init_global(struct mugy_grid *grid, mint rank);
 
 // Linear index given the nDim-dimensional subscript in a real/Fourier grid.
-mint sub2lin_real(mint *xI, const struct mugy_realGrid grid);
-mint sub2lin_fourier(mint *kxI, const struct mugy_fourierGrid grid);
+mint mugy_grid_sub2lin_real(mint *xI, const struct mugy_realGrid grid);
+mint mugy_grid_sub2lin_fourier(mint *kxI, const struct mugy_fourierGrid grid);
 
 // nDim-dimensional subscript given the linear index in a real/Fourier grid.
-void lin2sub_real(mint *xI, mint lin, const struct mugy_realGrid grid);
-void lin2sub_fourier(mint *kxI, mint lin, const struct mugy_fourierGrid grid);
+void mugy_grid_lin2sub_real(mint *xI, mint lin, const struct mugy_realGrid grid);
+void mugy_grid_lin2sub_fourier(mint *kxI, mint lin, const struct mugy_fourierGrid grid);
+
+// Like mugy_grid_lin2sub_fourier but on a perpendicular plane only.
+void mugy_grid_lin2sub_fourier_perp(mint *kxI, mint lin, const struct mugy_fourierGrid grid);
 
 // (x,y,z)/(kx,ky,kz) coordinates given the multidimensional xI/kxI index.
-void get_x(real *x, mint *xI, const struct mugy_realGrid grid);
-void get_kx(real *kx, mint *kxI, const struct mugy_fourierGrid grid);
+void mugy_grid_get_x(real *x, mint *xI, const struct mugy_realGrid grid);
+void mugy_grid_get_kx(real *kx, mint *kxI, const struct mugy_fourierGrid grid);
 
 // Deallocate memory used by grids.
 void mugy_grid_free(struct mugy_grid *grid);

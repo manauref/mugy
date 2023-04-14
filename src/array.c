@@ -32,15 +32,6 @@ struct mugy_array *mugy_array_alloc(enum mugy_datatype type, mint numElements, e
   return arr;
 }
 
-// Free memory associated with arrays on host, device or both.
-void mugy_array_free(struct mugy_array *arr, enum resource_mem res) {
-  if ((res == hostMem) || (res == hostAndDeviceMem))
-    mugy_free(arr->ho, hostMem);  // Free host memory.
-
-  if ((res == deviceMem) || (res == hostAndDeviceMem))
-    mugy_free(arr->dev, deviceMem);  // Free device memory.
-}
-
 // Copy arrays betwen host and device, or within host or device.
 void *mugy_array_copy(struct mugy_array *aout, struct mugy_array *ain, enum memcpy_dir_dev dir) {
 #ifdef USE_GPU
@@ -66,4 +57,13 @@ void mugy_array_scale(struct mugy_array *arr, real fac, enum resource_comp res) 
   for (mint linIdx=0; linIdx<arr->nelem; linIdx++) {
     ap[0] *= fac;  ap++;
   }
+}
+
+// Free memory associated with arrays on host, device or both.
+void mugy_array_free(struct mugy_array *arr, enum resource_mem res) {
+  if ((res == hostMem) || (res == hostAndDeviceMem))
+    mugy_free(arr->ho, hostMem);  // Free host memory.
+
+  if ((res == deviceMem) || (res == hostAndDeviceMem))
+    mugy_free(arr->dev, deviceMem);  // Free device memory.
 }

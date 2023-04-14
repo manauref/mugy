@@ -35,7 +35,7 @@ struct mugy_array *mugy_population_alloc_fourierMoments(const struct mugy_fourie
 }
 
 void mugy_population_alloc_moments(struct mugy_population *pop, struct mugy_grid grid) {
-  // Allocate various fields needed.
+  // Allocate various moments needed.
 #ifdef USE_GPU
   enum resource_mem onResource = hostAndDeviceMem;
 #else
@@ -53,7 +53,7 @@ real* getMoment_real(struct mugy_realGrid grid, struct mugy_pop pop, mint sIdx, 
   // Return a pointer to the momIdx-th moment of the sIdx-th species in mom.
   real* ptrOut = momIn;
   mint momOff = 0;
-  for (mint s=0; s<sIdx; s++) momOff += pop.spar[s].numMoments;
+  for (mint s=0; s<sIdx; s++) momOff += pop.pars[s].numMoments;
   return ptrOut+(momOff+momIdx)*grid.NxTot;
 }
 
@@ -61,24 +61,23 @@ void* getMoment_fourier(struct mugy_fourierGrid grid, struct mugy_pop pop, mint 
   // Return a pointer to the momIdx-th moment of the sIdx-th species in momk.
   fourier* ptrOut = (fourier *)momkIn;
   mint momOff = 0;
-  for (mint s=0; s<sIdx; s++) momOff += pop.spar[s].numMoments;
+  for (mint s=0; s<sIdx; s++) momOff += pop.pars[s].numMoments;
   return ptrOut+(momOff+momIdx)*grid.NekxTot;
 }
-
 
 void mugy_population_free(struct mugy_population *pop) {
   // Deallocate memory used in species struct.
   for (mint i=0; i<2; i++) {
     struct mugy_pop *popp = i==0 ? &pop->global : &pop->local;
     for (mint s=0; s<popp->numSpecies; s++) {
-      free(popp->spar[s].alpha);
-      free(popp->spar[s].nu);
-      free(popp->spar[s].hDiffOrder);
-      free(popp->spar[s].hDiff);
-      free(popp->spar[s].kDiffMin);
-      free(popp->spar[s].initAux);
+      free(popp->pars[s].alpha);
+      free(popp->pars[s].nu);
+      free(popp->pars[s].hDiffOrder);
+      free(popp->pars[s].hDiff);
+      free(popp->pars[s].kDiffMin);
+      free(popp->pars[s].initAux);
     }
-    free(popp->spar);
+    free(popp->pars);
   }
 
 #ifdef USE_GPU
@@ -90,4 +89,6 @@ void mugy_population_free(struct mugy_population *pop) {
   // Free moments vector.
   for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
     mugy_array_free(pop->local.momk[s], onResource);
+
+  free(pop->local.momk);
 }

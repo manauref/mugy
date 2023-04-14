@@ -22,7 +22,8 @@ void mugy_field_init(struct mugy_field *field, struct mugy_grid *grid, struct mu
   // Allocate Fourier-space potential.
   field->phik = mugy_array_alloc(fourier_enum, grid->local.deal.NekxTot, onResource);
 
-  // Allocate Fourier-space gyroaveraged potentials (3 for each species).
+  // Allocate Fourier-space gyroaveraged potentials, 3 for each species:
+  //   <phi>, 0.5*hatLap <phi> and 0.5*hathatLap <phi>.
   field->gyrophik = mugy_array_alloc(fourier_enum, 3 * pop->local.numSpecies * grid->local.deal.NekxTot, onResource);
 }
 

@@ -85,7 +85,7 @@ void mugy_grid_init_global(struct mugy_grid *grid, mint rank) {
 
   // Global dealiased k-space grids.
   for (mint d=0; d<nDim; d++) gridG->al.kxMin[d] = gridG->deal.kxMin[d];
-  gridG->deal.kx  = alloc_realArray_ho(sum_mint(gridG->deal.Nekx, 3));
+  gridG->deal.kx = alloc_realArray_ho(sum_mint(gridG->deal.Nekx, 3));
   real *kxMin = gridG->deal.kxMin;
   mint *Nkx = gridG->deal.Nkx; 
   mint kxOff = 0;
@@ -123,9 +123,19 @@ void mugy_grid_init_global(struct mugy_grid *grid, mint rank) {
   arrPrintS_real(gridG->deal.kxMin,    nDim, " Minimum absolute magnitude of wavenumbers: kxMin    =", "\n", rank);
   arrPrintS_real(gridG->deal.kxMaxDyn, nDim, " Largest wavenumbers evolved:               kxMaxDyn =", "\n", rank);
 
+  // Also convenient to keep dealiased kperpSq in memory:
+  gridG->deal.kperpSq = alloc_realArray_ho(gridG->deal.NekxyTot);
+  for (mint i=0; i<gridG->deal.Nekx[0]; i++) {
+    for (mint j=0; j<gridG->deal.Nekx[1]; j++) {
+      double kx = gridG->deal.kx[i];
+      double ky = gridG->deal.kx[gridG->deal.Nekx[0]+j];
+      gridG->deal.kperpSq[i*gridG->deal.Nekx[1]+j] = kx*kx + ky*ky;
+    }
+  }
+
 }
 
-mint sub2lin_real(mint *xI, const struct mugy_realGrid grid) {
+mint mugy_grid_sub2lin_real(mint *xI, const struct mugy_realGrid grid) {
   // Given the nDim-dimensional index (subscript) xI return the linear index
   // in a real grid. We assume row major order for the (z,x,y) dimensions.
   mint strides[nDim] = {grid.Nx[1],1,grid.NxyTot};
@@ -134,7 +144,7 @@ mint sub2lin_real(mint *xI, const struct mugy_realGrid grid) {
   return lin;
 }
 
-mint sub2lin_fourier(mint *kxI, const struct mugy_fourierGrid grid) {
+mint mugy_grid_sub2lin_fourier(mint *kxI, const struct mugy_fourierGrid grid) {
   // Given the nDim-dimensional index (subscript) kxI return the linear index
   // in a Fourier grid. We assume row major order for the (kz,kx,ky) dimensions.
   mint strides[nDim] = {grid.Nekx[1],1,grid.NekxyTot};
@@ -143,7 +153,7 @@ mint sub2lin_fourier(mint *kxI, const struct mugy_fourierGrid grid) {
   return lin;
 }
 
-void lin2sub_real(mint *xI, mint lin, const struct mugy_realGrid grid) {
+void mugy_grid_lin2sub_real(mint *xI, mint lin, const struct mugy_realGrid grid) {
   // Given the linear index 'lin' in a real grid, return the nDim-dimensional
   // index (subscript) xI. We assume row major order for the (z,x,y) dimensions.
   mint strides[nDim] = {grid.Nx[1],1,grid.NxyTot};
@@ -153,7 +163,7 @@ void lin2sub_real(mint *xI, mint lin, const struct mugy_realGrid grid) {
   }
 }
 
-void lin2sub_fourier(mint *kxI, mint lin, const struct mugy_fourierGrid grid) {
+void mugy_grid_lin2sub_fourier(mint *kxI, mint lin, const struct mugy_fourierGrid grid) {
   // Given the linear index 'lin' in a Fourier grid, return the nDim-dimensional
   // index (subscript) kxI. We assume row major order for the (kz,kx,ky) dimensions.
   mint strides[nDim] = {grid.Nekx[1],1,grid.NekxyTot};
@@ -163,7 +173,17 @@ void lin2sub_fourier(mint *kxI, mint lin, const struct mugy_fourierGrid grid) {
   }
 }
 
-void get_x(real *x, mint *xI, const struct mugy_realGrid grid) {
+void mugy_grid_lin2sub_fourier_perp(mint *kxI, mint lin, const struct mugy_fourierGrid grid) {
+  // Given the linear index 'lin' in a perpendicular (kx-ky) Fourier grid, return the
+  // 2-dimensional index (subscript) kxI. We assume row major order for the (kx,ky) dimensions.
+  mint strides[2] = {grid.Nekx[1],1};
+  for (mint d=0; d<2; d++) {
+    kxI[d] = lin/strides[d];
+    lin -= kxI[d]*strides[d];
+  }
+}
+
+void mugy_grid_get_x(real *x, mint *xI, const struct mugy_realGrid grid) {
   // Obtain the x=(x,y,z) coordinates given the multidimensional
   // xI index. Assume the flat grid.x array is organized as {x,y,z}.
   real* x_p = grid.x;
@@ -173,7 +193,7 @@ void get_x(real *x, mint *xI, const struct mugy_realGrid grid) {
   }
 }
 
-void get_kx(real *kx, mint *kxI, const struct mugy_fourierGrid grid) {
+void mugy_grid_get_kx(real *kx, mint *kxI, const struct mugy_fourierGrid grid) {
   // Obtain the kx=(kx,ky,kz) coordinates given the multidimensional
   // kxI index. Assume the flat grid.kx array is organized as {kx,ky,kz}.
   real* kx_p = grid.kx;
@@ -187,11 +207,13 @@ void mugy_grid_free(struct mugy_grid *grid) {
   // Deallocate memory used by grids.
   free(grid->global.deal.dual.x);
   free(grid->global.deal.kx);
+  free(grid->global.deal.kperpSq);
   free(grid->global.al.dual.x);
   free(grid->global.al.kx);
 
   free(grid->local.deal.dual.x);
   free(grid->local.deal.kx);
+  free(grid->local.deal.kperpSq);
   free(grid->local.al.dual.x);
   free(grid->local.al.kx);
 }

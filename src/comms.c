@@ -154,40 +154,40 @@ void mugy_comms_distributeDOFs(struct mugy_comms comms, struct mugy_grid *grid, 
   mint rank_s = comms.sub1d[nDim].rank;
   distribute1dDOFs(pop->mpiProcs, rank_s, pop->global.numSpecies, &pop->local.numSpecies, &pop->local.globalSpecOff);
   pop->local.globalMomOff = 0;
-  for (mint s=0; s<pop->local.globalSpecOff; s++) pop->local.globalMomOff += pop->global.spar[s].numMoments;
-  pop->local.spar = (struct mugy_species_pars*) calloc(pop->local.numSpecies, sizeof(struct mugy_species_pars));
+  for (mint s=0; s<pop->local.globalSpecOff; s++) pop->local.globalMomOff += pop->global.pars[s].numMoments;
+  pop->local.pars = (struct mugy_species_pars*) calloc(pop->local.numSpecies, sizeof(struct mugy_species_pars));
   for (mint s=0; s<pop->local.numSpecies; s++) {
-    pop->local.spar[s].numMoments = pop->global.spar[s+pop->local.globalSpecOff].numMoments;
+    pop->local.pars[s].numMoments = pop->global.pars[s+pop->local.globalSpecOff].numMoments;
 
-    pop->local.spar[s].alpha      = alloc_realArray_ho(pop->local.spar[s].numMoments);
-    pop->local.spar[s].nu         = alloc_realArray_ho(pop->local.spar[s].numMoments);
-    pop->local.spar[s].hDiffOrder = alloc_realArray_ho(nDim);
-    pop->local.spar[s].hDiff      = alloc_realArray_ho(nDim);
-    pop->local.spar[s].kDiffMin   = alloc_realArray_ho(nDim);
-    pop->local.spar[s].initAux    = alloc_realArray_ho(nDim);
+    pop->local.pars[s].alpha      = alloc_realArray_ho(pop->local.pars[s].numMoments);
+    pop->local.pars[s].nu         = alloc_realArray_ho(pop->local.pars[s].numMoments);
+    pop->local.pars[s].hDiffOrder = alloc_realArray_ho(nDim);
+    pop->local.pars[s].hDiff      = alloc_realArray_ho(nDim);
+    pop->local.pars[s].kDiffMin   = alloc_realArray_ho(nDim);
+    pop->local.pars[s].initAux    = alloc_realArray_ho(nDim);
 
-    pop->local.spar[s].qCharge    = pop->global.spar[s+pop->local.globalSpecOff].qCharge   ;
-    pop->local.spar[s].muMass     = pop->global.spar[s+pop->local.globalSpecOff].muMass    ;
-    pop->local.spar[s].tau        = pop->global.spar[s+pop->local.globalSpecOff].tau       ;
-    pop->local.spar[s].omSt       = pop->global.spar[s+pop->local.globalSpecOff].omSt      ;
-    pop->local.spar[s].omd        = pop->global.spar[s+pop->local.globalSpecOff].omd       ;
-    pop->local.spar[s].delta      = pop->global.spar[s+pop->local.globalSpecOff].delta     ;
-    pop->local.spar[s].deltaPerp  = pop->global.spar[s+pop->local.globalSpecOff].deltaPerp ;
-    pop->local.spar[s].eta        = pop->global.spar[s+pop->local.globalSpecOff].eta       ;
-    memcpy(pop->local.spar[s].alpha, pop->global.spar[s+pop->local.globalSpecOff].alpha, pop->local.spar[s].numMoments*sizeof(real));
-    memcpy(pop->local.spar[s].nu   , pop->global.spar[s+pop->local.globalSpecOff].nu   , pop->local.spar[s].numMoments*sizeof(real));
-    pop->local.spar[s].delta0     = pop->global.spar[s+pop->local.globalSpecOff].delta0    ;
-    memcpy(pop->local.spar[s].hDiffOrder, pop->global.spar[s+pop->local.globalSpecOff].hDiffOrder, nDim*sizeof(real));
-    memcpy(pop->local.spar[s].hDiff     , pop->global.spar[s+pop->local.globalSpecOff].hDiff     , nDim*sizeof(real));
-    memcpy(pop->local.spar[s].kDiffMin  , pop->global.spar[s+pop->local.globalSpecOff].kDiffMin  , nDim*sizeof(real));
-    pop->local.spar[s].icOp       = pop->global.spar[s+pop->local.globalSpecOff].icOp      ;
-    memcpy(pop->local.spar[s].initAux, pop->global.spar[s+pop->local.globalSpecOff].initAux, nDim*sizeof(real));
-    pop->local.spar[s].initA      = pop->global.spar[s+pop->local.globalSpecOff].initA     ;
-    pop->local.spar[s].noiseA     = pop->global.spar[s+pop->local.globalSpecOff].noiseA    ;
+    pop->local.pars[s].qCharge    = pop->global.pars[s+pop->local.globalSpecOff].qCharge   ;
+    pop->local.pars[s].muMass     = pop->global.pars[s+pop->local.globalSpecOff].muMass    ;
+    pop->local.pars[s].tau        = pop->global.pars[s+pop->local.globalSpecOff].tau       ;
+    pop->local.pars[s].omSt       = pop->global.pars[s+pop->local.globalSpecOff].omSt      ;
+    pop->local.pars[s].omd        = pop->global.pars[s+pop->local.globalSpecOff].omd       ;
+    pop->local.pars[s].delta      = pop->global.pars[s+pop->local.globalSpecOff].delta     ;
+    pop->local.pars[s].deltaPerp  = pop->global.pars[s+pop->local.globalSpecOff].deltaPerp ;
+    pop->local.pars[s].eta        = pop->global.pars[s+pop->local.globalSpecOff].eta       ;
+    memcpy(pop->local.pars[s].alpha, pop->global.pars[s+pop->local.globalSpecOff].alpha, pop->local.pars[s].numMoments*sizeof(real));
+    memcpy(pop->local.pars[s].nu   , pop->global.pars[s+pop->local.globalSpecOff].nu   , pop->local.pars[s].numMoments*sizeof(real));
+    pop->local.pars[s].delta0     = pop->global.pars[s+pop->local.globalSpecOff].delta0    ;
+    memcpy(pop->local.pars[s].hDiffOrder, pop->global.pars[s+pop->local.globalSpecOff].hDiffOrder, nDim*sizeof(real));
+    memcpy(pop->local.pars[s].hDiff     , pop->global.pars[s+pop->local.globalSpecOff].hDiff     , nDim*sizeof(real));
+    memcpy(pop->local.pars[s].kDiffMin  , pop->global.pars[s+pop->local.globalSpecOff].kDiffMin  , nDim*sizeof(real));
+    pop->local.pars[s].icOp       = pop->global.pars[s+pop->local.globalSpecOff].icOp      ;
+    memcpy(pop->local.pars[s].initAux, pop->global.pars[s+pop->local.globalSpecOff].initAux, nDim*sizeof(real));
+    pop->local.pars[s].initA      = pop->global.pars[s+pop->local.globalSpecOff].initA     ;
+    pop->local.pars[s].noiseA     = pop->global.pars[s+pop->local.globalSpecOff].noiseA    ;
   }
   // Set the total number of moments.
   pop->local.numMomentsTot = 0;
-  for (int s=0; s<pop->local.numSpecies; s++) pop->local.numMomentsTot += pop->local.spar[s].numMoments;
+  for (int s=0; s<pop->local.numSpecies; s++) pop->local.numMomentsTot += pop->local.pars[s].numMoments;
 
   // Distribute the real-space and Fourier-space points. 
   struct mugy_grid_ada *gridG = &grid->global;
@@ -230,12 +230,21 @@ void mugy_comms_distributeDOFs(struct mugy_comms comms, struct mugy_grid *grid, 
 
   // Copy global scalars into local grids.
   for (mint d=0; d<nDim; d++) {
-    gridL->deal.kxMin[d]    = gridG->deal.kxMin[d];
-    gridL->al.kxMin[d]   = gridG->al.kxMin[d];
-    gridL->deal.dual.dx[d]  = gridG->deal.dual.dx[d];
-    gridL->al.dual.dx[d] = gridG->al.dual.dx[d];
+    gridL->deal.kxMin[d]   = gridG->deal.kxMin[d];
+    gridL->al.kxMin[d]     = gridG->al.kxMin[d];
+    gridL->deal.dual.dx[d] = gridG->deal.dual.dx[d];
+    gridL->al.dual.dx[d]   = gridG->al.dual.dx[d];
   }
 
+  // Also convenient to keep dealiased kperpSq in memory:
+  gridL->deal.kperpSq = alloc_realArray_ho(gridL->deal.NekxyTot);
+  for (mint i=0; i<gridL->deal.Nekx[0]; i++) {
+    for (mint j=0; j<gridL->deal.Nekx[1]; j++) {
+      double kx = gridL->deal.kx[i];
+      double ky = gridL->deal.kx[gridL->deal.Nekx[0]+j];
+      gridL->deal.kperpSq[i*gridL->deal.Nekx[1]+j] = kx*kx + ky*ky;
+    }
+  }
 }
 
 void mugy_comms_terminate(struct mugy_comms *comms) {

@@ -13,8 +13,8 @@
 struct mugy_species_pars {
   mint numMoments;   // Number of moments.
   real qCharge;      // Charge.
-  real muMass;       // sqrt of the mass.
-  real tau;          // Temperature. 
+  real muMass;       // sqrt of the reference ion mass to mass of this species.
+  real tau;          // Ratio of reference ion temperature to temperature of this species. 
   real omSt;         // omega_star.
   real omd;          // omega_d.
   real delta;        // (Tpar + Tperp)/T.
@@ -37,9 +37,10 @@ struct mugy_pop {
   mint numSpecies;       // Number of species.
   mint globalSpecOff;    // Offset of first species in this process within the global population.
   mint globalMomOff;     // Offset of first moment in this process within global number of moments.
-  struct mugy_species_pars *spar;  // Pointer to array of species parameters.
+  struct mugy_species_pars *pars;  // Pointer to array of species parameters.
   mint numMomentsTot;    // Total number of moments across all species.
   struct mugy_array **momk;  // Moments in Fourier space. Possibly multiple copies (e.g. for time stepper).
+  struct mugy_array *poissonFac;  // Factors multiplying each moment in Poissson equation.
 };
 
 struct mugy_population {

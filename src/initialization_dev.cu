@@ -6,8 +6,8 @@
 
 extern "C" {
 #include "mh_initialization_dev.h"
-#include "mh_utilities_dev.h"
 }
+#include "mh_utilities_dev.h"
 
 void device_init_dev(struct mugy_comms *comms) {
 

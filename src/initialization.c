@@ -109,38 +109,38 @@ void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_
     fscanf(file_p, "%*s");  // &species.
     readFileVar_mint(file_p, 1, &popG->numSpecies);
     readFileVar_mint(file_p, 1, &pop->mpiProcs);
-    popG->spar = (struct mugy_species_pars*) calloc(popG->numSpecies, sizeof(struct mugy_species_pars));
+    popG->pars = (struct mugy_species_pars*) calloc(popG->numSpecies, sizeof(struct mugy_species_pars));
     mint *specNumMoms = (mint*) calloc(popG->numSpecies, sizeof(mint));
     mint *specOnes    = (mint*) calloc(popG->numSpecies, sizeof(mint));
     mint *specnDim    = (mint*) calloc(popG->numSpecies, sizeof(mint));
     readFileVar_mint(file_p, popG->numSpecies, specNumMoms);
     mint filePos = ftell(file_p);
     for (mint s=0; s<popG->numSpecies; s++) {
-      popG->spar[s].numMoments = specNumMoms[s];
+      popG->pars[s].numMoments = specNumMoms[s];
       specOnes[s] = 1;
       specnDim[s] = nDim;
     }
     real* real_p; real** real_pp; mint* mint_p;
     for (mint s=0; s<popG->numSpecies; s++) {
       fseek(file_p, filePos, SEEK_SET);
-      real_p  =    &popG->spar[s].qCharge; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
-      real_p  =     &popG->spar[s].muMass; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
-      real_p  =        &popG->spar[s].tau; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
-      real_p  =       &popG->spar[s].omSt; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
-      real_p  =        &popG->spar[s].omd; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
-      real_p  =      &popG->spar[s].delta; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
-      real_p  =  &popG->spar[s].deltaPerp; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
-      real_p  =        &popG->spar[s].eta; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
-      real_pp =      &popG->spar[s].alpha; readFileSpeciesPar_real(real_pp, file_p, s, popG->numSpecies, specNumMoms);
-      real_pp =         &popG->spar[s].nu; readFileSpeciesPar_real(real_pp, file_p, s, popG->numSpecies, specNumMoms);
-      real_p  =     &popG->spar[s].delta0; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
-      real_pp = &popG->spar[s].hDiffOrder; readFileSpeciesPar_real(real_pp, file_p, s, popG->numSpecies, specnDim   );
-      real_pp =      &popG->spar[s].hDiff; readFileSpeciesPar_real(real_pp, file_p, s, popG->numSpecies, specnDim   );
-      real_pp =   &popG->spar[s].kDiffMin; readFileSpeciesPar_real(real_pp, file_p, s, popG->numSpecies, specnDim   );
-      mint_p  =       &popG->spar[s].icOp; readFileSpeciesPar_mint(&mint_p, file_p, s, popG->numSpecies, specOnes   );
-      real_pp =    &popG->spar[s].initAux; readFileSpeciesPar_real(real_pp, file_p, s, popG->numSpecies, specnDim   );
-      real_p  =      &popG->spar[s].initA; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
-      real_p  =     &popG->spar[s].noiseA; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_p  =    &popG->pars[s].qCharge; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_p  =     &popG->pars[s].muMass; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_p  =        &popG->pars[s].tau; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_p  =       &popG->pars[s].omSt; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_p  =        &popG->pars[s].omd; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_p  =      &popG->pars[s].delta; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_p  =  &popG->pars[s].deltaPerp; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_p  =        &popG->pars[s].eta; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_pp =      &popG->pars[s].alpha; readFileSpeciesPar_real(real_pp, file_p, s, popG->numSpecies, specNumMoms);
+      real_pp =         &popG->pars[s].nu; readFileSpeciesPar_real(real_pp, file_p, s, popG->numSpecies, specNumMoms);
+      real_p  =     &popG->pars[s].delta0; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_pp = &popG->pars[s].hDiffOrder; readFileSpeciesPar_real(real_pp, file_p, s, popG->numSpecies, specnDim   );
+      real_pp =      &popG->pars[s].hDiff; readFileSpeciesPar_real(real_pp, file_p, s, popG->numSpecies, specnDim   );
+      real_pp =   &popG->pars[s].kDiffMin; readFileSpeciesPar_real(real_pp, file_p, s, popG->numSpecies, specnDim   );
+      mint_p  =       &popG->pars[s].icOp; readFileSpeciesPar_mint(&mint_p, file_p, s, popG->numSpecies, specOnes   );
+      real_pp =    &popG->pars[s].initAux; readFileSpeciesPar_real(real_pp, file_p, s, popG->numSpecies, specnDim   );
+      real_p  =      &popG->pars[s].initA; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
+      real_p  =     &popG->pars[s].noiseA; readFileSpeciesPar_real(&real_p, file_p, s, popG->numSpecies, specOnes   );
     }
     free(specnDim); free(specOnes); free(specNumMoms);
     fscanf(file_p, "%*s");  // /.
@@ -174,35 +174,35 @@ void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_
 
   MPI_Bcast(&popG->numSpecies, 1, mpi_mint, ioRank, MPI_COMM_WORLD);
   MPI_Bcast(&pop->mpiProcs   , 1, mpi_mint, ioRank, MPI_COMM_WORLD);
-  if (rank != ioRank) popG->spar = (struct mugy_species_pars*) calloc(popG->numSpecies, sizeof(struct mugy_species_pars));
+  if (rank != ioRank) popG->pars = (struct mugy_species_pars*) calloc(popG->numSpecies, sizeof(struct mugy_species_pars));
   for (mint s=0; s<popG->numSpecies; s++) {
-    MPI_Bcast(&popG->spar[s].numMoments,                       1, mpi_mint, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].numMoments,                       1, mpi_mint, ioRank, MPI_COMM_WORLD);
     if (rank != ioRank) {
-      popG->spar[s].alpha      = alloc_realArray_ho(popG->spar[s].numMoments);
-      popG->spar[s].nu         = alloc_realArray_ho(popG->spar[s].numMoments);
-      popG->spar[s].hDiffOrder = alloc_realArray_ho(nDim);
-      popG->spar[s].hDiff      = alloc_realArray_ho(nDim);
-      popG->spar[s].kDiffMin   = alloc_realArray_ho(nDim);
-      popG->spar[s].initAux    = alloc_realArray_ho(nDim);
+      popG->pars[s].alpha      = alloc_realArray_ho(popG->pars[s].numMoments);
+      popG->pars[s].nu         = alloc_realArray_ho(popG->pars[s].numMoments);
+      popG->pars[s].hDiffOrder = alloc_realArray_ho(nDim);
+      popG->pars[s].hDiff      = alloc_realArray_ho(nDim);
+      popG->pars[s].kDiffMin   = alloc_realArray_ho(nDim);
+      popG->pars[s].initAux    = alloc_realArray_ho(nDim);
     }
-    MPI_Bcast(&popG->spar[s].qCharge   ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->spar[s].muMass    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->spar[s].tau       ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->spar[s].omSt      ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->spar[s].omd       ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->spar[s].delta     ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->spar[s].deltaPerp ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->spar[s].eta       ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(popG->spar[s].alpha      , popG->spar[s].numMoments, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(popG->spar[s].nu         , popG->spar[s].numMoments, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->spar[s].delta0    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(popG->spar[s].hDiffOrder ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(popG->spar[s].hDiff      ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(popG->spar[s].kDiffMin   ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->spar[s].icOp      ,                       1, mpi_mint, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(popG->spar[s].initAux    ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->spar[s].initA     ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->spar[s].noiseA    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].qCharge   ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].muMass    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].tau       ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].omSt      ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].omd       ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].delta     ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].deltaPerp ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].eta       ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(popG->pars[s].alpha      , popG->pars[s].numMoments, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(popG->pars[s].nu         , popG->pars[s].numMoments, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].delta0    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(popG->pars[s].hDiffOrder ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(popG->pars[s].hDiff      ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(popG->pars[s].kDiffMin   ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].icOp      ,                       1, mpi_mint, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(popG->pars[s].initAux    ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].initA     ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].noiseA    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
   }
 
   MPI_Bcast(&field->pars.lambdaD, 1, mpi_real, ioRank, MPI_COMM_WORLD);
@@ -245,7 +245,7 @@ void read_inputs(mint argc, char *argv[], struct mugy_ioSetup *ioSet, struct mug
   // Set the total number of moments.
   struct mugy_pop *popG = &pop->global;
   popG->numMomentsTot = 0;
-  for (mint s=0; s<popG->numSpecies; s++) popG->numMomentsTot += popG->spar[s].numMoments;
+  for (mint s=0; s<popG->numSpecies; s++) popG->numMomentsTot += popG->pars[s].numMoments;
 
 }
 
@@ -261,7 +261,7 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_grid grid,
   struct mugy_array *momk = pop->local.momk[0]; // Put ICs in first stepper field.
 
   // NOTE: For now assume initialOp is the same for all species.
-  mint initialOp = pop->local.spar[0].icOp; 
+  mint initialOp = pop->local.pars[0].icOp; 
 
   if (initialOp == 0) {
     // Initialize in real space and transform to Fourier.
@@ -269,16 +269,16 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_grid grid,
     struct mugy_array *momIC = mugy_population_alloc_realMoments(*gridL, pop->local, hostAndDeviceMem);
 
     for (mint s=0; s<pop->local.numSpecies; s++) {
-      real initA = pop->local.spar[s].initA;
+      real initA = pop->local.pars[s].initA;
 
       real *den_p  = getMoment_real(*gridL, pop->local, s, denIdx, momIC->ho);  // Get density of species s.
       real *temp_p = getMoment_real(*gridL, pop->local, s, tempIdx, momIC->ho);  // Get temperature of species s.
 
       for (mint linIdx=0; linIdx<gridL->NxTot; linIdx++) {
         mint xIdx[nDim];
-        lin2sub_real(&xIdx[0], linIdx, *gridL);  // Convert linear index to multidimensional x index.
+        mugy_grid_lin2sub_real(&xIdx[0], linIdx, *gridL);  // Convert linear index to multidimensional x index.
         real x[nDim];
-        get_x(&x[0], xIdx, *gridL);
+        mugy_grid_get_x(&x[0], xIdx, *gridL);
 
         // Initial density: a superposition of sines and cosines.
         double kx = grid.local.deal.kxMin[0];
@@ -323,11 +323,11 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_grid grid,
 //    // Assign real array to a linear combo of sines and cosines.
 //    real *fxy_rp = fxy_r->ho;
 //    for (mint linIdx=0; linIdx<gridL->NxTot; linIdx++) {
-//      real initA = pop->local.spar[0].initA;
+//      real initA = pop->local.pars[0].initA;
 //      mint xIdx[nDim];
-//      lin2sub_real(&xIdx[0], linIdx, *gridL);  // Convert linear index to multidimensional x index.
+//      mugy_grid_lin2sub_real(&xIdx[0], linIdx, *gridL);  // Convert linear index to multidimensional x index.
 //      real x[nDim];
-//      get_x(&x[0], xIdx, *gridL);
+//      mugy_grid_get_x(&x[0], xIdx, *gridL);
 //
 //      fxy_rp[0] = 0.;
 //      double kx = grid.local.deal.kxMin[0];
@@ -359,17 +359,17 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_grid grid,
     real *kxMin = &grid.local.deal.kxMin[0];
 
     for (mint s=0; s<pop->local.numSpecies; s++) {
-      real initA    = pop->local.spar[s].initA;
-      real *initAux = &pop->local.spar[s].initAux[0];
+      real initA    = pop->local.pars[s].initA;
+      real *initAux = &pop->local.pars[s].initAux[0];
 
       fourier *den_p  = getMoment_fourier(grid.local.deal, pop->local, s, denIdx, momk->ho);  // Get density of species s.
       fourier *temp_p = getMoment_fourier(grid.local.deal, pop->local, s, tempIdx, momk->ho);  // Get temperature of species s.
 
       for (mint linIdx=0; linIdx<grid.local.deal.NekxTot; linIdx++) {
         mint kxIdx[nDim];
-        lin2sub_fourier(&kxIdx[0], linIdx, grid.local.deal);  // Convert linear index to multidimensional kx index.
+        mugy_grid_lin2sub_fourier(&kxIdx[0], linIdx, grid.local.deal);  // Convert linear index to multidimensional kx index.
         real kx[nDim];
-        get_kx(&kx[0], kxIdx, grid.local.deal);
+        mugy_grid_get_kx(&kx[0], kxIdx, grid.local.deal);
   
         // Set density to a power-law in k-space.
         den_p[0] = initA*(pow((kxMin[0]+fabs(kx[0]))/kxMin[0],initAux[0]))
