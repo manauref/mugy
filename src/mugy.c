@@ -53,6 +53,9 @@ int main(int argc, char *argv[]) {
   // Initialize field object.
   mugy_field_init(field, grid, pop);
 
+  // Initialize FLR and linear operators.
+  mugy_flr_init(pop, grid, field, ioMan);
+
   // Impose ICs.
   set_initialConditions(pop, *grid, fftMan, ioMan);
 

@@ -52,6 +52,8 @@ then
   export SUNDIALS_DIR=$HOME/multiscale/code/BUILD.Release/INSTALL.Release/
   export SUNDIALS_MOD=$SUNDIALS_DIR/fortran
   export SUNDIALS_LIB=$SUNDIALS_DIR/lib
+  export GSL_INC=/usr/local/gsl/2.6/x86_64/include/
+  export GSL_LIB=/usr/local/gsl/2.6/x86_66/lib64/
 
 else
 

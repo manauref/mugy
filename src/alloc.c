@@ -22,13 +22,13 @@ char* alloc_charArray_ho(mint numElements) {
   if (out_p == NULL) abortSimulation(" alloc_charArray: calloc failed! Terminating...\n");
   return out_p;
 }
-real* alloc_realArray_ho(mint numElements) {
+real* mugy_alloc_real_ho(mint numElements) {
   real *out_p;
   out_p = (real *) calloc(numElements, sizeof(real));
   if (out_p == NULL) abortSimulation(" alloc_realArray: calloc failed! Terminating...\n");
   return out_p;
 }
-void *alloc_fourierArray_ho(mint numElements) {
+void *mugy_alloc_fourier_ho(mint numElements) {
   fourier *out_p;
   out_p = (fourier *) calloc(numElements, sizeof(fourier));
   if (out_p == NULL) abortSimulation(" alloc_fourierArray: calloc failed! Terminating...\n");

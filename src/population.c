@@ -49,7 +49,7 @@ void mugy_population_alloc_moments(struct mugy_population *pop, struct mugy_grid
 
 }
 
-real* getMoment_real(struct mugy_realGrid grid, struct mugy_pop pop, mint sIdx, mint momIdx, real *momIn) {
+real* mugy_population_getMoment_real(struct mugy_realGrid grid, struct mugy_pop pop, mint sIdx, mint momIdx, real *momIn) {
   // Return a pointer to the momIdx-th moment of the sIdx-th species in mom.
   real* ptrOut = momIn;
   mint momOff = 0;
@@ -57,7 +57,7 @@ real* getMoment_real(struct mugy_realGrid grid, struct mugy_pop pop, mint sIdx, 
   return ptrOut+(momOff+momIdx)*grid.NxTot;
 }
 
-void* getMoment_fourier(struct mugy_fourierGrid grid, struct mugy_pop pop, mint sIdx, mint momIdx, void *momkIn) {
+void* mugy_population_getMoment_fourier(struct mugy_fourierGrid grid, struct mugy_pop pop, mint sIdx, mint momIdx, void *momkIn) {
   // Return a pointer to the momIdx-th moment of the sIdx-th species in momk.
   fourier* ptrOut = (fourier *)momkIn;
   mint momOff = 0;
@@ -89,6 +89,9 @@ void mugy_population_free(struct mugy_population *pop) {
   // Free moments vector.
   for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
     mugy_array_free(pop->local.momk[s], onResource);
+
+  // Free Poisson bracket FLR operators.
+  mugy_array_free(pop->local.pbFLRop, onResource);
 
   free(pop->local.momk);
 }

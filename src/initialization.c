@@ -64,7 +64,7 @@ void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint n
   if (numElements[sIdx] == 1) {
     fscanf(fp, "%"fmt_real, &(*var)[0]);
   } else {
-    *var = alloc_realArray_ho(numElements[sIdx]);
+    *var = mugy_alloc_real_ho(numElements[sIdx]);
     for (mint i=0; i<numElements[sIdx]; i++) fscanf(fp, "%"fmt_real, &(*var)[i]);
   }
   // Skip species after sIdx (presumably will be read later).
@@ -178,12 +178,12 @@ void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_
   for (mint s=0; s<popG->numSpecies; s++) {
     MPI_Bcast(&popG->pars[s].numMoments,                       1, mpi_mint, ioRank, MPI_COMM_WORLD);
     if (rank != ioRank) {
-      popG->pars[s].alpha      = alloc_realArray_ho(popG->pars[s].numMoments);
-      popG->pars[s].nu         = alloc_realArray_ho(popG->pars[s].numMoments);
-      popG->pars[s].hDiffOrder = alloc_realArray_ho(nDim);
-      popG->pars[s].hDiff      = alloc_realArray_ho(nDim);
-      popG->pars[s].kDiffMin   = alloc_realArray_ho(nDim);
-      popG->pars[s].initAux    = alloc_realArray_ho(nDim);
+      popG->pars[s].alpha      = mugy_alloc_real_ho(popG->pars[s].numMoments);
+      popG->pars[s].nu         = mugy_alloc_real_ho(popG->pars[s].numMoments);
+      popG->pars[s].hDiffOrder = mugy_alloc_real_ho(nDim);
+      popG->pars[s].hDiff      = mugy_alloc_real_ho(nDim);
+      popG->pars[s].kDiffMin   = mugy_alloc_real_ho(nDim);
+      popG->pars[s].initAux    = mugy_alloc_real_ho(nDim);
     }
     MPI_Bcast(&popG->pars[s].qCharge   ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
     MPI_Bcast(&popG->pars[s].muMass    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
@@ -271,8 +271,8 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_grid grid,
     for (mint s=0; s<pop->local.numSpecies; s++) {
       real initA = pop->local.pars[s].initA;
 
-      real *den_p  = getMoment_real(*gridL, pop->local, s, denIdx, momIC->ho);  // Get density of species s.
-      real *temp_p = getMoment_real(*gridL, pop->local, s, tempIdx, momIC->ho);  // Get temperature of species s.
+      real *den_p  = mugy_population_getMoment_real(*gridL, pop->local, s, denIdx, momIC->ho);  // Get density of species s.
+      real *temp_p = mugy_population_getMoment_real(*gridL, pop->local, s, tempIdx, momIC->ho);  // Get temperature of species s.
 
       for (mint linIdx=0; linIdx<gridL->NxTot; linIdx++) {
         mint xIdx[nDim];
@@ -362,8 +362,9 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_grid grid,
       real initA    = pop->local.pars[s].initA;
       real *initAux = &pop->local.pars[s].initAux[0];
 
-      fourier *den_p  = getMoment_fourier(grid.local.deal, pop->local, s, denIdx, momk->ho);  // Get density of species s.
-      fourier *temp_p = getMoment_fourier(grid.local.deal, pop->local, s, tempIdx, momk->ho);  // Get temperature of species s.
+      // Get density and temperature of species s.
+      fourier *den_p  = mugy_population_getMoment_fourier(grid.local.deal, pop->local, s, denIdx, momk->ho);
+      fourier *temp_p = mugy_population_getMoment_fourier(grid.local.deal, pop->local, s, tempIdx, momk->ho);
 
       for (mint linIdx=0; linIdx<grid.local.deal.NekxTot; linIdx++) {
         mint kxIdx[nDim];

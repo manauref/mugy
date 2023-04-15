@@ -40,6 +40,7 @@ struct mugy_pop {
   struct mugy_species_pars *pars;  // Pointer to array of species parameters.
   mint numMomentsTot;    // Total number of moments across all species.
   struct mugy_array **momk;  // Moments in Fourier space. Possibly multiple copies (e.g. for time stepper).
+  struct mugy_array *pbFLRop;  // Poisson bracket FLR operators for each species.
   struct mugy_array *poissonFac;  // Factors multiplying each moment in Poissson equation.
 };
 
@@ -66,8 +67,8 @@ struct mugy_array *mugy_population_alloc_fourierMoments(const struct mugy_fourie
 void mugy_population_alloc_moments(struct mugy_population *pop, struct mugy_grid grid);
 
 // Return a pointer to the momIdx-th moment of the sIdx-th species in mom/momk.
-real* getMoment_real(struct mugy_realGrid grid, struct mugy_pop pop, mint sIdx, mint momIdx, real *momIn);
-void* getMoment_fourier(struct mugy_fourierGrid grid, struct mugy_pop pop, mint sIdx, mint momIdx, void *momkIn);
+real* mugy_population_getMoment_real(struct mugy_realGrid grid, struct mugy_pop pop, mint sIdx, mint momIdx, real *momIn);
+void* mugy_population_getMoment_fourier(struct mugy_fourierGrid grid, struct mugy_pop pop, mint sIdx, mint momIdx, void *momkIn);
 
 void mugy_population_free(struct mugy_population *pop);
 

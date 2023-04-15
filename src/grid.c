@@ -59,7 +59,7 @@ void mugy_grid_init_global(struct mugy_grid *grid, mint rank) {
   }
 
   // Global de-aliased real-space grids
-  gridG->deal.dual.x = alloc_realArray_ho(sum_mint(gridG->deal.dual.Nx, nDim));
+  gridG->deal.dual.x = mugy_alloc_real_ho(sum_mint(gridG->deal.dual.Nx, nDim));
   real *dx = gridG->deal.dual.dx;
   mint *Nx = gridG->deal.dual.Nx; 
   mint xOff = 0;
@@ -71,7 +71,7 @@ void mugy_grid_init_global(struct mugy_grid *grid, mint rank) {
     xOff += Nx[d];
   }
   // Global aliased real-space grids (may not be needed).
-  gridG->al.dual.x = alloc_realArray_ho(sum_mint(gridG->al.dual.Nx, 3));
+  gridG->al.dual.x = mugy_alloc_real_ho(sum_mint(gridG->al.dual.Nx, 3));
   real *dxa = gridG->al.dual.dx;
   mint *Nxa = gridG->al.dual.Nx; 
   mint xaOff = 0;
@@ -85,7 +85,7 @@ void mugy_grid_init_global(struct mugy_grid *grid, mint rank) {
 
   // Global dealiased k-space grids.
   for (mint d=0; d<nDim; d++) gridG->al.kxMin[d] = gridG->deal.kxMin[d];
-  gridG->deal.kx = alloc_realArray_ho(sum_mint(gridG->deal.Nekx, 3));
+  gridG->deal.kx = mugy_alloc_real_ho(sum_mint(gridG->deal.Nekx, 3));
   real *kxMin = gridG->deal.kxMin;
   mint *Nkx = gridG->deal.Nkx; 
   mint kxOff = 0;
@@ -99,7 +99,7 @@ void mugy_grid_init_global(struct mugy_grid *grid, mint rank) {
     gridG->deal.kx[i] = -(real)(Nkx[0]-1-(i-Nkx[0]))*kxMin[0];
 
   // Global aliased k-space grids.
-  gridG->al.kx = alloc_realArray_ho(sum_mint(gridG->al.Nekx, 3));
+  gridG->al.kx = mugy_alloc_real_ho(sum_mint(gridG->al.Nekx, 3));
   real *kxaMin = gridG->al.kxMin;
   mint *Nkxa = gridG->al.Nkx; 
   mint kxaOff = 0;
@@ -124,7 +124,7 @@ void mugy_grid_init_global(struct mugy_grid *grid, mint rank) {
   arrPrintS_real(gridG->deal.kxMaxDyn, nDim, " Largest wavenumbers evolved:               kxMaxDyn =", "\n", rank);
 
   // Also convenient to keep dealiased kperpSq in memory:
-  gridG->deal.kperpSq = alloc_realArray_ho(gridG->deal.NekxyTot);
+  gridG->deal.kperpSq = mugy_alloc_real_ho(gridG->deal.NekxyTot);
   for (mint i=0; i<gridG->deal.Nekx[0]; i++) {
     for (mint j=0; j<gridG->deal.Nekx[1]; j++) {
       double kx = gridG->deal.kx[i];

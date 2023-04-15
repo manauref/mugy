@@ -159,12 +159,12 @@ void mugy_comms_distributeDOFs(struct mugy_comms comms, struct mugy_grid *grid, 
   for (mint s=0; s<pop->local.numSpecies; s++) {
     pop->local.pars[s].numMoments = pop->global.pars[s+pop->local.globalSpecOff].numMoments;
 
-    pop->local.pars[s].alpha      = alloc_realArray_ho(pop->local.pars[s].numMoments);
-    pop->local.pars[s].nu         = alloc_realArray_ho(pop->local.pars[s].numMoments);
-    pop->local.pars[s].hDiffOrder = alloc_realArray_ho(nDim);
-    pop->local.pars[s].hDiff      = alloc_realArray_ho(nDim);
-    pop->local.pars[s].kDiffMin   = alloc_realArray_ho(nDim);
-    pop->local.pars[s].initAux    = alloc_realArray_ho(nDim);
+    pop->local.pars[s].alpha      = mugy_alloc_real_ho(pop->local.pars[s].numMoments);
+    pop->local.pars[s].nu         = mugy_alloc_real_ho(pop->local.pars[s].numMoments);
+    pop->local.pars[s].hDiffOrder = mugy_alloc_real_ho(nDim);
+    pop->local.pars[s].hDiff      = mugy_alloc_real_ho(nDim);
+    pop->local.pars[s].kDiffMin   = mugy_alloc_real_ho(nDim);
+    pop->local.pars[s].initAux    = mugy_alloc_real_ho(nDim);
 
     pop->local.pars[s].qCharge    = pop->global.pars[s+pop->local.globalSpecOff].qCharge   ;
     pop->local.pars[s].muMass     = pop->global.pars[s+pop->local.globalSpecOff].muMass    ;
@@ -213,10 +213,10 @@ void mugy_comms_distributeDOFs(struct mugy_comms comms, struct mugy_grid *grid, 
   gridL->al.dual.NxyTot = prod_mint(gridL->al.dual.Nx,2);
 
   // Create local real-space and Fourier-space coordinate arrays.
-  gridL->deal.kx     = alloc_realArray_ho(sum_mint(gridL->deal.Nekx, nDim));
-  gridL->deal.dual.x = alloc_realArray_ho(sum_mint(gridL->deal.dual.Nx, nDim));
-  gridL->al.kx     = alloc_realArray_ho(sum_mint(gridL->al.Nekx, nDim));
-  gridL->al.dual.x = alloc_realArray_ho(sum_mint(gridL->al.dual.Nx, nDim));
+  gridL->deal.kx     = mugy_alloc_real_ho(sum_mint(gridL->deal.Nekx, nDim));
+  gridL->deal.dual.x = mugy_alloc_real_ho(sum_mint(gridL->deal.dual.Nx, nDim));
+  gridL->al.kx     = mugy_alloc_real_ho(sum_mint(gridL->al.Nekx, nDim));
+  gridL->al.dual.x = mugy_alloc_real_ho(sum_mint(gridL->al.dual.Nx, nDim));
   for (mint d=0; d<nDim; d++) {
     memcpy(getArray_real(gridL->deal.kx,gridL->deal.Nekx,d),
            getArray_real(gridG->deal.kx,gridG->deal.Nekx,d)+gridL->deal.globalOff[d], gridL->deal.Nekx[d]*sizeof(real));
@@ -237,7 +237,7 @@ void mugy_comms_distributeDOFs(struct mugy_comms comms, struct mugy_grid *grid, 
   }
 
   // Also convenient to keep dealiased kperpSq in memory:
-  gridL->deal.kperpSq = alloc_realArray_ho(gridL->deal.NekxyTot);
+  gridL->deal.kperpSq = mugy_alloc_real_ho(gridL->deal.NekxyTot);
   for (mint i=0; i<gridL->deal.Nekx[0]; i++) {
     for (mint j=0; j<gridL->deal.Nekx[1]; j++) {
       double kx = gridL->deal.kx[i];

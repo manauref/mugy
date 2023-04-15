@@ -18,6 +18,11 @@ struct mugy_array {
   void *dev;   // Pointer to device memory.
 };
 
+// Get pointer to the element in the array with linear index 'linIdx'.
+static inline void* mugy_array_get(struct mugy_array* arr, mint linIdx) {
+  return ((char *)arr->ho) + linIdx*arr->elemsz;
+};
+
 // Functions that allocate real/Fourier arrays on host, device or both.
 //   arr: pointer to array to be allocated (really a struct mugy_with ho/dev pointers).
 //   numElements: number of elements in the array.

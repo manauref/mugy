@@ -14,12 +14,13 @@
 #[   removeIOobject
 #[   attrInquire
 #[   varInquire
+#[   attrRead
 #[   varShape
 #[   adType2npType
 #[   varType
 #[   varRead
-#[   
-#[   
+#[   kGrid
+#[   xGrid
 #[   
 #[
 #[ ................................................................ ]#
@@ -29,6 +30,7 @@ from mpi4py import MPI
 import numpy as np
 import adios2
 import sys
+import scipy.special as scsp  #[ For Bessel functions.
 
 class pmIO:
   def __init__(self, **kwargs):
@@ -172,9 +174,6 @@ class pmIO:
     return var
   #[ .......... end of varRead .............. ]#
 
-#[ Moment variables have the shape [numMoments x Nkz x Nkx x Nky ],
-#[ where numMoments is the total number of moments across all species).
-
   #[ Generate the Fourier space grid (note that for colorplots
   #[ matplotlib expects a nodal grid).
   def kGrid(self, **kwargs):
@@ -218,3 +217,65 @@ class pmIO:
     else:
       return x
   #[ .......... end of xGrid .............. ]#
+
+  #[ Calculate the FLR operators.
+  #[ 'tauIn'=Ti0/Ts0 and 'muIn'=sqrt(m_i/m_s), where
+  #[ Ti0/m_i are the temperature and mass of the reference ions,
+  #[ and Ts0/m_s are the temperature and mass of the species
+  #[ whose FLR operators are desired.
+  def calcFLR(self, kxIn, tauIn, muIn, **kwargs):
+    kxSq    = [np.power(kxIn[0],2), np.power(kxIn[1],2)]
+    kperpSq = np.zeros((np.size(kxIn[0]),np.size(kxIn[1])))
+    for i in range(np.size(kperpSq,0)):
+      for j in range(np.size(kperpSq,1)):
+        kperpSq[i,j] = np.add(kxSq[0][i],kxSq[1][j])
+    kperp = np.sqrt(kperpSq)
+  
+    krho = tauIn*kperp/muIn
+
+    b   = np.power(krho,2)
+    bSq = np.power(b,2)
+  
+    Gamma0 = scsp.ive(0,b)
+    Gamma1 = scsp.ive(1,b)
+    avgJ0  = np.sqrt(Gamma0)
+  
+    GammaRat  = Gamma1/Gamma0
+    hatLap    = b*(GammaRat-1.0)
+    hatLapSq  = np.power(hatLap,2)
+    hathatLap = b*(0.5*GammaRat-1.0)-0.25*bSq*(3.0+GammaRat)*(GammaRat-1.0)
+  
+    Db = 1.0+hathatLap-0.25*hatLapSq
+    Nb = 1.0+hathatLap-0.5*hatLapSq
+  
+    Sb = (avgJ0*Nb)/Db
+  
+    flrDict = {}
+    if 'only' in kwargs:
+      #[ Output only desired arrays (saves memory).
+      for iSt in kwargs['only']:
+        if iSt == "Gamma0":
+          flrDict["Gamma0"]    = Gamma0
+        elif iSt == "avgJ0":
+          flrDict["avgJ0"]     = avgJ0
+        elif iSt == "hatLap":
+          flrDict["hatLap"]    = hatLap
+        elif iSt == "hathatLap":
+          flrDict["hathatLap"] = hathatLap
+        elif iSt == "Db":
+          flrDict["Db"]        = Db
+        elif iSt == "Nb":
+          flrDict["Nb"]        = Nb
+        elif iSt == "Sb":
+          flrDict["Sb"]        = Sb
+    else:
+      #[ Output all FLR functions.
+      flrDict["Gamma0"]    = Gamma0
+      flrDict["avgJ0"]     = avgJ0
+      flrDict["hatLap"]    = hatLap
+      flrDict["hathatLap"] = hathatLap
+      flrDict["Db"]        = Db
+      flrDict["Nb"]        = Nb
+      flrDict["Sb"]        = Sb
+    return flrDict
+  #[ ........... End of FLR functions ................... ]#

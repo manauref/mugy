@@ -34,6 +34,9 @@
 // Functions that allocate mugy data.
 #include "mh_alloc.h"
 
+// FLR and Linear operators.
+#include "mh_flr.h"
+
 // Functions used to initialize the simulation.
 #include "mh_initialization.h"
 

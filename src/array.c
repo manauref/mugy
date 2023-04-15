@@ -11,8 +11,8 @@
 #include "mh_data.h"
 #include <stdlib.h>  // for malloc.
 
-// Allocate array on host, device, or both.
 struct mugy_array *mugy_array_alloc(enum mugy_datatype type, mint numElements, enum resource_mem res) {
+  // Allocate array on host, device, or both.
 
   struct mugy_array *arr = (struct mugy_array *) malloc(sizeof(struct mugy_array));
   arr->type  = type;
@@ -32,8 +32,8 @@ struct mugy_array *mugy_array_alloc(enum mugy_datatype type, mint numElements, e
   return arr;
 }
 
-// Copy arrays betwen host and device, or within host or device.
 void *mugy_array_copy(struct mugy_array *aout, struct mugy_array *ain, enum memcpy_dir_dev dir) {
+  // Copy arrays betwen host and device, or within host or device.
 #ifdef USE_GPU
   if (dir == host2device)
     return mugy_memcpy(aout->dev, ain->ho, ain->nelemsz, dir);
