@@ -309,7 +309,7 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_field *field
 //    mugy_fft_c2r(fftMan, momIC, momICk, mugy_fft_mom_xy, deviceComp);
 //    mugy_array_copy(momIC, momIC, device2host);
 //
-//    struct mugy_ad_file *fh = mugy_io_create_moments_file(ioman, "mom", *grid, *pop, real_enum);
+//    struct mugy_ad_file *fh = mugy_io_create_moments_file(ioman, "mom", grid, pop, real_enum);
 //    mugy_io_write_mugy_array(NULL, "mom", fh, momIC);
 //    mugy_io_close_file(fh);
 //
@@ -345,7 +345,7 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_field *field
 //    mugy_fft_c2r(fftMan, fxy_r, fxy_k, mugy_fft_xy, deviceComp);
 //    mugy_array_copy(fxy_r, fxy_r, device2host);
 //
-//    struct mugy_ad_file *fhr = mugy_io_create_mugy_array_file(ioman, "arr", gridL, real_enum);
+//    struct mugy_ad_file *fhr = mugy_io_create_mugy_array_file(ioman, "arr", grid, real_enum);
 //    mugy_io_write_mugy_array(NULL, "arr", fhr, fxy_r);
 //    mugy_io_close_file(fhr);
 //

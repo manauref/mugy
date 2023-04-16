@@ -34,7 +34,7 @@ struct mugy_array *mugy_population_alloc_fourierMoments(const struct mugy_fourie
   return momk;
 }
 
-void mugy_population_alloc_moments(struct mugy_population *pop, struct mugy_grid grid) {
+void mugy_population_alloc_moments(struct mugy_population *pop, struct mugy_grid *grid) {
   // Allocate various moments needed.
 #ifdef USE_GPU
   enum resource_mem onResource = hostAndDeviceMem;
@@ -45,7 +45,7 @@ void mugy_population_alloc_moments(struct mugy_population *pop, struct mugy_grid
   // Allocate moments vector needed for time stepping.
   pop->local.momk = (struct mugy_array**) calloc(TIME_STEPPER_NUM_FIELDS, sizeof(struct mugy_array *));
   for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
-    pop->local.momk[s] = mugy_population_alloc_fourierMoments(grid.local.deal, pop->local, onResource);
+    pop->local.momk[s] = mugy_population_alloc_fourierMoments(grid->local.deal, pop->local, onResource);
 
 }
 

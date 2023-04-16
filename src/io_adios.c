@@ -30,7 +30,7 @@ struct mugy_ioManager *mugy_io_init(struct mugy_comms comms) {
 }
 
 struct mugy_ad_file *mugy_io_create_mugy_array_file(struct mugy_ioManager *ioman, char* fname,
-  struct mugy_grid grid, enum mugy_datatype dtype) {
+  struct mugy_grid *grid, enum mugy_datatype dtype) {
   // Create a file that will hold a mugy array defined on the grid.
 
   struct mugy_ad_file *adf = (struct mugy_ad_file *) calloc(1, sizeof(struct mugy_ad_file));
@@ -46,7 +46,7 @@ struct mugy_ad_file *mugy_io_create_mugy_array_file(struct mugy_ioManager *ioman
   // The data is in z,x,y or kz,kx,ky order.
   const mint dimOrg[nDim] = {1,2,0};
   if (adf->isVarReal) {
-    struct mugy_realGrid *gridG = &grid.global.deal.dual, *gridL = &grid.local.deal.dual;
+    struct mugy_realGrid *gridG = &grid->global.deal.dual, *gridL = &grid->local.deal.dual;
     for (mint d=0; d<nDim; d++) {
       shape[dimOrg[d]] = (size_t)gridG->Nx[d];
       start[dimOrg[d]] = (size_t)gridL->globalOff[d];
@@ -61,7 +61,7 @@ struct mugy_ad_file *mugy_io_create_mugy_array_file(struct mugy_ioManager *ioman
     adf->var = adios2_define_variable(adf->io, "globalVariable", adios_real, nDim, shape,
                                       start, count, adios2_constant_dims_true);
   } else {
-    struct mugy_fourierGrid *gridG = &grid.global.deal, *gridL = &grid.local.deal;
+    struct mugy_fourierGrid *gridG = &grid->global.deal, *gridL = &grid->local.deal;
     for (mint d=0; d<nDim; d++) {
       shape[dimOrg[d]] = (size_t)gridG->Nekx[d];
       start[dimOrg[d]] = (size_t)gridL->globalOff[d];
@@ -90,7 +90,7 @@ struct mugy_ad_file *mugy_io_create_mugy_array_file(struct mugy_ioManager *ioman
 }
 
 struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, char* fname,
-  struct mugy_grid grid, struct mugy_population pop, enum mugy_datatype dtype) {
+  struct mugy_grid *grid, struct mugy_population *pop, enum mugy_datatype dtype) {
   // Create a file storing real-space moments.
 
   struct mugy_ad_file *adf = (struct mugy_ad_file *) calloc(1, sizeof(struct mugy_ad_file));
@@ -105,11 +105,11 @@ struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, c
   size_t shape[nDim+1], start[nDim+1], count[nDim+1];
   // The data is in s,z,x,y or s,kz,kz,ky order order.
   const mint dimOrg[nDim] = {2,3,1};
-  shape[0] = (size_t)pop.global.numMomentsTot;
-  start[0] = (size_t)pop.local.globalMomOff;
-  count[0] = (size_t)pop.local.numMomentsTot;
+  shape[0] = (size_t)pop->global.numMomentsTot;
+  start[0] = (size_t)pop->local.globalMomOff;
+  count[0] = (size_t)pop->local.numMomentsTot;
   if (adf->isVarReal) {
-    struct mugy_realGrid *gridG = &grid.global.deal.dual, *gridL = &grid.local.deal.dual;
+    struct mugy_realGrid *gridG = &grid->global.deal.dual, *gridL = &grid->local.deal.dual;
     for (mint d=0; d<nDim; d++) {
       shape[dimOrg[d]] = (size_t)gridG->Nx[d];
       start[dimOrg[d]] = (size_t)gridL->globalOff[d];
@@ -124,7 +124,7 @@ struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, c
     adf->var = adios2_define_variable(adf->io, "globalVariable", adios_real, nDim+1, shape,
                                       start, count, adios2_constant_dims_true);
   } else {
-    struct mugy_fourierGrid *gridG = &grid.global.deal, *gridL = &grid.local.deal;
+    struct mugy_fourierGrid *gridG = &grid->global.deal, *gridL = &grid->local.deal;
     for (mint d=0; d<nDim; d++) {
       shape[dimOrg[d]] = (size_t)gridG->Nekx[d];
       start[dimOrg[d]] = (size_t)gridL->globalOff[d];
@@ -138,8 +138,8 @@ struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, c
                                       start, count, adios2_constant_dims_true);
   }
 
-  adios2_define_attribute(adf->io, "numSpecies", adios_mint, &pop.global.numSpecies);
-  mint numMom = pop.global.numMomentsTot/pop.global.numSpecies;
+  adios2_define_attribute(adf->io, "numSpecies", adios_mint, &pop->global.numSpecies);
+  mint numMom = pop->global.numMomentsTot/pop->global.numSpecies;
   adios2_define_attribute(adf->io, "numMoments", adios_mint, &numMom);
 
   ad_check_handler(adf->var, " ADIOS: Error defining variable.");
@@ -158,7 +158,7 @@ struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, c
 }
 
 struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *ioman, char* fname,
-  struct mugy_grid grid, struct mugy_population pop,
+  struct mugy_grid *grid, struct mugy_population *pop,
   enum mugy_datatype dtype, enum mugy_datatype gridtype, mint ncomp, mint zIdx) {
   // Create a file for a mugy_array holding ncomp quantities per species on an perpendicular plane.
 
@@ -166,8 +166,8 @@ struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *
   bool isGridReal = gridtype == real_enum;
 
   // Exit if not part of this perp plane.
-  mint globalOffz = isGridReal? grid.local.deal.dual.globalOff[2] : grid.local.deal.globalOff[2];;
-  mint localNz    = isGridReal? grid.local.deal.dual.Nx[2] : grid.local.deal.Nekx[2];;
+  mint globalOffz = isGridReal? grid->local.deal.dual.globalOff[2] : grid->local.deal.globalOff[2];;
+  mint localNz    = isGridReal? grid->local.deal.dual.Nx[2] : grid->local.deal.Nekx[2];;
   if ((zIdx < globalOffz) || (globalOffz+localNz < zIdx)) return NULL;
 
   struct mugy_ad_file *adf = (struct mugy_ad_file *) calloc(1, sizeof(struct mugy_ad_file));
@@ -182,11 +182,11 @@ struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *
   size_t shape[perpDim+1], start[perpDim+1], count[perpDim+1];
   // The data is in s,x,y or s,kz,ky order order.
   const mint dimOrg[2] = {1,2};
-  shape[0] = (size_t)pop.global.numSpecies*ncomp;
-  start[0] = (size_t)pop.local.globalSpecOff*ncomp;
-  count[0] = (size_t)pop.local.numSpecies*ncomp;
+  shape[0] = (size_t)pop->global.numSpecies*ncomp;
+  start[0] = (size_t)pop->local.globalSpecOff*ncomp;
+  count[0] = (size_t)pop->local.numSpecies*ncomp;
   if (isGridReal) {
-    struct mugy_realGrid *gridG = &grid.global.deal.dual, *gridL = &grid.local.deal.dual;
+    struct mugy_realGrid *gridG = &grid->global.deal.dual, *gridL = &grid->local.deal.dual;
     for (mint d=0; d<perpDim; d++) {
       shape[dimOrg[d]] = (size_t)gridG->Nx[d];
       start[dimOrg[d]] = (size_t)gridL->globalOff[d];
@@ -198,7 +198,7 @@ struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *
     adios2_define_attribute_array(adf->io, "xMax", adios_real, gridG->xMax, perpDim);
     adios2_define_attribute_array(adf->io, "dx", adios_real, gridG->dx, perpDim);
   } else {
-    struct mugy_fourierGrid *gridG = &grid.global.deal, *gridL = &grid.local.deal;
+    struct mugy_fourierGrid *gridG = &grid->global.deal, *gridL = &grid->local.deal;
     for (mint d=0; d<perpDim; d++) {
       shape[dimOrg[d]] = (size_t)gridG->Nekx[d];
       start[dimOrg[d]] = (size_t)gridL->globalOff[d];
@@ -217,7 +217,7 @@ struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *
     adf->var = adios2_define_variable(adf->io, "globalVariable", adios_fourier, perpDim+1, shape,
                                       start, count, adios2_constant_dims_true);
 
-  adios2_define_attribute(adf->io, "numSpecies", adios_mint, &pop.global.numSpecies);
+  adios2_define_attribute(adf->io, "numSpecies", adios_mint, &pop->global.numSpecies);
   mint numMom = ncomp;
   adios2_define_attribute(adf->io, "numMoments", adios_mint, &numMom);
 
@@ -236,7 +236,7 @@ struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *
   return adf;
 }
 
-void mugy_io_setup_files(struct mugy_ioManager *ioman, struct mugy_grid grid, struct mugy_population pop) {
+void mugy_io_setup_files(struct mugy_ioManager *ioman, struct mugy_grid *grid, struct mugy_population *pop) {
 
   // List files we intend to open/write/close.
   // For some default files we prepend the type of data with this key:

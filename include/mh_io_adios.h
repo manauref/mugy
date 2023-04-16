@@ -52,19 +52,19 @@ struct mugy_ioManager *mugy_io_init(struct mugy_comms comms);
 
 // Create a file holding global real(Fourier)Arrays.
 struct mugy_ad_file *mugy_io_create_mugy_array_file(struct mugy_ioManager *ioman, char* fname,
-  struct mugy_grid grid, enum mugy_datatype dtype);
+  struct mugy_grid *grid, enum mugy_datatype dtype);
 
 // Create a file holding global real(Fourier) moments.
 struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, char* fname,
-  struct mugy_grid grid, struct mugy_population pop, enum mugy_datatype dtype);
+  struct mugy_grid *grid, struct mugy_population *pop, enum mugy_datatype dtype);
 
 // Create a file for a mugy_array holding ncomp quantities per species on an perpendicular plane.
 struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *ioman, char* fname,
-  struct mugy_grid grid, struct mugy_population pop,
+  struct mugy_grid *grid, struct mugy_population *pop,
   enum mugy_datatype dtype, enum mugy_datatype gridtype, mint ncomp, mint zIdx);
 
 // Create files for IO.
-void mugy_io_setup_files(struct mugy_ioManager *ioman, struct mugy_grid grid, struct mugy_population pop);
+void mugy_io_setup_files(struct mugy_ioManager *ioman, struct mugy_grid *grid, struct mugy_population *pop);
 
 // Output real(Fourier)-space array.
 void mugy_io_write_mugy_array(struct mugy_ioManager *ioman, char* fname, struct mugy_ad_file *fh, struct mugy_array *arr);

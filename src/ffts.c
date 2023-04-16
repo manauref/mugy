@@ -47,7 +47,7 @@ struct mugy_ffts {
   struct mugy_fft_fam_dev *dev;
 };
 
-struct mugy_ffts *mugy_fft_init(struct mugy_grid grid, struct mugy_pop popL, struct mugy_comms comms) {
+struct mugy_ffts *mugy_fft_init(struct mugy_grid *grid, struct mugy_pop popL, struct mugy_comms *comms) {
 
   // Allocate space for the FFT manager.
   struct mugy_ffts *ffts = (struct mugy_ffts *) malloc(sizeof(struct mugy_ffts));
@@ -68,14 +68,14 @@ struct mugy_ffts *mugy_fft_init(struct mugy_grid grid, struct mugy_pop popL, str
   // ....... Setup for xy FFTs of a single 3D array ......... //
   ffts->ho->xy = (struct mugy_fft_ho *) malloc(sizeof(struct mugy_fft_ho));
   cfft  = ffts->ho->xy;
-  scomm = &comms.sub2d[0];
+  scomm = &comms->sub2d[0];
   // Get local data size.
   const mint fftDim = 2;
   ptrdiff_t fftSizek[fftDim], fftNum, blockSizek0;
-  fftSizek[0] = grid.global.deal.Nekx[0];
-  fftSizek[1] = grid.global.deal.Nekx[1];
-  fftNum      = grid.local.deal.Nekx[2];
-  blockSizek0 = grid.local.deal.Nekx[0];
+  fftSizek[0] = grid->global.deal.Nekx[0];
+  fftSizek[1] = grid->global.deal.Nekx[1];
+  fftNum      = grid->local.deal.Nekx[2];
+  blockSizek0 = grid->local.deal.Nekx[0];
   ptrdiff_t alloc_local, local_Nekx0, local_kx0_start;
   alloc_local = mugy_fftw_mpi_local_size_many(fftDim, fftSizek, fftNum, blockSizek0, scomm->comm, &local_Nekx0, &local_kx0_start);
 
@@ -85,25 +85,25 @@ struct mugy_ffts *mugy_fft_init(struct mugy_grid grid, struct mugy_pop popL, str
 
   // Create plans.
   ptrdiff_t fftSize[fftDim], blockSize0in, blockSize0out;
-  fftSize[0] = grid.global.deal.dual.Nx[0];
-  fftSize[1] = grid.global.deal.dual.Nx[1];
-  blockSize0in  = grid.local.deal.dual.Nx[0];
+  fftSize[0] = grid->global.deal.dual.Nx[0];
+  fftSize[1] = grid->global.deal.dual.Nx[1];
+  blockSize0in  = grid->local.deal.dual.Nx[0];
   blockSize0out = blockSizek0;
   cfft->plan_r2c = mugy_fftw_mpi_plan_many_dft_r2c(fftDim, fftSize, fftNum, blockSize0in, blockSize0out,
                                                    cfft->rbuf, cfft->kbuf, scomm->comm, FFTW_ESTIMATE);
   blockSize0in  = blockSizek0;
-  blockSize0out = grid.local.deal.dual.Nx[0];
+  blockSize0out = grid->local.deal.dual.Nx[0];
   cfft->plan_c2r = mugy_fftw_mpi_plan_many_dft_c2r(fftDim, fftSize, fftNum, blockSize0in, blockSize0out,
                                                    cfft->kbuf, cfft->rbuf, scomm->comm, FFTW_ESTIMATE);
 
-  cfft->normFac = 1./((real)grid.global.deal.dual.NxyTot);
+  cfft->normFac = 1./((real)grid->global.deal.dual.NxyTot);
   cfft->forwardNorm = false;  // This FFT is only used for ICs given in real-space.
   // ....... End setup for xy FFTs of a single 3D array ......... //
 
   // ....... Setup for xy FFTs of all moments ......... //
   ffts->ho->mom_xy = (struct mugy_fft_ho *) malloc(sizeof(struct mugy_fft_ho));
   cfft = ffts->ho->mom_xy;
-  fftNum      = popL.numMomentsTot * grid.local.deal.Nekx[2];
+  fftNum      = popL.numMomentsTot * grid->local.deal.Nekx[2];
   alloc_local = mugy_fftw_mpi_local_size_many(fftDim, fftSizek, fftNum, blockSizek0, scomm->comm, &local_Nekx0, &local_kx0_start);
 
   // Allocate buffers.
@@ -111,16 +111,16 @@ struct mugy_ffts *mugy_fft_init(struct mugy_grid grid, struct mugy_pop popL, str
   cfft->rbuf = mugy_fftw_alloc_real(2*alloc_local);
 
   // Create plans.
-  blockSize0in  = grid.local.deal.dual.Nx[0];
+  blockSize0in  = grid->local.deal.dual.Nx[0];
   blockSize0out = blockSizek0;
   cfft->plan_r2c = mugy_fftw_mpi_plan_many_dft_r2c(fftDim, fftSize, fftNum, blockSize0in, blockSize0out,
                                                    cfft->rbuf, cfft->kbuf, scomm->comm, FFTW_ESTIMATE);
   blockSize0in  = blockSizek0;
-  blockSize0out = grid.local.deal.dual.Nx[0];
+  blockSize0out = grid->local.deal.dual.Nx[0];
   cfft->plan_c2r = mugy_fftw_mpi_plan_many_dft_c2r(fftDim, fftSize, fftNum, blockSize0in, blockSize0out,
                                                    cfft->kbuf, cfft->rbuf, scomm->comm, FFTW_ESTIMATE);
 
-  cfft->normFac = 1./((real)grid.global.deal.dual.NxyTot);
+  cfft->normFac = 1./((real)grid->global.deal.dual.NxyTot);
   cfft->forwardNorm = false;  // This FFT is only used for ICs given in real-space.
   // ....... End setup for xy FFTs of all moments ......... //
 

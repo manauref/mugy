@@ -33,22 +33,22 @@ int main(int argc, char *argv[]) {
 #endif
 
   // Initialize sub-communicators.
-  mugy_comms_sub_init(comms, *grid, *pop);
+  mugy_comms_sub_init(comms, grid, pop);
 
   // Set the number of cells in Fourier space and aliased real space.
   mugy_grid_init_global(grid, comms->world.rank);
 
   // Decompose the x,y,z,s domains amongst MPI processes.
-  mugy_comms_distributeDOFs(*comms, grid, pop);
+  mugy_comms_distributeDOFs(comms, grid, pop);
 
   // Allocate dynamic moments.
-  mugy_population_alloc_moments(pop, *grid);
+  mugy_population_alloc_moments(pop, grid);
 
   // Initialize FFT infrastructure.
-  struct mugy_ffts *fftMan = mugy_fft_init(*grid, pop->local, *comms);
+  struct mugy_ffts *fftMan = mugy_fft_init(grid, pop->local, comms);
 
   // Setup IO files.
-  mugy_io_setup_files(ioMan, *grid, *pop);
+  mugy_io_setup_files(ioMan, grid, pop);
 
   // Initialize field object.
   mugy_field_init(field, grid, pop);

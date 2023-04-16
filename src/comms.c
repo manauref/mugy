@@ -20,13 +20,13 @@ struct mugy_comms *mugy_comms_init(mint argc, char *argv[]) {
   return comms;
 }
 
-void mugy_comms_sub_init(struct mugy_comms *comms, struct mugy_grid grid, struct mugy_population pop) {
+void mugy_comms_sub_init(struct mugy_comms *comms, struct mugy_grid *grid, struct mugy_population *pop) {
   // Initialize the various sub-communicators needed.
   
   // Check the number of MPI processes is correct.
-  if (prod_mint(grid.mpiProcs,nDim)*pop.mpiProcs != comms->world.size) {
+  if (prod_mint(grid->mpiProcs,nDim)*pop->mpiProcs != comms->world.size) {
     printf(" Number of MPI processes in input file (%d) differs from that in mpirun (%d).\n",
-           prod_mint(grid.mpiProcs,nDim)*pop.mpiProcs, comms->world.size);
+           prod_mint(grid->mpiProcs,nDim)*pop->mpiProcs, comms->world.size);
     abortSimulation(" Terminating...\n");
   }
 
@@ -37,8 +37,8 @@ void mugy_comms_sub_init(struct mugy_comms *comms, struct mugy_grid grid, struct
   scomm->dim    = nDim+1;
   scomm->coord  = alloc_mintArray_ho(scomm->dim);
   scomm->decomp = alloc_mintArray_ho(scomm->dim);
-  for (mint d=0; d<nDim; d++) scomm->decomp[d] = grid.mpiProcs[d];
-  scomm->decomp[nDim] = pop.mpiProcs;
+  for (mint d=0; d<nDim; d++) scomm->decomp[d] = grid->mpiProcs[d];
+  scomm->decomp[nDim] = pop->mpiProcs;
   arrPrintS_mint(scomm->decomp,nDim+1, " MPI processes along X,Y,Z,s: ", "\n", comms->world.rank);
   r0printf("\n", comms->world.rank);
 
@@ -147,11 +147,11 @@ void distribute1dDOFs(const mint procs, const mint procID, const mint globalDOFs
 
 }
 
-void mugy_comms_distributeDOFs(struct mugy_comms comms, struct mugy_grid *grid, struct mugy_population *pop) {
+void mugy_comms_distributeDOFs(struct mugy_comms *comms, struct mugy_grid *grid, struct mugy_population *pop) {
   // Distribute s,Z,X,Y amongst MPI processes.
   
   // Distribute the species.
-  mint rank_s = comms.sub1d[nDim].rank;
+  mint rank_s = comms->sub1d[nDim].rank;
   distribute1dDOFs(pop->mpiProcs, rank_s, pop->global.numSpecies, &pop->local.numSpecies, &pop->local.globalSpecOff);
   pop->local.globalMomOff = 0;
   for (mint s=0; s<pop->local.globalSpecOff; s++) pop->local.globalMomOff += pop->global.pars[s].numMoments;
@@ -193,7 +193,7 @@ void mugy_comms_distributeDOFs(struct mugy_comms comms, struct mugy_grid *grid, 
   struct mugy_grid_ada *gridG = &grid->global;
   struct mugy_grid_ada *gridL = &grid->local;
   for (mint d=0; d<nDim; d++) {
-    mint rank_i = comms.sub1d[d].rank;
+    mint rank_i = comms->sub1d[d].rank;
     distribute1dDOFs(grid->mpiProcs[d], rank_i, gridG->deal.Nekx[d],
                      &gridL->deal.Nekx[d], &gridL->deal.globalOff[d]);
     distribute1dDOFs(grid->mpiProcs[d], rank_i, gridG->deal.dual.Nx[d],

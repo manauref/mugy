@@ -64,7 +64,7 @@ struct mugy_array *mugy_population_alloc_realMoments(const struct mugy_realGrid 
 //   res: resource on which to allocate (host, device or both).
 struct mugy_array *mugy_population_alloc_fourierMoments(const struct mugy_fourierGrid grid, const struct mugy_pop pop, enum resource_mem res);
 
-void mugy_population_alloc_moments(struct mugy_population *pop, struct mugy_grid grid);
+void mugy_population_alloc_moments(struct mugy_population *pop, struct mugy_grid *grid);
 
 // Return a pointer to the momIdx-th moment of the sIdx-th species in mom/momk.
 real* mugy_population_getMoment_real(struct mugy_realGrid grid, struct mugy_pop pop, mint sIdx, mint momIdx, real *momIn);

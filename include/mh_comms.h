@@ -25,9 +25,9 @@ struct mugy_comms {
 struct mugy_comms *mugy_comms_init(mint argc, char *argv[]);  // Initialize MPI.
 
 // Initialize sub-communicators.
-void mugy_comms_sub_init(struct mugy_comms *comms, struct mugy_grid grid, struct mugy_population pop);
+void mugy_comms_sub_init(struct mugy_comms *comms, struct mugy_grid *grid, struct mugy_population *pop);
 
 // Distribute s,Z,X,Y degrees of freedom amongst MPI processes.
-void mugy_comms_distributeDOFs(struct mugy_comms comms, struct mugy_grid *grid, struct mugy_population *pop);
+void mugy_comms_distributeDOFs(struct mugy_comms *comms, struct mugy_grid *grid, struct mugy_population *pop);
 
 void mugy_comms_terminate(struct mugy_comms *comms);  // Terminate communications.

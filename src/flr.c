@@ -88,14 +88,14 @@ void mugy_flr_init(struct mugy_population *pop, struct mugy_grid *grids, struct 
   mugy_array_copy(popL->pbFLRop, popL->pbFLRop, host2device);
 #endif
 
-//    struct mugy_ad_file *fhr = mugy_io_create_population_perp_file(ioman, "pbFLRop", *grids, *pop, real_enum, fourier_enum, 3, 0);
+//    struct mugy_ad_file *fhr = mugy_io_create_population_perp_file(ioman, "pbFLRop", grids, pop, real_enum, fourier_enum, 3, 0);
 //    mugy_io_write_mugy_array(NULL, "pbFLRop", fhr, popL->pbFLRop);
 //    mugy_io_close_file(fhr);
 //
-//    struct mugy_ad_file *fhs = mugy_io_create_population_perp_file(ioman, "poissonDb", *grids, *pop, real_enum, fourier_enum, 1, 0);
+//    struct mugy_ad_file *fhs = mugy_io_create_population_perp_file(ioman, "poissonDb", grids, pop, real_enum, fourier_enum, 1, 0);
 //    mugy_io_write_mugy_array(NULL, "poissonDb", fhs, poissonDb);
 //    mugy_io_close_file(fhs);
-//    struct mugy_ad_file *fht = mugy_io_create_population_perp_file(ioman, "poissonSb", *grids, *pop, real_enum, fourier_enum, 1, 0);
+//    struct mugy_ad_file *fht = mugy_io_create_population_perp_file(ioman, "poissonSb", grids, pop, real_enum, fourier_enum, 1, 0);
 //    mugy_io_write_mugy_array(NULL, "poissonSb", fht, poissonSb);
 //    mugy_io_close_file(fht);
 
