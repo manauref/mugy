@@ -20,26 +20,26 @@ struct mugy_population *mugy_population_alloc() {
 
 // Functions that allocate moment vectors.
 struct mugy_array *mugy_population_alloc_realMoments(const struct mugy_realGrid grid,
-  const struct mugy_pop pop, enum resource_mem res) {
+  const struct mugy_pop pop, enum mugy_resource_mem res) {
 
   mint nelem = pop.numMomentsTot*grid.NxTot;
-  struct mugy_array *mom = mugy_array_alloc(real_enum, nelem, res);
+  struct mugy_array *mom = mugy_array_alloc(MUGY_REAL, nelem, res);
   return mom;
 }
 struct mugy_array *mugy_population_alloc_fourierMoments(const struct mugy_fourierGrid grid,
-  const struct mugy_pop pop, enum resource_mem res) {
+  const struct mugy_pop pop, enum mugy_resource_mem res) {
 
   mint nelem = pop.numMomentsTot*grid.NekxTot;
-  struct mugy_array *momk = mugy_array_alloc(fourier_enum, nelem, res);
+  struct mugy_array *momk = mugy_array_alloc(MUGY_FOURIER, nelem, res);
   return momk;
 }
 
 void mugy_population_alloc_moments(struct mugy_population *pop, struct mugy_grid *grid) {
   // Allocate various moments needed.
 #ifdef USE_GPU
-  enum resource_mem onResource = hostAndDeviceMem;
+  enum mugy_resource_mem onResource = MUGY_HOSTDEVICE_MEM;
 #else
-  enum resource_mem onResource = hostMem;
+  enum mugy_resource_mem onResource = MUGY_HOST_MEM;
 #endif
 
   // Allocate moments vector needed for time stepping.
@@ -81,9 +81,9 @@ void mugy_population_free(struct mugy_population *pop) {
   }
 
 #ifdef USE_GPU
-  enum resource_mem onResource = hostAndDeviceMem;
+  enum mugy_resource_mem onResource = MUGY_HOSTDEVICE_MEM;
 #else
-  enum resource_mem onResource = hostMem;
+  enum mugy_resource_mem onResource = MUGY_HOST_MEM;
 #endif
 
   // Free moments vector.

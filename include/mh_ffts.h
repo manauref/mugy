@@ -30,7 +30,7 @@ typedef struct mugy_ffts mugy_ffts;
 
 struct mugy_ffts *mugy_fft_init(struct mugy_grid *grid, struct mugy_pop popL, struct mugy_comms *comms);
 
-void mugy_fft_c2r(struct mugy_ffts *ffts, struct mugy_array *fOut, struct mugy_array *fkIn, enum mugy_fft_type ttype, enum resource_comp res);
-void mugy_fft_r2c(struct mugy_ffts *ffts, struct mugy_array *fkOut, struct mugy_array *fIn, enum mugy_fft_type ttype, enum resource_comp res);
+void mugy_fft_c2r(struct mugy_ffts *ffts, struct mugy_array *fOut, struct mugy_array *fkIn, enum mugy_fft_type ttype, enum mugy_resource_calc res);
+void mugy_fft_r2c(struct mugy_ffts *ffts, struct mugy_array *fkOut, struct mugy_array *fIn, enum mugy_fft_type ttype, enum mugy_resource_calc res);
 
 void mugy_fft_terminate(struct mugy_ffts *ffts);

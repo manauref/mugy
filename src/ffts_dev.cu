@@ -42,9 +42,9 @@ struct mugy_fft_fam_dev *mugy_fft_init_dev(struct mugy_grid *grid, struct mugy_p
   odist      = grid->local.deal.NekxyTot;
   CUFFT_CALL(cufftCreate(&cfft->plan_r2c));
   CUFFT_CALL(cufftXtMakePlanMany(cfft->plan_r2c, fftDim, fftSize,
-    inembed, istride, idist, mugy_cufft_real_enum,
-    onembed, ostride, odist, mugy_cufft_fourier_enum,
-    fftNum, workSizes_r2c, mugy_cufft_executiontype));
+    inembed, istride, idist, MUGY_CUFFT_REAL,
+    onembed, ostride, odist, MUGY_CUFFT_FOURIER,
+    fftNum, workSizes_r2c, MUGY_CUFFT_EXEC_FOURIER));
   CUFFT_CALL(cufftSetStream(cfft->plan_r2c, cfft->stream));
 
   inembed[0] = grid->local.deal.Nekx[0];
@@ -55,15 +55,15 @@ struct mugy_fft_fam_dev *mugy_fft_init_dev(struct mugy_grid *grid, struct mugy_p
   odist      = grid->local.deal.dual.NxyTot;
   CUFFT_CALL(cufftCreate(&cfft->plan_c2r));
   CUFFT_CALL(cufftXtMakePlanMany(cfft->plan_c2r, fftDim, fftSize,
-    inembed, istride, idist, mugy_cufft_fourier_enum,
-    onembed, ostride, odist, mugy_cufft_real_enum,
-    fftNum, workSizes_c2r, mugy_cufft_executiontype));
+    inembed, istride, idist, MUGY_CUFFT_FOURIER,
+    onembed, ostride, odist, MUGY_CUFFT_REAL,
+    fftNum, workSizes_c2r, MUGY_CUFFT_EXEC_FOURIER));
   CUFFT_CALL(cufftSetStream(cfft->plan_c2r, cfft->stream));
 
   // Allocate buffers.
   // Switch these mallocs to mugy functions.
   CUDA_RT_CALL(cudaMalloc(&cfft->rbuf, grid->local.deal.dual.NxTot*sizeof(real)));
-  CUDA_RT_CALL(cudaMalloc(&cfft->kbuf, grid->local.deal.NekxTot*sizeof(mugy_cufft_fourier)));
+  CUDA_RT_CALL(cudaMalloc(&cfft->kbuf, grid->local.deal.NekxTot*sizeof(mugy_cufft_fourier_t)));
 
   cfft->normFac = 1./((real)grid->global.deal.dual.NxyTot);
   cfft->forwardNorm = false;  // This FFT is only used for ICs given in real-space.
@@ -86,9 +86,9 @@ struct mugy_fft_fam_dev *mugy_fft_init_dev(struct mugy_grid *grid, struct mugy_p
   odist      = grid->local.deal.NekxyTot;
   CUFFT_CALL(cufftCreate(&cfft->plan_r2c));
   CUFFT_CALL(cufftXtMakePlanMany(cfft->plan_r2c, fftDim, fftSize,
-    inembed, istride, idist, mugy_cufft_real_enum,
-    onembed, ostride, odist, mugy_cufft_fourier_enum,
-    fftNum, workSizes_r2c, mugy_cufft_executiontype));
+    inembed, istride, idist, MUGY_CUFFT_REAL,
+    onembed, ostride, odist, MUGY_CUFFT_FOURIER,
+    fftNum, workSizes_r2c, MUGY_CUFFT_EXEC_FOURIER));
   CUFFT_CALL(cufftSetStream(cfft->plan_r2c, cfft->stream));
 
   inembed[0] = grid->local.deal.Nekx[0];
@@ -99,15 +99,15 @@ struct mugy_fft_fam_dev *mugy_fft_init_dev(struct mugy_grid *grid, struct mugy_p
   odist      = grid->local.deal.dual.NxyTot;
   CUFFT_CALL(cufftCreate(&cfft->plan_c2r));
   CUFFT_CALL(cufftXtMakePlanMany(cfft->plan_c2r, fftDim, fftSize,
-    inembed, istride, idist, mugy_cufft_fourier_enum,
-    onembed, ostride, odist, mugy_cufft_real_enum,
-    fftNum, workSizes_c2r, mugy_cufft_executiontype));
+    inembed, istride, idist, MUGY_CUFFT_FOURIER,
+    onembed, ostride, odist, MUGY_CUFFT_REAL,
+    fftNum, workSizes_c2r, MUGY_CUFFT_EXEC_FOURIER));
   CUFFT_CALL(cufftSetStream(cfft->plan_c2r, cfft->stream));
 
   // Allocate buffers.
   // Switch these mallocs to mugy functions.
   CUDA_RT_CALL(cudaMalloc(&cfft->rbuf, popL.numMomentsTot*grid->local.deal.dual.NxTot*sizeof(real)));
-  CUDA_RT_CALL(cudaMalloc(&cfft->kbuf, popL.numMomentsTot*grid->local.deal.NekxTot*sizeof(mugy_cufft_fourier)));
+  CUDA_RT_CALL(cudaMalloc(&cfft->kbuf, popL.numMomentsTot*grid->local.deal.NekxTot*sizeof(mugy_cufft_fourier_t)));
 
   cfft->normFac = 1./((real)grid->global.deal.dual.NxyTot);
   cfft->forwardNorm = false;  // This FFT is only used for ICs given in real-space.
@@ -128,7 +128,7 @@ void mugy_fft_c2r_dev(struct mugy_fft_fam_dev *ffts, struct mugy_array *fOut, st
     abortSimulation(" mugy_fft_c2r_dev: fft type not supported! Terminating...\n");
 
   // Copy data into buffer.
-  mugy_memcpy(cfft->kbuf, fkIn->dev, fkIn->nelemsz, device2device);
+  mugy_memcpy(cfft->kbuf, fkIn->dev, fkIn->nelemsz, MUGY_DEVICE2DEVICE);
 
   // Inverse FFT.
   CUFFT_CALL(cufftXtExec(cfft->plan_c2r, cfft->kbuf, cfft->rbuf, CUFFT_INVERSE));
@@ -136,11 +136,11 @@ void mugy_fft_c2r_dev(struct mugy_fft_fam_dev *ffts, struct mugy_array *fOut, st
   CUDA_RT_CALL(cudaStreamSynchronize(cfft->stream));
 
   // Copy data from buffer.
-  mugy_memcpy(fOut->dev, cfft->rbuf, fOut->nelemsz, device2device);
+  mugy_memcpy(fOut->dev, cfft->rbuf, fOut->nelemsz, MUGY_DEVICE2DEVICE);
 
   // Apply the nonunitary normalization.
   if (!cfft->forwardNorm)
-    mugy_array_scale(fOut, cfft->normFac, deviceComp);
+    mugy_array_scale(fOut, cfft->normFac, MUGY_DEVICE_CALC);
   
 }
 
@@ -155,7 +155,7 @@ void mugy_fft_r2c_dev(struct mugy_fft_fam_dev *ffts, struct mugy_array *fkOut, s
     abortSimulation(" mugy_fft_r2c_dev: fft type not supported! Terminating...\n");
 
   // Copy data into buffer.
-  mugy_memcpy(cfft->rbuf, fIn->dev, fIn->nelemsz, device2device);
+  mugy_memcpy(cfft->rbuf, fIn->dev, fIn->nelemsz, MUGY_DEVICE2DEVICE);
 
   // Forward FFT.
   CUFFT_CALL(cufftXtExec(cfft->plan_r2c, cfft->rbuf, cfft->kbuf, CUFFT_FORWARD));
@@ -163,11 +163,11 @@ void mugy_fft_r2c_dev(struct mugy_fft_fam_dev *ffts, struct mugy_array *fkOut, s
   CUDA_RT_CALL(cudaStreamSynchronize(cfft->stream));
 
   // Copy data from buffer.
-  mugy_memcpy(fkOut->dev, cfft->kbuf, fkOut->nelemsz, device2device);
+  mugy_memcpy(fkOut->dev, cfft->kbuf, fkOut->nelemsz, MUGY_DEVICE2DEVICE);
 
   // Apply the nonunitary normalization.
   if (cfft->forwardNorm)
-    mugy_array_scale(fkOut, cfft->normFac, deviceComp);
+    mugy_array_scale(fkOut, cfft->normFac, MUGY_DEVICE_CALC);
   
 }
 

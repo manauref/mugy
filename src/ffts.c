@@ -25,11 +25,11 @@
 
 // Info needed for a single FFT on the host.
 struct mugy_fft_ho {
-  mugy_fftw_fourier *kbuf;  // Fourier-space buffer.
-  real *rbuf;               // Real-space buffer.
-  real normFac;             // Normalization.
-  bool forwardNorm;         // Normalize in r2c (true) or c2r (false) FFT.
-  mugy_fftw_plan plan_r2c, plan_c2r;  // Plans.
+  mugy_fftw_fourier_t *kbuf;  // Fourier-space buffer.
+  real *rbuf;                 // Real-space buffer.
+  real normFac;               // Normalization.
+  bool forwardNorm;           // Normalize in r2c (true) or c2r (false) FFT.
+  mugy_fftw_plan_t plan_r2c, plan_c2r;  // Plans.
 };
 
 struct mugy_fft_fam_ho {
@@ -127,9 +127,9 @@ struct mugy_ffts *mugy_fft_init(struct mugy_grid *grid, struct mugy_pop popL, st
   return ffts;
 }
 
-void mugy_fft_c2r(struct mugy_ffts *ffts, struct mugy_array *fOut, struct mugy_array *fkIn, enum mugy_fft_type ttype, enum resource_comp res) {
+void mugy_fft_c2r(struct mugy_ffts *ffts, struct mugy_array *fOut, struct mugy_array *fkIn, enum mugy_fft_type ttype, enum mugy_resource_calc res) {
 #if USE_GPU
-  if (res == deviceComp)
+  if (res == MUGY_DEVICE_CALC)
     return mugy_fft_c2r_dev(ffts->dev, fOut, fkIn, ttype);
 #endif
   
@@ -142,22 +142,22 @@ void mugy_fft_c2r(struct mugy_ffts *ffts, struct mugy_array *fOut, struct mugy_a
     abortSimulation(" mugy_fft_c2r: fft type not supported! Terminating...\n");
 
   // Copy data into buffer.
-  mugy_memcpy(cfft->kbuf, fkIn->ho, fkIn->nelemsz, host2host);
+  mugy_memcpy(cfft->kbuf, fkIn->ho, fkIn->nelemsz, MUGY_HOST2HOST);
 
   // Inverse FFT.
   mugy_fftw_mpi_execute_dft_c2r(cfft->plan_c2r, cfft->kbuf, cfft->rbuf);
 
   // Copy data from buffer.
-  mugy_memcpy(fOut->ho, cfft->rbuf, fOut->nelemsz, host2host);
+  mugy_memcpy(fOut->ho, cfft->rbuf, fOut->nelemsz, MUGY_HOST2HOST);
 
   // Apply the nonunitary normalization.
   if (!cfft->forwardNorm)
-    mugy_array_scale(fOut, cfft->normFac, hostComp);
+    mugy_array_scale(fOut, cfft->normFac, MUGY_HOST_CALC);
 }
 
-void mugy_fft_r2c(struct mugy_ffts *ffts, struct mugy_array *fkOut, struct mugy_array *fIn, enum mugy_fft_type ttype, enum resource_comp res) {
+void mugy_fft_r2c(struct mugy_ffts *ffts, struct mugy_array *fkOut, struct mugy_array *fIn, enum mugy_fft_type ttype, enum mugy_resource_calc res) {
 #if USE_GPU
-  if (res == deviceComp)
+  if (res == MUGY_DEVICE_CALC)
     return mugy_fft_r2c_dev(ffts->dev, fkOut, fIn, ttype);
 #endif
   
@@ -170,17 +170,17 @@ void mugy_fft_r2c(struct mugy_ffts *ffts, struct mugy_array *fkOut, struct mugy_
     abortSimulation(" mugy_fft_r2c: fft type not supported! Terminating...\n");
 
   // Copy data into buffer.
-  mugy_memcpy(cfft->rbuf, fIn->ho, fIn->nelemsz, host2host);
+  mugy_memcpy(cfft->rbuf, fIn->ho, fIn->nelemsz, MUGY_HOST2HOST);
 
   // Forward FFT.
   mugy_fftw_mpi_execute_dft_r2c(cfft->plan_r2c, cfft->rbuf, cfft->kbuf);
 
   // Copy data from buffer.
-  mugy_memcpy(fkOut->ho, cfft->kbuf, fkOut->nelemsz, host2host);
+  mugy_memcpy(fkOut->ho, cfft->kbuf, fkOut->nelemsz, MUGY_HOST2HOST);
 
   // Apply the nonunitary normalization.
   if (cfft->forwardNorm)
-    mugy_array_scale(fkOut, cfft->normFac, hostComp);
+    mugy_array_scale(fkOut, cfft->normFac, MUGY_HOST_CALC);
 }
 
 void mugy_fft_terminate(struct mugy_ffts *ffts) {

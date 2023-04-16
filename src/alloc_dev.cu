@@ -15,10 +15,10 @@ real* mugy_alloc_real_dev(int numElements) {
   checkCudaErrors(cudaMalloc(&out_p, numElements*sizeof(real)));
   return out_p;
 }
-// MF 2023/03/29: Returning a void* because C doesn't know cuCumplex/cufourier the type.
+// MF 2023/03/29: Returning a void* because C doesn't know cuCumplex/mugy_cufourier_t the type.
 void* mugy_alloc_fourier_dev(mint numElements) {
-  cufourier *out_p;
-  checkCudaErrors(cudaMalloc(&out_p, numElements*sizeof(cufourier)));
+  mugy_cufourier_t *out_p;
+  checkCudaErrors(cudaMalloc(&out_p, numElements*sizeof(mugy_cufourier_t)));
   return out_p;
 }
 void* mugy_alloc_dev(mint numElements, size_t elemsz) {

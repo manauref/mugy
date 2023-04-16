@@ -30,11 +30,11 @@ struct mugy_ioManager *mugy_io_init(struct mugy_comms comms) {
 }
 
 struct mugy_ad_file *mugy_io_create_mugy_array_file(struct mugy_ioManager *ioman, char* fname,
-  struct mugy_grid *grid, enum mugy_datatype dtype) {
+  struct mugy_grid *grid, enum mugy_data_types dtype) {
   // Create a file that will hold a mugy array defined on the grid.
 
   struct mugy_ad_file *adf = (struct mugy_ad_file *) calloc(1, sizeof(struct mugy_ad_file));
-  adf->isVarReal = dtype == real_enum;
+  adf->isVarReal = dtype == MUGY_REAL;
 
   adf->fname = alloc_charArray_ho(strlen(fname)+1);
   strcpy(adf->fname, fname);
@@ -53,12 +53,12 @@ struct mugy_ad_file *mugy_io_create_mugy_array_file(struct mugy_ioManager *ioman
       count[dimOrg[d]] = (size_t)gridL->Nx[d];
     }
     // Attributes
-    adios2_define_attribute_array(adf->io, "Nx", adios_mint, gridG->Nx, nDim);
-    adios2_define_attribute_array(adf->io, "xMin", adios_real, gridG->xMin, nDim);
-    adios2_define_attribute_array(adf->io, "xMax", adios_real, gridG->xMax, nDim);
-    adios2_define_attribute_array(adf->io, "dx", adios_real, gridG->dx, nDim);
+    adios2_define_attribute_array(adf->io, "Nx", MUGY_ADIOS_MINT, gridG->Nx, nDim);
+    adios2_define_attribute_array(adf->io, "xMin", MUGY_ADIOS_REAL, gridG->xMin, nDim);
+    adios2_define_attribute_array(adf->io, "xMax", MUGY_ADIOS_REAL, gridG->xMax, nDim);
+    adios2_define_attribute_array(adf->io, "dx", MUGY_ADIOS_REAL, gridG->dx, nDim);
     // Variables
-    adf->var = adios2_define_variable(adf->io, "globalVariable", adios_real, nDim, shape,
+    adf->var = adios2_define_variable(adf->io, "globalVariable", MUGY_ADIOS_REAL, nDim, shape,
                                       start, count, adios2_constant_dims_true);
   } else {
     struct mugy_fourierGrid *gridG = &grid->global.deal, *gridL = &grid->local.deal;
@@ -68,10 +68,10 @@ struct mugy_ad_file *mugy_io_create_mugy_array_file(struct mugy_ioManager *ioman
       count[dimOrg[d]] = (size_t)gridL->Nekx[d];
     }
     // Attributes
-    adios2_define_attribute_array(adf->io, "Nekx", adios_mint, gridG->Nekx, nDim);
-    adios2_define_attribute_array(adf->io, "kxMin", adios_real, gridG->kxMin, nDim);
+    adios2_define_attribute_array(adf->io, "Nekx", MUGY_ADIOS_MINT, gridG->Nekx, nDim);
+    adios2_define_attribute_array(adf->io, "kxMin", MUGY_ADIOS_REAL, gridG->kxMin, nDim);
     // Variables
-    adf->var = adios2_define_variable(adf->io, "globalVariable", adios_fourier, nDim, shape,
+    adf->var = adios2_define_variable(adf->io, "globalVariable", MUGY_ADIOS_FOURIER, nDim, shape,
                                       start, count, adios2_constant_dims_true);
   }
   ad_check_handler(adf->var, " ADIOS: Error defining variable.");
@@ -90,11 +90,11 @@ struct mugy_ad_file *mugy_io_create_mugy_array_file(struct mugy_ioManager *ioman
 }
 
 struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, char* fname,
-  struct mugy_grid *grid, struct mugy_population *pop, enum mugy_datatype dtype) {
+  struct mugy_grid *grid, struct mugy_population *pop, enum mugy_data_types dtype) {
   // Create a file storing real-space moments.
 
   struct mugy_ad_file *adf = (struct mugy_ad_file *) calloc(1, sizeof(struct mugy_ad_file));
-  adf->isVarReal = dtype == real_enum;
+  adf->isVarReal = dtype == MUGY_REAL;
 
   adf->fname = alloc_charArray_ho(strlen(fname)+1);
   strcpy(adf->fname, fname);
@@ -116,12 +116,12 @@ struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, c
       count[dimOrg[d]] = (size_t)gridL->Nx[d];
     }
     // Attributes
-    adios2_define_attribute_array(adf->io, "Nx", adios_mint, gridG->Nx, nDim);
-    adios2_define_attribute_array(adf->io, "xMin", adios_real, gridG->xMin, nDim);
-    adios2_define_attribute_array(adf->io, "xMax", adios_real, gridG->xMax, nDim);
-    adios2_define_attribute_array(adf->io, "dx", adios_real, gridG->dx, nDim);
+    adios2_define_attribute_array(adf->io, "Nx", MUGY_ADIOS_MINT, gridG->Nx, nDim);
+    adios2_define_attribute_array(adf->io, "xMin", MUGY_ADIOS_REAL, gridG->xMin, nDim);
+    adios2_define_attribute_array(adf->io, "xMax", MUGY_ADIOS_REAL, gridG->xMax, nDim);
+    adios2_define_attribute_array(adf->io, "dx", MUGY_ADIOS_REAL, gridG->dx, nDim);
     // Variables
-    adf->var = adios2_define_variable(adf->io, "globalVariable", adios_real, nDim+1, shape,
+    adf->var = adios2_define_variable(adf->io, "globalVariable", MUGY_ADIOS_REAL, nDim+1, shape,
                                       start, count, adios2_constant_dims_true);
   } else {
     struct mugy_fourierGrid *gridG = &grid->global.deal, *gridL = &grid->local.deal;
@@ -131,16 +131,16 @@ struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, c
       count[dimOrg[d]] = (size_t)gridL->Nekx[d];
     }
     // Attributes
-    adios2_define_attribute_array(adf->io, "Nekx", adios_mint, gridG->Nekx, nDim);
-    adios2_define_attribute_array(adf->io, "kxMin", adios_real, gridG->kxMin, nDim);
+    adios2_define_attribute_array(adf->io, "Nekx", MUGY_ADIOS_MINT, gridG->Nekx, nDim);
+    adios2_define_attribute_array(adf->io, "kxMin", MUGY_ADIOS_REAL, gridG->kxMin, nDim);
     // Variables
-    adf->var = adios2_define_variable(adf->io, "globalVariable", adios_fourier, nDim+1, shape,
+    adf->var = adios2_define_variable(adf->io, "globalVariable", MUGY_ADIOS_FOURIER, nDim+1, shape,
                                       start, count, adios2_constant_dims_true);
   }
 
-  adios2_define_attribute(adf->io, "numSpecies", adios_mint, &pop->global.numSpecies);
+  adios2_define_attribute(adf->io, "numSpecies", MUGY_ADIOS_MINT, &pop->global.numSpecies);
   mint numMom = pop->global.numMomentsTot/pop->global.numSpecies;
-  adios2_define_attribute(adf->io, "numMoments", adios_mint, &numMom);
+  adios2_define_attribute(adf->io, "numMoments", MUGY_ADIOS_MINT, &numMom);
 
   ad_check_handler(adf->var, " ADIOS: Error defining variable.");
 
@@ -159,11 +159,11 @@ struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, c
 
 struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *ioman, char* fname,
   struct mugy_grid *grid, struct mugy_population *pop,
-  enum mugy_datatype dtype, enum mugy_datatype gridtype, mint ncomp, mint zIdx) {
+  enum mugy_data_types dtype, enum mugy_data_types gridtype, mint ncomp, mint zIdx) {
   // Create a file for a mugy_array holding ncomp quantities per species on an perpendicular plane.
 
   const mint perpDim = 2;
-  bool isGridReal = gridtype == real_enum;
+  bool isGridReal = gridtype == MUGY_REAL;
 
   // Exit if not part of this perp plane.
   mint globalOffz = isGridReal? grid->local.deal.dual.globalOff[2] : grid->local.deal.globalOff[2];;
@@ -171,7 +171,7 @@ struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *
   if ((zIdx < globalOffz) || (globalOffz+localNz < zIdx)) return NULL;
 
   struct mugy_ad_file *adf = (struct mugy_ad_file *) calloc(1, sizeof(struct mugy_ad_file));
-  adf->isVarReal = dtype == real_enum;
+  adf->isVarReal = dtype == MUGY_REAL;
 
   adf->fname = alloc_charArray_ho(strlen(fname)+1);
   strcpy(adf->fname, fname);
@@ -193,10 +193,10 @@ struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *
       count[dimOrg[d]] = (size_t)gridL->Nx[d];
     }
     // Attributes
-    adios2_define_attribute_array(adf->io, "Nx", adios_mint, gridG->Nx, perpDim);
-    adios2_define_attribute_array(adf->io, "xMin", adios_real, gridG->xMin, perpDim);
-    adios2_define_attribute_array(adf->io, "xMax", adios_real, gridG->xMax, perpDim);
-    adios2_define_attribute_array(adf->io, "dx", adios_real, gridG->dx, perpDim);
+    adios2_define_attribute_array(adf->io, "Nx", MUGY_ADIOS_MINT, gridG->Nx, perpDim);
+    adios2_define_attribute_array(adf->io, "xMin", MUGY_ADIOS_REAL, gridG->xMin, perpDim);
+    adios2_define_attribute_array(adf->io, "xMax", MUGY_ADIOS_REAL, gridG->xMax, perpDim);
+    adios2_define_attribute_array(adf->io, "dx", MUGY_ADIOS_REAL, gridG->dx, perpDim);
   } else {
     struct mugy_fourierGrid *gridG = &grid->global.deal, *gridL = &grid->local.deal;
     for (mint d=0; d<perpDim; d++) {
@@ -205,21 +205,21 @@ struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *
       count[dimOrg[d]] = (size_t)gridL->Nekx[d];
     }
     // Attributes
-    adios2_define_attribute_array(adf->io, "Nekx", adios_mint, gridG->Nekx, perpDim);
-    adios2_define_attribute_array(adf->io, "kxMin", adios_real, gridG->kxMin, perpDim);
+    adios2_define_attribute_array(adf->io, "Nekx", MUGY_ADIOS_MINT, gridG->Nekx, perpDim);
+    adios2_define_attribute_array(adf->io, "kxMin", MUGY_ADIOS_REAL, gridG->kxMin, perpDim);
   }
 
   // Variables
   if (adf->isVarReal)
-    adf->var = adios2_define_variable(adf->io, "globalVariable", adios_real, perpDim+1, shape,
+    adf->var = adios2_define_variable(adf->io, "globalVariable", MUGY_ADIOS_REAL, perpDim+1, shape,
                                       start, count, adios2_constant_dims_true);
   else
-    adf->var = adios2_define_variable(adf->io, "globalVariable", adios_fourier, perpDim+1, shape,
+    adf->var = adios2_define_variable(adf->io, "globalVariable", MUGY_ADIOS_FOURIER, perpDim+1, shape,
                                       start, count, adios2_constant_dims_true);
 
-  adios2_define_attribute(adf->io, "numSpecies", adios_mint, &pop->global.numSpecies);
+  adios2_define_attribute(adf->io, "numSpecies", MUGY_ADIOS_MINT, &pop->global.numSpecies);
   mint numMom = ncomp;
-  adios2_define_attribute(adf->io, "numMoments", adios_mint, &numMom);
+  adios2_define_attribute(adf->io, "numMoments", MUGY_ADIOS_MINT, &numMom);
 
   ad_check_handler(adf->var, " ADIOS: Error defining variable.");
 
@@ -258,13 +258,13 @@ void mugy_io_setup_files(struct mugy_ioManager *ioman, struct mugy_grid *grid, s
     strcpy(fname, flist[i]+3);
 
     if (strcmp(dataKind, "ra_") == 0) {
-      ioman->files[i] = mugy_io_create_mugy_array_file(ioman, fname, grid, real_enum);
+      ioman->files[i] = mugy_io_create_mugy_array_file(ioman, fname, grid, MUGY_REAL);
     } else if (strcmp(dataKind, "ka_") == 0) {
-      ioman->files[i] = mugy_io_create_mugy_array_file(ioman, fname, grid, fourier_enum);
+      ioman->files[i] = mugy_io_create_mugy_array_file(ioman, fname, grid, MUGY_FOURIER);
     } else if (strcmp(dataKind, "rm_") == 0) {
-      ioman->files[i] = mugy_io_create_moments_file(ioman, fname, grid, pop, real_enum);
+      ioman->files[i] = mugy_io_create_moments_file(ioman, fname, grid, pop, MUGY_REAL);
     } else if (strcmp(dataKind, "km_") == 0) {
-      ioman->files[i] = mugy_io_create_moments_file(ioman, fname, grid, pop, fourier_enum);
+      ioman->files[i] = mugy_io_create_moments_file(ioman, fname, grid, pop, MUGY_FOURIER);
     }
     free(fname);
   }

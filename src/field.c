@@ -16,25 +16,25 @@ struct mugy_field *mugy_field_alloc() {
 
 void mugy_field_init(struct mugy_field *field, struct mugy_grid *grid, struct mugy_population *pop) {
 #ifdef USE_GPU
-  enum resource_mem onResource = hostAndDeviceMem;
+  enum mugy_resource_mem onResource = MUGY_HOSTDEVICE_MEM;
 #else
-  enum resource_mem onResource = hostMem;
+  enum mugy_resource_mem onResource = MUGY_HOST_MEM;
 #endif
 
   // Allocate Fourier-space potential.
-  field->phik = mugy_array_alloc(fourier_enum, grid->local.deal.NekxTot, onResource);
+  field->phik = mugy_array_alloc(MUGY_FOURIER, grid->local.deal.NekxTot, onResource);
 
   // Allocate Fourier-space gyroaveraged potentials, 3 for each species:
   // <phi>, 0.5*hatLap <phi> and (1+0.5*hatLap+hathatLap) <phi>, where
   // <phi> = <J_0>phi is the gyroaveraged potential.
-  field->gyrophik = mugy_array_alloc(fourier_enum, pop->local.numSpecies * 3 * grid->local.deal.NekxTot, onResource);
+  field->gyrophik = mugy_array_alloc(MUGY_FOURIER, pop->local.numSpecies * 3 * grid->local.deal.NekxTot, onResource);
 }
 
 void mugy_field_free(struct mugy_field *field) {
 #ifdef USE_GPU
-  enum resource_mem onResource = hostAndDeviceMem;
+  enum mugy_resource_mem onResource = MUGY_HOSTDEVICE_MEM;
 #else
-  enum resource_mem onResource = hostMem;
+  enum mugy_resource_mem onResource = MUGY_HOST_MEM;
 #endif
 
   // Free potentials.
@@ -58,7 +58,7 @@ void mugy_field_poisson_solve(struct mugy_field *field, struct mugy_population *
   struct mugy_array       *phik  = field->phik;
   struct mugy_array       *momk  = popL->momk[tstepIdx];
 
-  mugy_array_zero(phik, hostMem);
+  mugy_array_zero(phik, MUGY_HOST_MEM);
 
   for (mint s=0; s<popL->numSpecies; s++) {
     for (mint m=0; m<popL->pars[s].numMoments; m++) {

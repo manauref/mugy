@@ -12,9 +12,9 @@
 #include <mh_cuComplex_wrap.h>  /* For complex data types. */
 
 #ifdef USE_SINGLE_PRECISION
-typedef cuComplex cufourier;
+typedef cuComplex mugy_cufourier_t;
 #else
-typedef cuDoubleComplex cufourier;
+typedef cuDoubleComplex mugy_cufourier_t;
 #endif
 
 #endif

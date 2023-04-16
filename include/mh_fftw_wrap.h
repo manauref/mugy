@@ -12,9 +12,9 @@
 // ............ SINGLE PRECISION ............ // 
 
 
-typedef fftwf_complex mugy_fftw_fourier;
+typedef fftwf_complex mugy_fftw_fourier_t;
 
-typedef fftwf_plan mugy_fftw_plan;
+typedef fftwf_plan mugy_fftw_plan_t;
 
 static inline void mugy_fftw_mpi_init() {
   fftwf_mpi_init();
@@ -63,9 +63,9 @@ static inline void mugy_fftw_free(void *p) {
 // ............ DOUBLE PRECISION ............ // 
 
 
-typedef fftw_complex mugy_fftw_fourier;
+typedef fftw_complex mugy_fftw_fourier_t;
 
-typedef fftw_plan mugy_fftw_plan;
+typedef fftw_plan mugy_fftw_plan_t;
 
 static inline void mugy_fftw_mpi_init() {
   fftw_mpi_init();

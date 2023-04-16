@@ -61,7 +61,7 @@ void mugy_comms_sub_init(struct mugy_comms *comms, struct mugy_grid *grid, struc
   MPI_Comm_size(scomm->comm, &scomm->size);
   MPI_Comm_rank(scomm->comm, &scomm->rank);
   MPI_Cart_coords(scomm->comm, scomm->rank, scomm->dim, scomm->coord);
-  memcpy_mint(comms->world.coord, scomm->coord, nDim+1, host2host);  // Make coords the same in world.
+  memcpy_mint(comms->world.coord, scomm->coord, nDim+1, MUGY_HOST2HOST);  // Make coords the same in world.
 
   // 3D subcommunicator (xyz space, no need for xys, xzs, yzs comms).
   comms->sub3d = (struct mugy_comms_sub *) malloc(sizeof(struct mugy_comms_sub));

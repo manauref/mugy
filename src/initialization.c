@@ -156,28 +156,28 @@ void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_
   }
 
   // Broadcast to other processes.
-  MPI_Bcast(&grid->global.deal.Nkx     , nDim, mpi_mint, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&grid->global.deal.kxMin   , nDim, mpi_real, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&grid->global.deal.kxMaxDyn, nDim, mpi_real, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&grid->mpiProcs   , nDim, mpi_mint, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&grid->global.deal.Nkx     , nDim, MUGY_MPI_MINT, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&grid->global.deal.kxMin   , nDim, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&grid->global.deal.kxMaxDyn, nDim, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&grid->mpiProcs   , nDim, MUGY_MPI_MINT, ioRank, MPI_COMM_WORLD);
 
-  MPI_Bcast(&time->dt              , 1, mpi_real, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&time->endTime         , 1, mpi_real, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&time->nFrames         , 1, mpi_mint, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&time->ark_kySplit     , 1, mpi_mint, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&time->ark_fastTableExp, 1, mpi_mint, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&time->ark_fastTableImp, 1, mpi_mint, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&time->ark_slowTable   , 1, mpi_mint, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&time->ark_dtFast      , 1, mpi_real, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&time->ark_rtol        , 1, mpi_real, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&time->ark_atol        , 1, mpi_real, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&time->ark_ewtScaling  , 1, mpi_mint, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&time->dt              , 1, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&time->endTime         , 1, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&time->nFrames         , 1, MUGY_MPI_MINT, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&time->ark_kySplit     , 1, MUGY_MPI_MINT, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&time->ark_fastTableExp, 1, MUGY_MPI_MINT, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&time->ark_fastTableImp, 1, MUGY_MPI_MINT, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&time->ark_slowTable   , 1, MUGY_MPI_MINT, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&time->ark_dtFast      , 1, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&time->ark_rtol        , 1, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&time->ark_atol        , 1, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&time->ark_ewtScaling  , 1, MUGY_MPI_MINT, ioRank, MPI_COMM_WORLD);
 
-  MPI_Bcast(&popG->numSpecies, 1, mpi_mint, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&pop->mpiProcs   , 1, mpi_mint, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&popG->numSpecies, 1, MUGY_MPI_MINT, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&pop->mpiProcs   , 1, MUGY_MPI_MINT, ioRank, MPI_COMM_WORLD);
   if (rank != ioRank) popG->pars = (struct mugy_species_pars*) calloc(popG->numSpecies, sizeof(struct mugy_species_pars));
   for (mint s=0; s<popG->numSpecies; s++) {
-    MPI_Bcast(&popG->pars[s].numMoments,                       1, mpi_mint, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].numMoments,                       1, MUGY_MPI_MINT, ioRank, MPI_COMM_WORLD);
     if (rank != ioRank) {
       popG->pars[s].alpha      = mugy_alloc_real_ho(popG->pars[s].numMoments);
       popG->pars[s].nu         = mugy_alloc_real_ho(popG->pars[s].numMoments);
@@ -186,29 +186,29 @@ void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_
       popG->pars[s].kDiffMin   = mugy_alloc_real_ho(nDim);
       popG->pars[s].initAux    = mugy_alloc_real_ho(nDim);
     }
-    MPI_Bcast(&popG->pars[s].qCharge   ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->pars[s].muMass    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->pars[s].tau       ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->pars[s].omSt      ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->pars[s].omd       ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->pars[s].delta     ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->pars[s].deltaPerp ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->pars[s].eta       ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(popG->pars[s].alpha      , popG->pars[s].numMoments, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(popG->pars[s].nu         , popG->pars[s].numMoments, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->pars[s].delta0    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(popG->pars[s].hDiffOrder ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(popG->pars[s].hDiff      ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(popG->pars[s].kDiffMin   ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->pars[s].icOp      ,                       1, mpi_mint, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(popG->pars[s].initAux    ,                    nDim, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->pars[s].initA     ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
-    MPI_Bcast(&popG->pars[s].noiseA    ,                       1, mpi_real, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].qCharge   ,                       1, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].muMass    ,                       1, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].tau       ,                       1, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].omSt      ,                       1, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].omd       ,                       1, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].delta     ,                       1, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].deltaPerp ,                       1, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].eta       ,                       1, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(popG->pars[s].alpha      , popG->pars[s].numMoments, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(popG->pars[s].nu         , popG->pars[s].numMoments, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].delta0    ,                       1, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(popG->pars[s].hDiffOrder ,                    nDim, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(popG->pars[s].hDiff      ,                    nDim, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(popG->pars[s].kDiffMin   ,                    nDim, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].icOp      ,                       1, MUGY_MPI_MINT, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(popG->pars[s].initAux    ,                    nDim, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].initA     ,                       1, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+    MPI_Bcast(&popG->pars[s].noiseA    ,                       1, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
   }
 
-  MPI_Bcast(&field->pars.lambdaD, 1, mpi_real, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&field->pars.pade   , 1, mpi_mint, ioRank, MPI_COMM_WORLD);
-  MPI_Bcast(&field->pars.icOp   , 1, mpi_mint, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&field->pars.lambdaD, 1, MUGY_MPI_REAL, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&field->pars.pade   , 1, MUGY_MPI_MINT, ioRank, MPI_COMM_WORLD);
+  MPI_Bcast(&field->pars.icOp   , 1, MUGY_MPI_MINT, ioRank, MPI_COMM_WORLD);
 
 }
 
@@ -267,7 +267,7 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_field *field
   if (initialOp == 0) {
     // Initialize in real space and transform to Fourier.
     struct mugy_realGrid *gridL = &grid->local.deal.dual;
-    struct mugy_array *momIC = mugy_population_alloc_realMoments(*gridL, pop->local, hostAndDeviceMem);
+    struct mugy_array *momIC = mugy_population_alloc_realMoments(*gridL, pop->local, MUGY_HOSTDEVICE_MEM);
 
     for (mint s=0; s<pop->local.numSpecies; s++) {
       real initA = pop->local.pars[s].initA;
@@ -294,32 +294,32 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_field *field
     }
 
     // Copy initialized moments from host to device.
-    mugy_array_copy(momIC, momIC, host2device);
+    mugy_array_copy(momIC, momIC, MUGY_HOST2DEVICE);
 
     // Forward FFT moments.
-    mugy_fft_r2c(fftMan, momk, momIC, mugy_fft_mom_xy, deviceComp);
+    mugy_fft_r2c(fftMan, momk, momIC, mugy_fft_mom_xy, MUGY_DEVICE_CALC);
 
 //    //......................................................
 //    // Test FFT of a moments.
-//    struct mugy_array *momICk = mugy_population_alloc_fourierMoments(grid->local.deal, pop->local, hostAndDeviceMem);
+//    struct mugy_array *momICk = mugy_population_alloc_fourierMoments(grid->local.deal, pop->local, MUGY_HOSTDEVICE_MEM);
 //
-////    mugy_fft_r2c(fftMan, momICk, momIC, mugy_fft_mom_xy, hostComp);
-////    mugy_fft_c2r(fftMan, momIC, momICk, mugy_fft_mom_xy, hostComp);
-//    mugy_fft_r2c(fftMan, momICk, momIC, mugy_fft_mom_xy, deviceComp);
-//    mugy_fft_c2r(fftMan, momIC, momICk, mugy_fft_mom_xy, deviceComp);
-//    mugy_array_copy(momIC, momIC, device2host);
+////    mugy_fft_r2c(fftMan, momICk, momIC, mugy_fft_mom_xy, MUGY_HOST_CALC);
+////    mugy_fft_c2r(fftMan, momIC, momICk, mugy_fft_mom_xy, MUGY_HOST_CALC);
+//    mugy_fft_r2c(fftMan, momICk, momIC, mugy_fft_mom_xy, MUGY_DEVICE_CALC);
+//    mugy_fft_c2r(fftMan, momIC, momICk, mugy_fft_mom_xy, MUGY_DEVICE_CALC);
+//    mugy_array_copy(momIC, momIC, MUGY_DEVICE2HOST);
 //
-//    struct mugy_ad_file *fh = mugy_io_create_moments_file(ioman, "mom", grid, pop, real_enum);
+//    struct mugy_ad_file *fh = mugy_io_create_moments_file(ioman, "mom", grid, pop, MUGY_REAL);
 //    mugy_io_write_mugy_array(NULL, "mom", fh, momIC);
 //    mugy_io_close_file(fh);
 //
-//    mugy_array_free(momICk, hostAndDeviceMem);
+//    mugy_array_free(momICk, MUGY_HOSTDEVICE_MEM);
 //    //......................................................
 //
 //    //......................................................
 //    // Test FFT of a single array
-//    struct mugy_array *fxy_r = mugy_array_alloc(real_enum, gridL->NxTot, hostAndDeviceMem);
-//    struct mugy_array *fxy_k = mugy_array_alloc(fourier_enum, grid->local.deal.NekxTot, hostAndDeviceMem);
+//    struct mugy_array *fxy_r = mugy_array_alloc(MUGY_REAL, gridL->NxTot, MUGY_HOSTDEVICE_MEM);
+//    struct mugy_array *fxy_k = mugy_array_alloc(MUGY_FOURIER, grid->local.deal.NekxTot, MUGY_HOSTDEVICE_MEM);
 //
 //    // Assign real array to a linear combo of sines and cosines.
 //    real *fxy_rp = fxy_r->ho;
@@ -337,23 +337,23 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_field *field
 //      fxy_rp++;
 //    }
 //
-////    mugy_fft_r2c(fftMan, fxy_k, fxy_r, mugy_fft_xy, hostComp);
-////    mugy_fft_c2r(fftMan, fxy_r, fxy_k, mugy_fft_xy, hostComp);
+////    mugy_fft_r2c(fftMan, fxy_k, fxy_r, mugy_fft_xy, MUGY_HOST_CALC);
+////    mugy_fft_c2r(fftMan, fxy_r, fxy_k, mugy_fft_xy, MUGY_HOST_CALC);
 //
-//    mugy_array_copy(fxy_r, fxy_r, host2device);
-//    mugy_fft_r2c(fftMan, fxy_k, fxy_r, mugy_fft_xy, deviceComp);
-//    mugy_fft_c2r(fftMan, fxy_r, fxy_k, mugy_fft_xy, deviceComp);
-//    mugy_array_copy(fxy_r, fxy_r, device2host);
+//    mugy_array_copy(fxy_r, fxy_r, MUGY_HOST2DEVICE);
+//    mugy_fft_r2c(fftMan, fxy_k, fxy_r, mugy_fft_xy, MUGY_DEVICE_CALC);
+//    mugy_fft_c2r(fftMan, fxy_r, fxy_k, mugy_fft_xy, MUGY_DEVICE_CALC);
+//    mugy_array_copy(fxy_r, fxy_r, MUGY_DEVICE2HOST);
 //
-//    struct mugy_ad_file *fhr = mugy_io_create_mugy_array_file(ioman, "arr", grid, real_enum);
+//    struct mugy_ad_file *fhr = mugy_io_create_mugy_array_file(ioman, "arr", grid, MUGY_REAL);
 //    mugy_io_write_mugy_array(NULL, "arr", fhr, fxy_r);
 //    mugy_io_close_file(fhr);
 //
-//    mugy_array_free(fxy_r, hostAndDeviceMem);
-//    mugy_array_free(fxy_k, hostAndDeviceMem);
+//    mugy_array_free(fxy_r, MUGY_HOSTDEVICE_MEM);
+//    mugy_array_free(fxy_k, MUGY_HOSTDEVICE_MEM);
 //    //......................................................
 
-    mugy_array_free(momIC, hostAndDeviceMem);
+    mugy_array_free(momIC, MUGY_HOSTDEVICE_MEM);
 
   } else if (initialOp == 1) {
     // Initialize with a k-spce power law.
@@ -386,14 +386,14 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_field *field
     };
 
     // Copy initialized moments from host to device.
-    mugy_array_copy(momk, momk, host2device);
+    mugy_array_copy(momk, momk, MUGY_HOST2DEVICE);
   }
 
   // Solve the Poisson equation to compute phik.
-//  mugy_array_copy(momk, momk, device2host);
+//  mugy_array_copy(momk, momk, MUGY_DEVICE2HOST);
   mugy_field_poisson_solve(field, pop, grid, 0);
 
-  mugy_array_copy(field->phik, field->phik, device2host);
+  mugy_array_copy(field->phik, field->phik, MUGY_DEVICE2HOST);
   mugy_io_write_mugy_array(ioman, "phik", NULL, field->phik);
 
 }
