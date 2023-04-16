@@ -47,7 +47,7 @@ struct mugy_ffts {
   struct mugy_fft_fam_dev *dev;
 };
 
-struct mugy_ffts *mugy_fft_init(struct mugy_grid *grid, struct mugy_pop popL, struct mugy_comms *comms) {
+struct mugy_ffts *mugy_fft_init(struct mugy_grid *grid, struct mugy_population_species *popL, struct mugy_comms *comms) {
 
   // Allocate space for the FFT manager.
   struct mugy_ffts *ffts = (struct mugy_ffts *) malloc(sizeof(struct mugy_ffts));
@@ -103,7 +103,7 @@ struct mugy_ffts *mugy_fft_init(struct mugy_grid *grid, struct mugy_pop popL, st
   // ....... Setup for xy FFTs of all moments ......... //
   ffts->ho->mom_xy = (struct mugy_fft_ho *) malloc(sizeof(struct mugy_fft_ho));
   cfft = ffts->ho->mom_xy;
-  fftNum      = popL.numMomentsTot * grid->local->fourier->Nx[2];
+  fftNum      = popL->numMomentsTot * grid->local->fourier->Nx[2];
   alloc_local = mugy_fftw_mpi_local_size_many(fftDim, fftSizek, fftNum, blockSizek0, scomm->comm, &local_Nx0, &local_kx0_start);
 
   // Allocate buffers.

@@ -21,15 +21,15 @@ void mugy_flr_init(struct mugy_population *pop, struct mugy_grid *grids, struct 
   // Initialize the FLR factors, store them in population.
 
   struct mugy_grid_basic *grid = grids->local->fourier;
-  struct mugy_pop *popL = &pop->local;
+  struct mugy_population_species *popL = pop->local;
 
   // Compute the argument of the Bessel functions, b=(kperp*rho)^2.
   struct mugy_array *bFLR = mugy_array_alloc(MUGY_REAL, popL->numSpecies * grid->NxyTot, MUGY_HOST_MEM);
   for (mint linIdx=0; linIdx<grid->NxyTot; linIdx++) {
     real kperp = sqrt(grid->xperpSq[linIdx]);
     for (mint s=0; s<popL->numSpecies; s++) {
-      real muMass   = pop->global.pars[s].muMass;
-      real tau      = pop->global.pars[s].tau;
+      real muMass   = pop->global->pars[s].muMass;
+      real tau      = pop->global->pars[s].tau;
       real kperprho = sqrt(tau)*kperp/muMass;
 
       real *bFLR_p = mugy_array_get(bFLR, s*grid->NxyTot + linIdx);
@@ -103,7 +103,7 @@ void mugy_flr_init(struct mugy_population *pop, struct mugy_grid *grids, struct 
   mint elcIdx = 0;  // Assume electrons are first.
   // Reciprocal of the factor multiplying the potential in the field equation.
   struct mugy_array *rPoiPhikFac = mugy_array_alloc(MUGY_FOURIER, grid->NxyTot, MUGY_HOST_MEM);
-  real delta0e = pop->global.pars[elcIdx].delta0;
+  real delta0e = pop->global->pars[elcIdx].delta0;
   fourier iimag = 0. + 1.*I;
   for (mint linIdx=0; linIdx<grid->NxyTot; linIdx++) {
     mint idx[2];  real kx[2];
@@ -115,8 +115,8 @@ void mugy_flr_init(struct mugy_population *pop, struct mugy_grid *grids, struct 
 
     rPoiPhikFac_p[0] = pow(field->pars.lambdaD,2)*grid->xperpSq[linIdx]+1.0-delta0e*iimag*ky;
     // Add the (1/tau)*(1-Gamma0Ion) contributions.
-    for (mint s=elcIdx+1; s<pop->global.numSpecies; s++) {  // Assume electrons are first.
-      real tau_i = pop->global.pars[s].tau;
+    for (mint s=elcIdx+1; s<pop->global->numSpecies; s++) {  // Assume electrons are first.
+      real tau_i = pop->global->pars[s].tau;
       rPoiPhikFac_p[0] += (1./tau_i)*grid->xperpSq[linIdx]; 
     }
 
@@ -130,8 +130,8 @@ void mugy_flr_init(struct mugy_population *pop, struct mugy_grid *grids, struct 
   popL->poissonFac = mugy_array_alloc(MUGY_FOURIER, popL->numMomentsTot*grid->NxyTot, onResource);
 
   for (mint s=elcIdx+1; s<popL->numSpecies; s++) {
-    fourier *denkPoiFac_p  = mugy_population_getMoment_fourier(grid, *popL, s, denIdx, popL->poissonFac->ho);
-    fourier *tempkPoiFac_p = mugy_population_getMoment_fourier(grid, *popL, s, tempIdx, popL->poissonFac->ho);
+    fourier *denkPoiFac_p  = mugy_population_getMoment_fourier(grid, popL, s, denIdx, popL->poissonFac->ho);
+    fourier *tempkPoiFac_p = mugy_population_getMoment_fourier(grid, popL, s, tempIdx, popL->poissonFac->ho);
 
     real tau_i       = popL->pars[s].tau;
     real deltaPerp_i = popL->pars[s].deltaPerp;

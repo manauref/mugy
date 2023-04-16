@@ -152,46 +152,46 @@ void mugy_comms_distributeDOFs(struct mugy_comms *comms, struct mugy_grid *grid,
   
   // Distribute the species.
   mint rank_s = comms->sub1d[nDim].rank;
-  distribute1dDOFs(pop->mpiProcs, rank_s, pop->global.numSpecies, &pop->local.numSpecies, &pop->local.globalSpecOff);
-  pop->local.globalMomOff = 0;
-  for (mint s=0; s<pop->local.globalSpecOff; s++) pop->local.globalMomOff += pop->global.pars[s].numMoments;
-  pop->local.pars = (struct mugy_species_pars*) calloc(pop->local.numSpecies, sizeof(struct mugy_species_pars));
-  for (mint s=0; s<pop->local.numSpecies; s++) {
-    pop->local.pars[s].numMoments = pop->global.pars[s+pop->local.globalSpecOff].numMoments;
+  struct mugy_population_species *popG = pop->global,  *popL = pop->local;;
+  distribute1dDOFs(pop->mpiProcs, rank_s, popG->numSpecies, &popL->numSpecies, &popL->globalSpecOff);
+  popL->globalMomOff = 0;
+  for (mint s=0; s<popL->globalSpecOff; s++) popL->globalMomOff += popG->pars[s].numMoments;
+  popL->pars = (struct mugy_population_species_pars*) calloc(popL->numSpecies, sizeof(struct mugy_population_species_pars));
+  for (mint s=0; s<popL->numSpecies; s++) {
+    popL->pars[s].numMoments = popG->pars[s+popL->globalSpecOff].numMoments;
 
-    pop->local.pars[s].alpha      = mugy_alloc_real_ho(pop->local.pars[s].numMoments);
-    pop->local.pars[s].nu         = mugy_alloc_real_ho(pop->local.pars[s].numMoments);
-    pop->local.pars[s].hDiffOrder = mugy_alloc_real_ho(nDim);
-    pop->local.pars[s].hDiff      = mugy_alloc_real_ho(nDim);
-    pop->local.pars[s].kDiffMin   = mugy_alloc_real_ho(nDim);
-    pop->local.pars[s].initAux    = mugy_alloc_real_ho(nDim);
+    popL->pars[s].alpha      = mugy_alloc_real_ho(popL->pars[s].numMoments);
+    popL->pars[s].nu         = mugy_alloc_real_ho(popL->pars[s].numMoments);
+    popL->pars[s].hDiffOrder = mugy_alloc_real_ho(nDim);
+    popL->pars[s].hDiff      = mugy_alloc_real_ho(nDim);
+    popL->pars[s].kDiffMin   = mugy_alloc_real_ho(nDim);
+    popL->pars[s].initAux    = mugy_alloc_real_ho(nDim);
 
-    pop->local.pars[s].qCharge    = pop->global.pars[s+pop->local.globalSpecOff].qCharge   ;
-    pop->local.pars[s].muMass     = pop->global.pars[s+pop->local.globalSpecOff].muMass    ;
-    pop->local.pars[s].tau        = pop->global.pars[s+pop->local.globalSpecOff].tau       ;
-    pop->local.pars[s].omSt       = pop->global.pars[s+pop->local.globalSpecOff].omSt      ;
-    pop->local.pars[s].omd        = pop->global.pars[s+pop->local.globalSpecOff].omd       ;
-    pop->local.pars[s].delta      = pop->global.pars[s+pop->local.globalSpecOff].delta     ;
-    pop->local.pars[s].deltaPerp  = pop->global.pars[s+pop->local.globalSpecOff].deltaPerp ;
-    pop->local.pars[s].eta        = pop->global.pars[s+pop->local.globalSpecOff].eta       ;
-    memcpy(pop->local.pars[s].alpha, pop->global.pars[s+pop->local.globalSpecOff].alpha, pop->local.pars[s].numMoments*sizeof(real));
-    memcpy(pop->local.pars[s].nu   , pop->global.pars[s+pop->local.globalSpecOff].nu   , pop->local.pars[s].numMoments*sizeof(real));
-    pop->local.pars[s].delta0     = pop->global.pars[s+pop->local.globalSpecOff].delta0    ;
-    memcpy(pop->local.pars[s].hDiffOrder, pop->global.pars[s+pop->local.globalSpecOff].hDiffOrder, nDim*sizeof(real));
-    memcpy(pop->local.pars[s].hDiff     , pop->global.pars[s+pop->local.globalSpecOff].hDiff     , nDim*sizeof(real));
-    memcpy(pop->local.pars[s].kDiffMin  , pop->global.pars[s+pop->local.globalSpecOff].kDiffMin  , nDim*sizeof(real));
-    pop->local.pars[s].icOp       = pop->global.pars[s+pop->local.globalSpecOff].icOp      ;
-    memcpy(pop->local.pars[s].initAux, pop->global.pars[s+pop->local.globalSpecOff].initAux, nDim*sizeof(real));
-    pop->local.pars[s].initA      = pop->global.pars[s+pop->local.globalSpecOff].initA     ;
-    pop->local.pars[s].noiseA     = pop->global.pars[s+pop->local.globalSpecOff].noiseA    ;
+    popL->pars[s].qCharge    = popG->pars[s+popL->globalSpecOff].qCharge   ;
+    popL->pars[s].muMass     = popG->pars[s+popL->globalSpecOff].muMass    ;
+    popL->pars[s].tau        = popG->pars[s+popL->globalSpecOff].tau       ;
+    popL->pars[s].omSt       = popG->pars[s+popL->globalSpecOff].omSt      ;
+    popL->pars[s].omd        = popG->pars[s+popL->globalSpecOff].omd       ;
+    popL->pars[s].delta      = popG->pars[s+popL->globalSpecOff].delta     ;
+    popL->pars[s].deltaPerp  = popG->pars[s+popL->globalSpecOff].deltaPerp ;
+    popL->pars[s].eta        = popG->pars[s+popL->globalSpecOff].eta       ;
+    memcpy(popL->pars[s].alpha, popG->pars[s+popL->globalSpecOff].alpha, popL->pars[s].numMoments*sizeof(real));
+    memcpy(popL->pars[s].nu   , popG->pars[s+popL->globalSpecOff].nu   , popL->pars[s].numMoments*sizeof(real));
+    popL->pars[s].delta0     = popG->pars[s+popL->globalSpecOff].delta0    ;
+    memcpy(popL->pars[s].hDiffOrder, popG->pars[s+popL->globalSpecOff].hDiffOrder, nDim*sizeof(real));
+    memcpy(popL->pars[s].hDiff     , popG->pars[s+popL->globalSpecOff].hDiff     , nDim*sizeof(real));
+    memcpy(popL->pars[s].kDiffMin  , popG->pars[s+popL->globalSpecOff].kDiffMin  , nDim*sizeof(real));
+    popL->pars[s].icOp       = popG->pars[s+popL->globalSpecOff].icOp      ;
+    memcpy(popL->pars[s].initAux, popG->pars[s+popL->globalSpecOff].initAux, nDim*sizeof(real));
+    popL->pars[s].initA      = popG->pars[s+popL->globalSpecOff].initA     ;
+    popL->pars[s].noiseA     = popG->pars[s+popL->globalSpecOff].noiseA    ;
   }
   // Set the total number of moments.
-  pop->local.numMomentsTot = 0;
-  for (int s=0; s<pop->local.numSpecies; s++) pop->local.numMomentsTot += pop->local.pars[s].numMoments;
+  popL->numMomentsTot = 0;
+  for (int s=0; s<popL->numSpecies; s++) popL->numMomentsTot += popL->pars[s].numMoments;
 
   // Distribute the real-space and Fourier-space points. 
-  struct mugy_grid_chart *gridG = grid->global;
-  struct mugy_grid_chart *gridL = grid->local;
+  struct mugy_grid_chart *gridG = grid->global,  *gridL = grid->local;
   for (mint d=0; d<nDim; d++) {
     mint rank_i = comms->sub1d[d].rank;
     distribute1dDOFs(grid->mpiProcs[d], rank_i, gridG->fourier->Nx[d]  , &gridL->fourier->Nx[d]  , &gridL->fourier->globalOff[d]);

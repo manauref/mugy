@@ -112,9 +112,9 @@ struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, c
   size_t shape[nDim+1], start[nDim+1], count[nDim+1];
   // The data is in s,z,x,y or s,kz,kz,ky order order.
   const mint dimOrg[nDim] = {2,3,1};
-  shape[0] = (size_t)pop->global.numMomentsTot;
-  start[0] = (size_t)pop->local.globalMomOff;
-  count[0] = (size_t)pop->local.numMomentsTot;
+  shape[0] = (size_t)pop->global->numMomentsTot;
+  start[0] = (size_t)pop->local->globalMomOff;
+  count[0] = (size_t)pop->local->numMomentsTot;
   if (adf->isVarReal) {
     struct mugy_grid_basic *gridG = grid->global->real, *gridL = grid->local->real;
     for (mint d=0; d<nDim; d++) {
@@ -147,8 +147,8 @@ struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, c
                                       start, count, adios2_constant_dims_true);
   }
 
-  adios2_define_attribute(adf->io, "numSpecies", MUGY_ADIOS_MINT, &pop->global.numSpecies);
-  mint numMom = pop->global.numMomentsTot/pop->global.numSpecies;
+  adios2_define_attribute(adf->io, "numSpecies", MUGY_ADIOS_MINT, &pop->global->numSpecies);
+  mint numMom = pop->global->numMomentsTot/pop->global->numSpecies;
   adios2_define_attribute(adf->io, "numMoments", MUGY_ADIOS_MINT, &numMom);
 
   ad_check_handler(adf->var, " ADIOS: Error defining variable.");
@@ -191,9 +191,9 @@ struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *
   size_t shape[perpDim+1], start[perpDim+1], count[perpDim+1];
   // The data is in s,x,y or s,kz,ky order order.
   const mint dimOrg[2] = {1,2};
-  shape[0] = (size_t)pop->global.numSpecies*ncomp;
-  start[0] = (size_t)pop->local.globalSpecOff*ncomp;
-  count[0] = (size_t)pop->local.numSpecies*ncomp;
+  shape[0] = (size_t)pop->global->numSpecies*ncomp;
+  start[0] = (size_t)pop->local->globalSpecOff*ncomp;
+  count[0] = (size_t)pop->local->numSpecies*ncomp;
   if (isGridReal) {
     struct mugy_grid_basic *gridG = grid->global->real, *gridL = grid->local->real;
     for (mint d=0; d<perpDim; d++) {
@@ -228,7 +228,7 @@ struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *
     adf->var = adios2_define_variable(adf->io, "globalVariable", MUGY_ADIOS_FOURIER, perpDim+1, shape,
                                       start, count, adios2_constant_dims_true);
 
-  adios2_define_attribute(adf->io, "numSpecies", MUGY_ADIOS_MINT, &pop->global.numSpecies);
+  adios2_define_attribute(adf->io, "numSpecies", MUGY_ADIOS_MINT, &pop->global->numSpecies);
   mint numMom = ncomp;
   adios2_define_attribute(adf->io, "numMoments", MUGY_ADIOS_MINT, &numMom);
 

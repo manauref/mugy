@@ -11,7 +11,7 @@ extern "C" {
 }
 #include "mh_ffts_dev_priv.h"
 
-struct mugy_fft_fam_dev *mugy_fft_init_dev(struct mugy_grid *grid, struct mugy_pop popL, struct mugy_comms *comms) {
+struct mugy_fft_fam_dev *mugy_fft_init_dev(struct mugy_grid *grid, struct mugy_population_species *popL, struct mugy_comms *comms) {
 
   struct mugy_fft_fam_dev *ffts = (struct mugy_fft_fam_dev *) malloc(sizeof(struct mugy_fft_fam_dev));
 
@@ -76,7 +76,7 @@ struct mugy_fft_fam_dev *mugy_fft_init_dev(struct mugy_grid *grid, struct mugy_p
 
   CUDA_RT_CALL(cudaStreamCreateWithFlags(&cfft->stream, cudaStreamNonBlocking));
 
-  fftNum     = popL.numMomentsTot*grid->local->fourier->Nx[2];
+  fftNum     = popL->numMomentsTot*grid->local->fourier->Nx[2];
 
   inembed[0] = grid->local->real->Nx[0];
   inembed[1] = grid->local->real->Nx[1];
@@ -106,8 +106,8 @@ struct mugy_fft_fam_dev *mugy_fft_init_dev(struct mugy_grid *grid, struct mugy_p
 
   // Allocate buffers.
   // Switch these mallocs to mugy functions.
-  CUDA_RT_CALL(cudaMalloc(&cfft->rbuf, popL.numMomentsTot*grid->local->real->NxTot*sizeof(real)));
-  CUDA_RT_CALL(cudaMalloc(&cfft->kbuf, popL.numMomentsTot*grid->local->fourier->NxTot*sizeof(mugy_cufft_fourier_t)));
+  CUDA_RT_CALL(cudaMalloc(&cfft->rbuf, popL->numMomentsTot*grid->local->real->NxTot*sizeof(real)));
+  CUDA_RT_CALL(cudaMalloc(&cfft->kbuf, popL->numMomentsTot*grid->local->fourier->NxTot*sizeof(mugy_cufft_fourier_t)));
 
   cfft->normFac = 1./((real)grid->global->real->NxyTot);
   cfft->forwardNorm = false;  // This FFT is only used for ICs given in real-space.

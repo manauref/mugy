@@ -27,7 +27,7 @@ void mugy_field_init(struct mugy_field *field, struct mugy_grid *grid, struct mu
   // Allocate Fourier-space gyroaveraged potentials, 3 for each species:
   // <phi>, 0.5*hatLap <phi> and (1+0.5*hatLap+hathatLap) <phi>, where
   // <phi> = <J_0>phi is the gyroaveraged potential.
-  field->gyrophik = mugy_array_alloc(MUGY_FOURIER, pop->local.numSpecies * 3 * grid->local->fourier->NxTot, onResource);
+  field->gyrophik = mugy_array_alloc(MUGY_FOURIER, pop->local->numSpecies * 3 * grid->local->fourier->NxTot, onResource);
 }
 
 void mugy_field_poisson_solve(struct mugy_field *field, struct mugy_population *pop, struct mugy_grid *grid, mint tstepIdx) {
@@ -38,8 +38,8 @@ void mugy_field_poisson_solve(struct mugy_field *field, struct mugy_population *
   return mugy_field_poisson_solve_dev(field, pop, grid, tstepIdx);
 #endif
 
+  struct mugy_population_species *popL = pop->local;
   struct mugy_grid_basic *gridL = grid->local->fourier;
-  struct mugy_pop        *popL  = &pop->local;
   struct mugy_array      *phik  = field->phik;
   struct mugy_array      *momk  = popL->momk[tstepIdx];
 
@@ -47,8 +47,8 @@ void mugy_field_poisson_solve(struct mugy_field *field, struct mugy_population *
 
   for (mint s=0; s<popL->numSpecies; s++) {
     for (mint m=0; m<popL->pars[s].numMoments; m++) {
-      fourier *poissonFac_p = mugy_population_getMoment_fourier(gridL, *popL, s, m, popL->poissonFac->ho);
-      fourier *momk_p       = mugy_population_getMoment_fourier(gridL, *popL, s, m, momk->ho);
+      fourier *poissonFac_p = mugy_population_getMoment_fourier(gridL, popL, s, m, popL->poissonFac->ho);
+      fourier *momk_p       = mugy_population_getMoment_fourier(gridL, popL, s, m, momk->ho);
       for (mint linIdx=0; linIdx<gridL->NxTot; linIdx++) {
         fourier *phik_p = mugy_array_get(phik, linIdx);
 

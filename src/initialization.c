@@ -78,7 +78,7 @@ void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_
                     struct mugy_population *pop, struct mugy_field *field, mint rank) {
   // Read input values from input file.
 
-  struct mugy_pop *popG = &pop->global;
+  struct mugy_population_species *popG = pop->global;
 
   if (rank == ioRank) {  // Only ioRank reads from input file.
     printf(" Reading inputs from %s\n\n",fileNameIn);
@@ -109,7 +109,7 @@ void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_
     fscanf(file_p, "%*s");  // &species.
     readFileVar_mint(file_p, 1, &popG->numSpecies);
     readFileVar_mint(file_p, 1, &pop->mpiProcs);
-    popG->pars = (struct mugy_species_pars*) calloc(popG->numSpecies, sizeof(struct mugy_species_pars));
+    popG->pars = (struct mugy_population_species_pars*) calloc(popG->numSpecies, sizeof(struct mugy_population_species_pars));
     mint *specNumMoms = (mint*) calloc(popG->numSpecies, sizeof(mint));
     mint *specOnes    = (mint*) calloc(popG->numSpecies, sizeof(mint));
     mint *specnDim    = (mint*) calloc(popG->numSpecies, sizeof(mint));
@@ -173,7 +173,7 @@ void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_
 
   MPI_Bcast(&popG->numSpecies, 1, MUGY_MPI_MINT, ioRank, MPI_COMM_WORLD);
   MPI_Bcast(&pop->mpiProcs   , 1, MUGY_MPI_MINT, ioRank, MPI_COMM_WORLD);
-  if (rank != ioRank) popG->pars = (struct mugy_species_pars*) calloc(popG->numSpecies, sizeof(struct mugy_species_pars));
+  if (rank != ioRank) popG->pars = (struct mugy_population_species_pars*) calloc(popG->numSpecies, sizeof(struct mugy_population_species_pars));
   for (mint s=0; s<popG->numSpecies; s++) {
     MPI_Bcast(&popG->pars[s].numMoments,                       1, MUGY_MPI_MINT, ioRank, MPI_COMM_WORLD);
     if (rank != ioRank) {
@@ -242,7 +242,7 @@ void read_inputs(mint argc, char *argv[], struct mugy_ioSetup *ioSet, struct mug
   read_inputFile(ioSet->inputFile, grid, time, pop, field, rank);
 
   // Set the total number of moments.
-  struct mugy_pop *popG = &pop->global;
+  struct mugy_population_species *popG = pop->global;
   popG->numMomentsTot = 0;
   for (mint s=0; s<popG->numSpecies; s++) popG->numMomentsTot += popG->pars[s].numMoments;
 
@@ -257,18 +257,18 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_field *field
   struct mugy_ffts *fftMan, struct mugy_ioManager *ioman) {
   // Impose the initial conditions on the moments and thoe potential.
 
-  struct mugy_array *momk = pop->local.momk[0]; // Put ICs in first stepper field.
+  struct mugy_array *momk = pop->local->momk[0]; // Put ICs in first stepper field.
 
   // NOTE: For now assume initialOp is the same for all species.
-  mint initialOp = pop->local.pars[0].icOp; 
+  mint initialOp = pop->local->pars[0].icOp; 
 
   if (initialOp == 0) {
     // Initialize in real space and transform to Fourier.
     struct mugy_grid_basic *gridL = grid->local->real;
     struct mugy_array *momIC = mugy_population_alloc_realMoments(gridL, pop->local, MUGY_HOSTDEVICE_MEM);
 
-    for (mint s=0; s<pop->local.numSpecies; s++) {
-      real initA = pop->local.pars[s].initA;
+    for (mint s=0; s<pop->local->numSpecies; s++) {
+      real initA = pop->local->pars[s].initA;
 
       real *den_p  = mugy_population_getMoment_real(gridL, pop->local, s, denIdx, momIC->ho);  // Get density of species s.
       real *temp_p = mugy_population_getMoment_real(gridL, pop->local, s, tempIdx, momIC->ho);  // Get temperature of species s.
@@ -322,7 +322,7 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_field *field
 //    // Assign real array to a linear combo of sines and cosines.
 //    real *fxy_rp = fxy_r->ho;
 //    for (mint linIdx=0; linIdx<gridL->NxTot; linIdx++) {
-//      real initA = pop->local.pars[0].initA;
+//      real initA = pop->local->pars[0].initA;
 //      mint xIdx[nDim];
 //      mugy_grid_lin2sub_real(&xIdx[0], linIdx, gridL);  // Convert linear index to multidimensional x index.
 //      real x[nDim];
@@ -358,9 +358,9 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_field *field
     struct mugy_grid_basic *gridL = grid->local->fourier;
     real *kxMin = &gridL->dx[0];
 
-    for (mint s=0; s<pop->local.numSpecies; s++) {
-      real initA    = pop->local.pars[s].initA;
-      real *initAux = &pop->local.pars[s].initAux[0];
+    for (mint s=0; s<pop->local->numSpecies; s++) {
+      real initA    = pop->local->pars[s].initA;
+      real *initAux = &pop->local->pars[s].initAux[0];
 
       // Get density and temperature of species s.
       fourier *den_p  = mugy_population_getMoment_fourier(gridL, pop->local, s, denIdx, momk->ho);

@@ -44,8 +44,8 @@ void mugy_field_poisson_solve_dev(struct mugy_field *field, struct mugy_populati
   // Solve the Poisson equation to obtain phik using the charge density
   // in the time-stepping index 'tstepIdx'
 
+  struct mugy_population_species *popL = pop->local;
   struct mugy_grid_basic *gridL = grid->local->fourier;
-  struct mugy_pop        *popL  = &pop->local;
   struct mugy_array      *phik  = field->phik;
   struct mugy_array      *momk  = popL->momk[tstepIdx];
   

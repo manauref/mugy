@@ -28,7 +28,7 @@ enum mugy_fft_type {mugy_fft_xy, mugy_fft_mom_xy, mugy_fft_xy_a, mugy_fft_mom_xy
 
 typedef struct mugy_ffts mugy_ffts;
 
-struct mugy_ffts *mugy_fft_init(struct mugy_grid *grid, struct mugy_pop popL, struct mugy_comms *comms);
+struct mugy_ffts *mugy_fft_init(struct mugy_grid *grid, struct mugy_population_species *popL, struct mugy_comms *comms);
 
 void mugy_fft_c2r(struct mugy_ffts *ffts, struct mugy_array *fOut, struct mugy_array *fkIn, enum mugy_fft_type ttype, enum mugy_resource_calc res);
 void mugy_fft_r2c(struct mugy_ffts *ffts, struct mugy_array *fkOut, struct mugy_array *fIn, enum mugy_fft_type ttype, enum mugy_resource_calc res);

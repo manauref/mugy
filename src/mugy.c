@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
   set_initialConditions(pop, field, grid, fftMan, ioMan);
 
   // Write initial conditions.
-  mugy_io_write_mugy_array(ioMan, "momk", NULL, *pop->local.momk);
+  mugy_io_write_mugy_array(ioMan, "momk", NULL, pop->local->momk[0]);
 
   MPI_Barrier(comms->world.comm); // Avoid starting time loop prematurely.
   // ............ END OF INITIALIZATION ............ //
