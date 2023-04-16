@@ -9,6 +9,11 @@
 #include "mh_alloc.h"
 #include <string.h>
 
+#define MUGY_GENERATE_STRING(STRING) #STRING,
+static const char *mugy_grid_types_str[] = {
+    MUGY_FOREACH_GRIDTYPE(MUGY_GENERATE_STRING)
+};
+
 void ad_check_handler(const void *handler, const char *message) {
   // Check an ADIOS handler for error.
   if (handler == NULL) abortSimulation(message);
@@ -46,7 +51,7 @@ struct mugy_ad_file *mugy_io_create_mugy_array_file(struct mugy_ioManager *ioman
   // The data is in z,x,y or kz,kx,ky order.
   const mint dimOrg[nDim] = {1,2,0};
   if (adf->isVarReal) {
-    struct mugy_realGrid *gridG = &grid->global.deal.dual, *gridL = &grid->local.deal.dual;
+    struct mugy_grid_basic *gridG = grid->global->real, *gridL = grid->local->real;
     for (mint d=0; d<nDim; d++) {
       shape[dimOrg[d]] = (size_t)gridG->Nx[d];
       start[dimOrg[d]] = (size_t)gridL->globalOff[d];
@@ -54,22 +59,24 @@ struct mugy_ad_file *mugy_io_create_mugy_array_file(struct mugy_ioManager *ioman
     }
     // Attributes
     adios2_define_attribute_array(adf->io, "Nx", MUGY_ADIOS_MINT, gridG->Nx, nDim);
+    adios2_define_attribute_array(adf->io, "dx", MUGY_ADIOS_REAL, gridG->dx, nDim);
+    adios2_define_attribute(adf->io, "grid_type", MUGY_ADIOS_STRING, mugy_grid_types_str[gridG->type]);
     adios2_define_attribute_array(adf->io, "xMin", MUGY_ADIOS_REAL, gridG->xMin, nDim);
     adios2_define_attribute_array(adf->io, "xMax", MUGY_ADIOS_REAL, gridG->xMax, nDim);
-    adios2_define_attribute_array(adf->io, "dx", MUGY_ADIOS_REAL, gridG->dx, nDim);
     // Variables
     adf->var = adios2_define_variable(adf->io, "globalVariable", MUGY_ADIOS_REAL, nDim, shape,
                                       start, count, adios2_constant_dims_true);
   } else {
-    struct mugy_fourierGrid *gridG = &grid->global.deal, *gridL = &grid->local.deal;
+    struct mugy_grid_basic *gridG = grid->global->fourier, *gridL = grid->local->fourier;
     for (mint d=0; d<nDim; d++) {
-      shape[dimOrg[d]] = (size_t)gridG->Nekx[d];
+      shape[dimOrg[d]] = (size_t)gridG->Nx[d];
       start[dimOrg[d]] = (size_t)gridL->globalOff[d];
-      count[dimOrg[d]] = (size_t)gridL->Nekx[d];
+      count[dimOrg[d]] = (size_t)gridL->Nx[d];
     }
     // Attributes
-    adios2_define_attribute_array(adf->io, "Nekx", MUGY_ADIOS_MINT, gridG->Nekx, nDim);
-    adios2_define_attribute_array(adf->io, "kxMin", MUGY_ADIOS_REAL, gridG->kxMin, nDim);
+    adios2_define_attribute_array(adf->io, "Nx", MUGY_ADIOS_MINT, gridG->Nx, nDim);
+    adios2_define_attribute_array(adf->io, "dx", MUGY_ADIOS_REAL, gridG->dx, nDim);
+    adios2_define_attribute(adf->io, "grid_type", MUGY_ADIOS_STRING, mugy_grid_types_str[gridG->type]);
     // Variables
     adf->var = adios2_define_variable(adf->io, "globalVariable", MUGY_ADIOS_FOURIER, nDim, shape,
                                       start, count, adios2_constant_dims_true);
@@ -109,7 +116,7 @@ struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, c
   start[0] = (size_t)pop->local.globalMomOff;
   count[0] = (size_t)pop->local.numMomentsTot;
   if (adf->isVarReal) {
-    struct mugy_realGrid *gridG = &grid->global.deal.dual, *gridL = &grid->local.deal.dual;
+    struct mugy_grid_basic *gridG = grid->global->real, *gridL = grid->local->real;
     for (mint d=0; d<nDim; d++) {
       shape[dimOrg[d]] = (size_t)gridG->Nx[d];
       start[dimOrg[d]] = (size_t)gridL->globalOff[d];
@@ -117,22 +124,24 @@ struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, c
     }
     // Attributes
     adios2_define_attribute_array(adf->io, "Nx", MUGY_ADIOS_MINT, gridG->Nx, nDim);
+    adios2_define_attribute_array(adf->io, "dx", MUGY_ADIOS_REAL, gridG->dx, nDim);
+    adios2_define_attribute(adf->io, "grid_type", MUGY_ADIOS_STRING, mugy_grid_types_str[gridG->type]);
     adios2_define_attribute_array(adf->io, "xMin", MUGY_ADIOS_REAL, gridG->xMin, nDim);
     adios2_define_attribute_array(adf->io, "xMax", MUGY_ADIOS_REAL, gridG->xMax, nDim);
-    adios2_define_attribute_array(adf->io, "dx", MUGY_ADIOS_REAL, gridG->dx, nDim);
     // Variables
     adf->var = adios2_define_variable(adf->io, "globalVariable", MUGY_ADIOS_REAL, nDim+1, shape,
                                       start, count, adios2_constant_dims_true);
   } else {
-    struct mugy_fourierGrid *gridG = &grid->global.deal, *gridL = &grid->local.deal;
+    struct mugy_grid_basic *gridG = grid->global->fourier, *gridL = grid->local->fourier;
     for (mint d=0; d<nDim; d++) {
-      shape[dimOrg[d]] = (size_t)gridG->Nekx[d];
+      shape[dimOrg[d]] = (size_t)gridG->Nx[d];
       start[dimOrg[d]] = (size_t)gridL->globalOff[d];
-      count[dimOrg[d]] = (size_t)gridL->Nekx[d];
+      count[dimOrg[d]] = (size_t)gridL->Nx[d];
     }
     // Attributes
-    adios2_define_attribute_array(adf->io, "Nekx", MUGY_ADIOS_MINT, gridG->Nekx, nDim);
-    adios2_define_attribute_array(adf->io, "kxMin", MUGY_ADIOS_REAL, gridG->kxMin, nDim);
+    adios2_define_attribute_array(adf->io, "Nx", MUGY_ADIOS_MINT, gridG->Nx, nDim);
+    adios2_define_attribute_array(adf->io, "dx", MUGY_ADIOS_REAL, gridG->dx, nDim);
+    adios2_define_attribute(adf->io, "grid_type", MUGY_ADIOS_STRING, mugy_grid_types_str[gridG->type]);
     // Variables
     adf->var = adios2_define_variable(adf->io, "globalVariable", MUGY_ADIOS_FOURIER, nDim+1, shape,
                                       start, count, adios2_constant_dims_true);
@@ -159,15 +168,15 @@ struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, c
 
 struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *ioman, char* fname,
   struct mugy_grid *grid, struct mugy_population *pop,
-  enum mugy_data_types dtype, enum mugy_data_types gridtype, mint ncomp, mint zIdx) {
+  enum mugy_data_types dtype, enum mugy_grid_types gridtype, mint ncomp, mint zIdx) {
   // Create a file for a mugy_array holding ncomp quantities per species on an perpendicular plane.
 
   const mint perpDim = 2;
-  bool isGridReal = gridtype == MUGY_REAL;
+  bool isGridReal = gridtype == MUGY_REAL_GRID;
 
   // Exit if not part of this perp plane.
-  mint globalOffz = isGridReal? grid->local.deal.dual.globalOff[2] : grid->local.deal.globalOff[2];;
-  mint localNz    = isGridReal? grid->local.deal.dual.Nx[2] : grid->local.deal.Nekx[2];;
+  mint globalOffz = isGridReal? grid->local->real->globalOff[2] : grid->local->fourier->globalOff[2];;
+  mint localNz    = isGridReal? grid->local->real->Nx[2] : grid->local->fourier->Nx[2];;
   if ((zIdx < globalOffz) || (globalOffz+localNz < zIdx)) return NULL;
 
   struct mugy_ad_file *adf = (struct mugy_ad_file *) calloc(1, sizeof(struct mugy_ad_file));
@@ -186,7 +195,7 @@ struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *
   start[0] = (size_t)pop->local.globalSpecOff*ncomp;
   count[0] = (size_t)pop->local.numSpecies*ncomp;
   if (isGridReal) {
-    struct mugy_realGrid *gridG = &grid->global.deal.dual, *gridL = &grid->local.deal.dual;
+    struct mugy_grid_basic *gridG = grid->global->real, *gridL = grid->local->real;
     for (mint d=0; d<perpDim; d++) {
       shape[dimOrg[d]] = (size_t)gridG->Nx[d];
       start[dimOrg[d]] = (size_t)gridL->globalOff[d];
@@ -194,19 +203,21 @@ struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *
     }
     // Attributes
     adios2_define_attribute_array(adf->io, "Nx", MUGY_ADIOS_MINT, gridG->Nx, perpDim);
+    adios2_define_attribute_array(adf->io, "dx", MUGY_ADIOS_REAL, gridG->dx, perpDim);
+    adios2_define_attribute(adf->io, "grid_type", MUGY_ADIOS_STRING, mugy_grid_types_str[gridG->type]);
     adios2_define_attribute_array(adf->io, "xMin", MUGY_ADIOS_REAL, gridG->xMin, perpDim);
     adios2_define_attribute_array(adf->io, "xMax", MUGY_ADIOS_REAL, gridG->xMax, perpDim);
-    adios2_define_attribute_array(adf->io, "dx", MUGY_ADIOS_REAL, gridG->dx, perpDim);
   } else {
-    struct mugy_fourierGrid *gridG = &grid->global.deal, *gridL = &grid->local.deal;
+    struct mugy_grid_basic *gridG = grid->global->fourier, *gridL = grid->local->fourier;
     for (mint d=0; d<perpDim; d++) {
-      shape[dimOrg[d]] = (size_t)gridG->Nekx[d];
+      shape[dimOrg[d]] = (size_t)gridG->Nx[d];
       start[dimOrg[d]] = (size_t)gridL->globalOff[d];
-      count[dimOrg[d]] = (size_t)gridL->Nekx[d];
+      count[dimOrg[d]] = (size_t)gridL->Nx[d];
     }
     // Attributes
-    adios2_define_attribute_array(adf->io, "Nekx", MUGY_ADIOS_MINT, gridG->Nekx, perpDim);
-    adios2_define_attribute_array(adf->io, "kxMin", MUGY_ADIOS_REAL, gridG->kxMin, perpDim);
+    adios2_define_attribute_array(adf->io, "Nx", MUGY_ADIOS_MINT, gridG->Nx, perpDim);
+    adios2_define_attribute_array(adf->io, "dx", MUGY_ADIOS_REAL, gridG->dx, perpDim);
+    adios2_define_attribute(adf->io, "grid_type", MUGY_ADIOS_STRING, mugy_grid_types_str[gridG->type]);
   }
 
   // Variables

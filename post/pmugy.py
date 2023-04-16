@@ -112,7 +112,10 @@ class pmIO:
   def attrRead(self, attrName, **kwargs):
     #[ Establish file handle.
     ad_attr, openedFile, ad_ioNm, ad_io, ad_eng = self.attrInquire(attrName, **kwargs)
-    val = ad_attr.Data()
+    if ad_attr.Type() == "string":
+      val = ad_attr.DataString()[0]
+    else:
+      val = ad_attr.Data()
     if openedFile:
       self.fClose(ad_eng)
       closed = self.ad.RemoveIO(ad_ioNm)
@@ -201,8 +204,8 @@ class pmIO:
   #[ Generate the Fourier space grid (note that for colorplots
   #[ matplotlib expects a nodal grid).
   def kGrid(self, **kwargs):
-    Nekx  = self.attrRead('Nekx', **kwargs)
-    kxMin = self.attrRead('kxMin', **kwargs)
+    Nekx  = self.attrRead('Nx', **kwargs)
+    kxMin = self.attrRead('dx', **kwargs)
     dim   = np.size(Nekx)
     Nkx   = (Nekx+1)//2;  Nkx[1] = Nekx[1]; #[ Nekx[1] doesn't include negative ky's.
     kx    = [ np.array([kxMin[d]*i for i in range(Nekx[d])]) for d in range(dim) ]
@@ -225,15 +228,15 @@ class pmIO:
   #[ Generate the real space grid (note that for colorplots
   #[ matplotlib expects a nodal grid).
   def xGrid(self, **kwargs):
-    realFileGrid = self.attrHas('Nx', **kwargs)
-    if realFileGrid:
+    fileGridType = self.attrRead('grid_type', **kwargs)
+    if fileGridType == 'MUGY_REAL_GRID':
       Nx  = self.attrRead('Nx', **kwargs)
       dx  = self.attrRead('dx', **kwargs)
       dim = np.size(Nx)
     else:
       #[ Reconstruct real grid based on the Fourier grid in the file.
-      Nekx  = self.attrRead('Nekx', **kwargs)
-      kxMin = self.attrRead('kxMin', **kwargs)
+      Nekx  = self.attrRead('Nx', **kwargs)
+      kxMin = self.attrRead('dx', **kwargs)
       Nkx = (Nekx+1)//2;  Nkx[1] = Nekx[1]; #[ Nekx[1] doesn't include negative ky's.
       Nx  = 2*(Nkx-1)+1;
       dim = np.size(Nx)

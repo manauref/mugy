@@ -56,19 +56,19 @@ struct mugy_population *mugy_population_alloc();
 //   grid: grid on which to allocate the vector of moments.
 //   pop: population struct mugy_containing the number of species and moments.
 //   res: resource on which to allocate (host, device or both).
-struct mugy_array *mugy_population_alloc_realMoments(const struct mugy_realGrid grid, const struct mugy_pop pop, enum mugy_resource_mem res);
+struct mugy_array *mugy_population_alloc_realMoments(struct mugy_grid_basic *grid, const struct mugy_pop pop, enum mugy_resource_mem res);
 
 // Allocate Fourier-space moment vectors, on host and/or device.
 //   grid: grid on which to allocate the vector of moments.
 //   pop: population struct mugy_containing the number of species and moments.
 //   res: resource on which to allocate (host, device or both).
-struct mugy_array *mugy_population_alloc_fourierMoments(const struct mugy_fourierGrid grid, const struct mugy_pop pop, enum mugy_resource_mem res);
+struct mugy_array *mugy_population_alloc_fourierMoments(struct mugy_grid_basic *grid, const struct mugy_pop pop, enum mugy_resource_mem res);
 
 void mugy_population_alloc_moments(struct mugy_population *pop, struct mugy_grid *grid);
 
 // Return a pointer to the momIdx-th moment of the sIdx-th species in mom/momk.
-real* mugy_population_getMoment_real(struct mugy_realGrid grid, struct mugy_pop pop, mint sIdx, mint momIdx, real *momIn);
-void* mugy_population_getMoment_fourier(struct mugy_fourierGrid grid, struct mugy_pop pop, mint sIdx, mint momIdx, void *momkIn);
+real* mugy_population_getMoment_real(struct mugy_grid_basic *grid, struct mugy_pop pop, mint sIdx, mint momIdx, real *momIn);
+void* mugy_population_getMoment_fourier(struct mugy_grid_basic *grid, struct mugy_pop pop, mint sIdx, mint momIdx, void *momkIn);
 
 void mugy_population_free(struct mugy_population *pop);
 

@@ -19,17 +19,17 @@ struct mugy_population *mugy_population_alloc() {
 }
 
 // Functions that allocate moment vectors.
-struct mugy_array *mugy_population_alloc_realMoments(const struct mugy_realGrid grid,
+struct mugy_array *mugy_population_alloc_realMoments(struct mugy_grid_basic *grid,
   const struct mugy_pop pop, enum mugy_resource_mem res) {
 
-  mint nelem = pop.numMomentsTot*grid.NxTot;
+  mint nelem = pop.numMomentsTot*grid->NxTot;
   struct mugy_array *mom = mugy_array_alloc(MUGY_REAL, nelem, res);
   return mom;
 }
-struct mugy_array *mugy_population_alloc_fourierMoments(const struct mugy_fourierGrid grid,
+struct mugy_array *mugy_population_alloc_fourierMoments(struct mugy_grid_basic *grid,
   const struct mugy_pop pop, enum mugy_resource_mem res) {
 
-  mint nelem = pop.numMomentsTot*grid.NekxTot;
+  mint nelem = pop.numMomentsTot*grid->NxTot;
   struct mugy_array *momk = mugy_array_alloc(MUGY_FOURIER, nelem, res);
   return momk;
 }
@@ -45,24 +45,24 @@ void mugy_population_alloc_moments(struct mugy_population *pop, struct mugy_grid
   // Allocate moments vector needed for time stepping.
   pop->local.momk = (struct mugy_array**) calloc(TIME_STEPPER_NUM_FIELDS, sizeof(struct mugy_array *));
   for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
-    pop->local.momk[s] = mugy_population_alloc_fourierMoments(grid->local.deal, pop->local, onResource);
+    pop->local.momk[s] = mugy_population_alloc_fourierMoments(grid->local->fourier, pop->local, onResource);
 
 }
 
-real* mugy_population_getMoment_real(struct mugy_realGrid grid, struct mugy_pop pop, mint sIdx, mint momIdx, real *momIn) {
+real* mugy_population_getMoment_real(struct mugy_grid_basic *grid, struct mugy_pop pop, mint sIdx, mint momIdx, real *momIn) {
   // Return a pointer to the momIdx-th moment of the sIdx-th species in mom.
   real* ptrOut = momIn;
   mint momOff = 0;
   for (mint s=0; s<sIdx; s++) momOff += pop.pars[s].numMoments;
-  return ptrOut+(momOff+momIdx)*grid.NxTot;
+  return ptrOut+(momOff+momIdx)*grid->NxTot;
 }
 
-void* mugy_population_getMoment_fourier(struct mugy_fourierGrid grid, struct mugy_pop pop, mint sIdx, mint momIdx, void *momkIn) {
+void* mugy_population_getMoment_fourier(struct mugy_grid_basic *grid, struct mugy_pop pop, mint sIdx, mint momIdx, void *momkIn) {
   // Return a pointer to the momIdx-th moment of the sIdx-th species in momk.
   fourier* ptrOut = (fourier *)momkIn;
   mint momOff = 0;
   for (mint s=0; s<sIdx; s++) momOff += pop.pars[s].numMoments;
-  return ptrOut+(momOff+momIdx)*grid.NekxTot;
+  return ptrOut+(momOff+momIdx)*grid->NxTot;
 }
 
 void mugy_population_free(struct mugy_population *pop) {

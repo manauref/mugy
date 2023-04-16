@@ -22,6 +22,7 @@
 #endif
 
 #define MUGY_ADIOS_MINT adios2_type_int32_t
+#define MUGY_ADIOS_STRING adios2_type_string
 
 // Container for IO instructions
 struct mugy_ioSetup {
@@ -61,7 +62,7 @@ struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, c
 // Create a file for a mugy_array holding ncomp quantities per species on an perpendicular plane.
 struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *ioman, char* fname,
   struct mugy_grid *grid, struct mugy_population *pop,
-  enum mugy_data_types dtype, enum mugy_data_types gridtype, mint ncomp, mint zIdx);
+  enum mugy_data_types dtype, enum mugy_grid_types gridtype, mint ncomp, mint zIdx);
 
 // Create files for IO.
 void mugy_io_setup_files(struct mugy_ioManager *ioman, struct mugy_grid *grid, struct mugy_population *pop);

@@ -13,218 +13,261 @@
 // Allocate mugy_grid object.
 struct mugy_grid *mugy_grid_alloc() {
   struct mugy_grid *grid = (struct mugy_grid *) malloc(sizeof(struct mugy_grid));
+
+  // Allocate space for local and global grids.
+  grid->local  = (struct mugy_grid_chart *) malloc(sizeof(struct mugy_grid_chart));
+  grid->global = (struct mugy_grid_chart *) malloc(sizeof(struct mugy_grid_chart));
+
+  // Allocate for real/fourier dealiased and aliased grids.
+  for (mint i=0; i<2; i++) {
+    struct mugy_grid_chart *chart = i==0? grid->local : grid->global;
+    chart->real      = (struct mugy_grid_basic *) malloc(sizeof(struct mugy_grid_basic));
+    chart->fourier   = (struct mugy_grid_basic *) malloc(sizeof(struct mugy_grid_basic));
+    chart->realAl    = (struct mugy_grid_basic *) malloc(sizeof(struct mugy_grid_basic));
+    chart->fourierAl = (struct mugy_grid_basic *) malloc(sizeof(struct mugy_grid_basic));
+  }
+
   return grid;
 }
 
 void mugy_grid_init_global(struct mugy_grid *grid, mint rank) {
   // Set number of cells in de-aliased, aliased and real space global grids.
 
-  struct mugy_grid_ada *gridG = &grid->global;
+  struct mugy_grid_chart *gridG = grid->global;
 
   /* Given user-input number of distinct dealised wavenumbers, Nkx,
      the number of real-space cells is Nx = 3*(Nkx-1). We prefer this
      to be a power of 2, so we may need to adjust Nkx. */
-  arrPrintS_mint(gridG->deal.Nkx, nDim, " User requested  NkxG=("," ) distinct wavenumbers (absolute magnitude)\n", rank);
-  for (mint d=0; d<nDim; d++) gridG->al.dual.Nx[d]  = closest_power_of_two(3*(gridG->deal.Nkx[d]-1));
-  gridG->al.dual.NxTot  = prod_mint(gridG->al.dual.Nx,nDim);
-  gridG->al.dual.NxyTot = prod_mint(gridG->al.dual.Nx,2);
+  arrPrintS_mint(gridG->fourier->NxNonNeg, nDim, " User requested  NkxG=("," ) distinct wavenumbers (absolute magnitude)\n", rank);
+  for (mint d=0; d<nDim; d++) gridG->realAl->Nx[d]  = closest_power_of_two(3*(gridG->fourier->NxNonNeg[d]-1));
+  gridG->realAl->NxTot  = prod_mint(gridG->realAl->Nx,nDim);
+  gridG->realAl->NxyTot = prod_mint(gridG->realAl->Nx,2);
 
   // Number of distinct aliased (absolute) wavenumbers.
-  for (mint d=0; d<nDim; d++) gridG->al.Nkx[d] = gridG->al.dual.Nx[d]/2+1;
+  for (mint d=0; d<nDim; d++) gridG->fourierAl->NxNonNeg[d] = gridG->realAl->Nx[d]/2+1;
   // Length of aliased arrays along kx and ky.
-  for (mint d=0; d<nDim; d++) gridG->al.Nekx[d] = gridG->al.Nkx[d];
-  gridG->al.Nekx[0] += gridG->al.Nkx[0]-1;  // Add the negative kx's:
-  gridG->al.NekxTot  = prod_mint(gridG->al.Nekx,nDim);
-  gridG->al.NekxyTot = prod_mint(gridG->al.Nekx,2);
+  for (mint d=0; d<nDim; d++) gridG->fourierAl->Nx[d] = gridG->fourierAl->NxNonNeg[d];
+  gridG->fourierAl->Nx[0] += gridG->fourierAl->NxNonNeg[0]-1;  // Add the negative kx's.
+  gridG->fourierAl->NxTot  = prod_mint(gridG->fourierAl->Nx,nDim);
+  gridG->fourierAl->NxyTot = prod_mint(gridG->fourierAl->Nx,2);
 
   // Recompute the number of distinct de-aliased (absolute) wavenumbers.
-  for (mint d=0; d<nDim; d++) gridG->deal.Nkx[d] = 2*(gridG->al.Nkx[d]-1)/3+1;
+  for (mint d=0; d<nDim; d++) gridG->fourier->NxNonNeg[d] = 2*(gridG->fourierAl->NxNonNeg[d]-1)/3+1;
   // Length of de-aliased arrays along kx and ky.
-  for (mint d=0; d<nDim; d++) gridG->deal.Nekx[d] = gridG->deal.Nkx[d];
-  gridG->deal.Nekx[0] += gridG->deal.Nkx[0]-1;  // Add the negative kx's:
-  gridG->deal.NekxTot  = prod_mint(gridG->deal.Nekx,nDim);
-  gridG->deal.NekxyTot = prod_mint(gridG->deal.Nekx,2);
+  for (mint d=0; d<nDim; d++) gridG->fourier->Nx[d] = gridG->fourier->NxNonNeg[d];
+  gridG->fourier->Nx[0] += gridG->fourier->NxNonNeg[0]-1;  // Add the negative kx's:
+  gridG->fourier->NxTot  = prod_mint(gridG->fourier->Nx,nDim);
+  gridG->fourier->NxyTot = prod_mint(gridG->fourier->Nx,2);
 
   // Number of cells in de-aliased real-space.
-  for (mint d=0; d<nDim; d++) gridG->deal.dual.Nx[d]  = 2*(gridG->deal.Nkx[d]-1)+1;
-  gridG->deal.dual.NxTot  = prod_mint(gridG->deal.dual.Nx,nDim);
-  gridG->deal.dual.NxyTot = prod_mint(gridG->deal.dual.Nx,2);
+  for (mint d=0; d<nDim; d++) gridG->real->Nx[d]  = 2*(gridG->fourier->NxNonNeg[d]-1)+1;
+  gridG->real->NxTot  = prod_mint(gridG->real->Nx,nDim);
+  gridG->real->NxyTot = prod_mint(gridG->real->Nx,2);
 
-  real Lx[nDim] = {2.0*M_PI/gridG->deal.kxMin[0], 2.0*M_PI/gridG->deal.kxMin[1], 2.0*M_PI/gridG->deal.kxMin[2]};
+  // Number of non-negative coordinates in real space (may not be used).
+  for (mint d=0; d<nDim; d++) {
+    gridG->real->NxNonNeg[d]   = mugy_max(1, gridG->real->Nx[d] / 2);    // Arbitrary, but may not be used.
+    gridG->realAl->NxNonNeg[d] = mugy_max(1, gridG->realAl->Nx[d] / 2);  // Arbitrary, but may not be used.
+  }
+
+  real Lx[nDim] = {2.0*M_PI/gridG->fourier->dx[0], 2.0*M_PI/gridG->fourier->dx[1], 2.0*M_PI/gridG->fourier->dx[2]};
 
   // Length of dealised and aliased real-space cell.
   for (mint d=0; d<nDim; d++) {
-    gridG->deal.dual.dx[d]  = Lx[d]/fmax(1.,(real)(gridG->deal.dual.Nx[d]-gridG->deal.dual.Nx[d] % 2));
-    gridG->al.dual.dx[d] = Lx[d]/fmax(1.,(real)(gridG->al.dual.Nx[d]-gridG->al.dual.Nx[d] % 2));
+    gridG->real->dx[d]   = Lx[d]/fmax(1.,(real)(gridG->real->Nx[d]-gridG->real->Nx[d] % 2));
+    gridG->realAl->dx[d] = Lx[d]/fmax(1.,(real)(gridG->realAl->Nx[d]-gridG->realAl->Nx[d] % 2));
   }
 
   // Global de-aliased real-space grids
-  gridG->deal.dual.x = mugy_alloc_real_ho(sum_mint(gridG->deal.dual.Nx, nDim));
-  real *dx = gridG->deal.dual.dx;
-  mint *Nx = gridG->deal.dual.Nx; 
+  gridG->real->x = mugy_alloc_real_ho(sum_mint(gridG->real->Nx, nDim));
+  real *dx = gridG->real->dx;
+  mint *Nx = gridG->real->Nx; 
   mint xOff = 0;
   for (mint d=0; d<nDim; d++) {
     for (mint i=0; i<Nx[d]; i++)
-      gridG->deal.dual.x[i+xOff] = ((real)i)*dx[d]+(real)(1-Nx[d] % 2-1)*0.5*dx[d]-0.5*Lx[d];
-    gridG->deal.dual.xMin[d] = gridG->deal.dual.x[0+xOff];
-    gridG->deal.dual.xMax[d] = gridG->deal.dual.x[Nx[d]-1+xOff];
+      gridG->real->x[i+xOff] = ((real)i)*dx[d]+(real)(1-Nx[d] % 2-1)*0.5*dx[d]-0.5*Lx[d];
+    gridG->real->xMin[d] = gridG->real->x[0+xOff];
+    gridG->real->xMax[d] = gridG->real->x[Nx[d]-1+xOff];
     xOff += Nx[d];
   }
   // Global aliased real-space grids (may not be needed).
-  gridG->al.dual.x = mugy_alloc_real_ho(sum_mint(gridG->al.dual.Nx, 3));
-  real *dxa = gridG->al.dual.dx;
-  mint *Nxa = gridG->al.dual.Nx; 
+  gridG->realAl->x = mugy_alloc_real_ho(sum_mint(gridG->realAl->Nx, 3));
+  real *dxa = gridG->realAl->dx;
+  mint *Nxa = gridG->realAl->Nx; 
   mint xaOff = 0;
   for (mint d=0; d<nDim; d++) {
     for (mint i=0; i<Nxa[d]; i++)
-      gridG->al.dual.x[i+xaOff] = (real)(i)*dxa[d]+(real)(1-Nxa[d] % 2-1)*0.5*dxa[d]-0.5*Lx[d];
-    gridG->al.dual.xMin[d] = gridG->al.dual.x[0+xaOff];
-    gridG->al.dual.xMax[d] = gridG->al.dual.x[Nxa[d]-1+xaOff];
+      gridG->realAl->x[i+xaOff] = (real)(i)*dxa[d]+(real)(1-Nxa[d] % 2-1)*0.5*dxa[d]-0.5*Lx[d];
+    gridG->realAl->xMin[d] = gridG->realAl->x[0+xaOff];
+    gridG->realAl->xMax[d] = gridG->realAl->x[Nxa[d]-1+xaOff];
     xaOff += Nxa[d];
   }
 
   // Global dealiased k-space grids.
-  for (mint d=0; d<nDim; d++) gridG->al.kxMin[d] = gridG->deal.kxMin[d];
-  gridG->deal.kx = mugy_alloc_real_ho(sum_mint(gridG->deal.Nekx, 3));
-  real *kxMin = gridG->deal.kxMin;
-  mint *Nkx = gridG->deal.Nkx; 
+  for (mint d=0; d<nDim; d++) gridG->fourier->xMin[d] = 0.;
+  gridG->fourier->x = mugy_alloc_real_ho(sum_mint(gridG->fourier->Nx, 3));
+  real *dkx = gridG->fourier->dx;
+  mint *Nkx = gridG->fourier->NxNonNeg; 
   mint kxOff = 0;
+  // Positive Fourier modes.
   for (mint d=0; d<nDim; d++) {
     for (mint i=0; i<Nkx[d]; i++)
-      gridG->deal.kx[i+kxOff] = (real)(i)*kxMin[d];
-    kxOff += gridG->deal.Nekx[d];
+      gridG->fourier->x[i+kxOff] = ((real) i)*dkx[d];
+    gridG->fourier->xMax[d] = gridG->fourier->x[Nkx[d]-1+kxOff];  // Arbitrary, but may not be used.
+    kxOff += gridG->fourier->Nx[d];
   }
-  // Negative kx modes in increasing order.
-  for (mint i=Nkx[0]; i<gridG->deal.Nekx[0]; i++)
-    gridG->deal.kx[i] = -(real)(Nkx[0]-1-(i-Nkx[0]))*kxMin[0];
+  // Negative Fourier modes in increasing order.
+  for (mint i=Nkx[0]; i<gridG->fourier->Nx[0]; i++)
+    gridG->fourier->x[i] = -(real)(Nkx[0]-1-(i-Nkx[0]))*dkx[0];
 
   // Global aliased k-space grids.
-  gridG->al.kx = mugy_alloc_real_ho(sum_mint(gridG->al.Nekx, 3));
-  real *kxaMin = gridG->al.kxMin;
-  mint *Nkxa = gridG->al.Nkx; 
+  gridG->fourierAl->x = mugy_alloc_real_ho(sum_mint(gridG->fourierAl->Nx, 3));
+  real *dkxa = gridG->fourierAl->dx;
+  mint *Nkxa = gridG->fourierAl->NxNonNeg; 
   mint kxaOff = 0;
   for (mint d=0; d<nDim; d++) {
     for (mint i=0; i<Nkxa[d]; i++)
-      gridG->al.kx[i+kxaOff] = (real)(i)*kxaMin[d];
-    kxaOff += gridG->al.Nekx[d];
+      gridG->fourierAl->x[i+kxaOff] = (real)(i)*dkxa[d];
+    gridG->fourierAl->xMax[d] = gridG->fourierAl->x[Nkxa[d]-1+kxaOff];  // Arbitrary, but may not be used.
+    kxaOff += gridG->fourierAl->Nx[d];
   }
   // Negative kx modes in increasing order.
-  for (mint i=Nkxa[0]; i<gridG->al.Nekx[0]; i++)
-    gridG->al.kx[i] = -(real)(Nkxa[0]-1-(i-Nkxa[0]))*kxaMin[0];
+  for (mint i=Nkxa[0]; i<gridG->fourierAl->Nx[0]; i++)
+    gridG->fourierAl->x[i] = -(real)(Nkxa[0]-1-(i-Nkxa[0]))*dkxa[0];
 
   r0printf("\n Proceeding with :\n", rank);
-  arrPrintS_mint(gridG->deal.Nkx,      nDim, " Number of distinct de-aliased absolute wavenumbers: NkxG   =", "\n", rank);
-  arrPrintS_mint(gridG->deal.Nekx,     nDim, " Length of de-aliased k-space arrays:                NekxG  =", "\n", rank);
-  arrPrintS_mint(gridG->al.Nkx,        nDim, " Number of distinct aliased absolute wavenumbers:    NkxaG  =", "\n", rank);
-  arrPrintS_mint(gridG->al.Nekx,       nDim, " Length of aliased k-space arrays:                   NekxaG =", "\n", rank);
-  arrPrintS_mint(gridG->al.dual.Nx,    nDim, " Number of aliased real space cells:                 NxaG   =", "\n", rank);
-  arrPrintS_mint(gridG->deal.dual.Nx,  nDim, " Number of de-aliased real space cells:              NxG    =", "\n", rank);
-
-  arrPrintS_real(gridG->deal.kxMin,    nDim, " Minimum absolute magnitude of wavenumbers: kxMin    =", "\n", rank);
-  arrPrintS_real(gridG->deal.kxMaxDyn, nDim, " Largest wavenumbers evolved:               kxMaxDyn =", "\n", rank);
+  arrPrintS_mint(gridG->fourier->NxNonNeg,   nDim, " Number of distinct de-aliased absolute wavenumbers: NkxG   =", "\n", rank);
+  arrPrintS_mint(gridG->fourier->Nx,         nDim, " Length of de-aliased k-space arrays:                NekxG  =", "\n", rank);
+  arrPrintS_mint(gridG->fourierAl->NxNonNeg, nDim, " Number of distinct aliased absolute wavenumbers:    NkxaG  =", "\n", rank);
+  arrPrintS_mint(gridG->fourierAl->Nx,       nDim, " Length of aliased k-space arrays:                   NekxaG =", "\n", rank);
+  arrPrintS_mint(gridG->realAl->Nx,          nDim, " Number of aliased real space cells:                 NxaG   =", "\n", rank);
+  arrPrintS_mint(gridG->real->Nx,            nDim, " Number of de-aliased real space cells:              NxG    =", "\n", rank);
+  arrPrintS_real(gridG->fourier->dx,         nDim, " Minimum absolute magnitude of wavenumbers: kxMin    =", "\n", rank);
 
   // Also convenient to keep dealiased kperpSq in memory:
-  gridG->deal.kperpSq = mugy_alloc_real_ho(gridG->deal.NekxyTot);
-  for (mint i=0; i<gridG->deal.Nekx[0]; i++) {
-    for (mint j=0; j<gridG->deal.Nekx[1]; j++) {
-      double kx = gridG->deal.kx[i];
-      double ky = gridG->deal.kx[gridG->deal.Nekx[0]+j];
-      gridG->deal.kperpSq[i*gridG->deal.Nekx[1]+j] = kx*kx + ky*ky;
+  gridG->fourier->xperpSq = mugy_alloc_real_ho(gridG->fourier->NxyTot);
+  for (mint i=0; i<gridG->fourier->Nx[0]; i++) {
+    for (mint j=0; j<gridG->fourier->Nx[1]; j++) {
+      double kx = gridG->fourier->x[i];
+      double ky = gridG->fourier->x[gridG->fourier->Nx[0]+j];
+      gridG->fourier->xperpSq[i*gridG->fourier->Nx[1]+j] = kx*kx + ky*ky;
     }
   }
 
+  // Set the type of each grid.
+  gridG->real->type      = MUGY_REAL_GRID;
+  gridG->fourier->type   = MUGY_FOURIER_GRID;
+  gridG->realAl->type    = MUGY_REAL_GRID;
+  gridG->fourierAl->type = MUGY_FOURIER_GRID;
+
 }
 
-mint mugy_grid_sub2lin_real(mint *xI, const struct mugy_realGrid grid) {
+mint mugy_grid_sub2lin_real(mint *xI, const struct mugy_grid_basic *grid) {
   // Given the nDim-dimensional index (subscript) xI return the linear index
   // in a real grid. We assume row major order for the (z,x,y) dimensions.
-  mint strides[nDim] = {grid.Nx[1],1,grid.NxyTot};
+  mint strides[nDim] = {grid->Nx[1],1,grid->NxyTot};
   mint lin;
   for (mint d=0; d<nDim; d++) lin += xI[d]*strides[d];
   return lin;
 }
 
-mint mugy_grid_sub2lin_fourier(mint *kxI, const struct mugy_fourierGrid grid) {
+mint mugy_grid_sub2lin_fourier(mint *kxI, const struct mugy_grid_basic *grid) {
   // Given the nDim-dimensional index (subscript) kxI return the linear index
   // in a Fourier grid. We assume row major order for the (kz,kx,ky) dimensions.
-  mint strides[nDim] = {grid.Nekx[1],1,grid.NekxyTot};
+  mint strides[nDim] = {grid->Nx[1],1,grid->NxyTot};
   mint lin;
   for (mint d=0; d<nDim; d++) lin += kxI[d]*strides[d];
   return lin;
 }
 
-void mugy_grid_lin2sub_real(mint *xI, mint lin, const struct mugy_realGrid grid) {
+void mugy_grid_lin2sub_real(mint *xI, mint lin, const struct mugy_grid_basic *grid) {
   // Given the linear index 'lin' in a real grid, return the nDim-dimensional
   // index (subscript) xI. We assume row major order for the (z,x,y) dimensions.
-  mint strides[nDim] = {grid.Nx[1],1,grid.NxyTot};
+  mint strides[nDim] = {grid->Nx[1],1,grid->NxyTot};
   for (mint d=0; d<nDim; d++) {
     xI[d] = lin/strides[d];
     lin -= xI[d]*strides[d];
   }
 }
 
-void mugy_grid_lin2sub_fourier(mint *kxI, mint lin, const struct mugy_fourierGrid grid) {
+void mugy_grid_lin2sub_fourier(mint *kxI, mint lin, const struct mugy_grid_basic *grid) {
   // Given the linear index 'lin' in a Fourier grid, return the nDim-dimensional
   // index (subscript) kxI. We assume row major order for the (kz,kx,ky) dimensions.
-  mint strides[nDim] = {grid.Nekx[1],1,grid.NekxyTot};
+  mint strides[nDim] = {grid->Nx[1],1,grid->NxyTot};
   for (mint d=0; d<nDim; d++) {
     kxI[d] = lin/strides[d];
     lin -= kxI[d]*strides[d];
   }
 }
 
-void mugy_grid_lin2sub_fourier_perp(mint *kxI, mint lin, const struct mugy_fourierGrid grid) {
+void mugy_grid_lin2sub_fourier_perp(mint *kxI, mint lin, const struct mugy_grid_basic *grid) {
   // Given the linear index 'lin' in a perpendicular (kx-ky) Fourier grid, return the
   // 2-dimensional index (subscript) kxI. We assume row major order for the (kx,ky) dimensions.
-  mint strides[2] = {grid.Nekx[1],1};
+  mint strides[2] = {grid->Nx[1],1};
   for (mint d=0; d<2; d++) {
     kxI[d] = lin/strides[d];
     lin -= kxI[d]*strides[d];
   }
 }
 
-void mugy_grid_get_x(real *x, mint *xI, const struct mugy_realGrid grid) {
+void mugy_grid_get_x(real *x, mint *xI, const struct mugy_grid_basic *grid) {
   // Obtain the x=(x,y,z) coordinates given the multidimensional
   // xI index. Assume the flat grid.x array is organized as {x,y,z}.
-  real* x_p = grid.x;
+  real* x_p = grid->x;
   for (mint d=0; d<nDim; d++) {
     x[d] = x_p[xI[d]]; 
-    x_p += grid.Nx[d];
+    x_p += grid->Nx[d];
   }
 }
 
-void mugy_grid_get_kx(real *kx, mint *kxI, const struct mugy_fourierGrid grid) {
+void mugy_grid_get_kx(real *kx, mint *kxI, const struct mugy_grid_basic *grid) {
   // Obtain the kx=(kx,ky,kz) coordinates given the multidimensional
   // kxI index. Assume the flat grid.kx array is organized as {kx,ky,kz}.
-  real* kx_p = grid.kx;
+  real* kx_p = grid->x;
   for (mint d=0; d<nDim; d++) {
     kx[d] = kx_p[kxI[d]]; 
-    kx_p += grid.Nekx[d];
+    kx_p += grid->Nx[d];
   }
 }
 
-void mugy_grid_get_kx_perp(real *kx, mint *kxI, const struct mugy_fourierGrid grid) {
+void mugy_grid_get_kx_perp(real *kx, mint *kxI, const struct mugy_grid_basic *grid) {
   // Obtain the kx=(kx,ky) coordinates given the multidimensional
-  // kxI index. Assume the flat grid.kx array is organized as {kx,ky,kz}.
-  real* kx_p = grid.kx;
+  // kxI index. Assume the flat grid->x array is organized as {kx,ky,kz}.
+  real* kx_p = grid->x;
   for (mint d=0; d<2; d++) {
     kx[d] = kx_p[kxI[d]]; 
-    kx_p += grid.Nekx[d];
+    kx_p += grid->Nx[d];
   }
 }
 
 void mugy_grid_free(struct mugy_grid *grid) {
   // Deallocate memory used by grids.
-  free(grid->global.deal.dual.x);
-  free(grid->global.deal.kx);
-  free(grid->global.deal.kperpSq);
-  free(grid->global.al.dual.x);
-  free(grid->global.al.kx);
+  free(grid->global->real->x);
+  free(grid->global->fourier->x);
+  free(grid->global->realAl->x);
+  free(grid->global->fourierAl->x);
 
-  free(grid->local.deal.dual.x);
-  free(grid->local.deal.kx);
-  free(grid->local.deal.kperpSq);
-  free(grid->local.al.dual.x);
-  free(grid->local.al.kx);
+  free(grid->local->real->x);
+  free(grid->local->fourier->x);
+  free(grid->local->realAl->x);
+  free(grid->local->fourierAl->x);
+
+  free(grid->global->fourier->xperpSq);
+  free(grid->local->fourier->xperpSq);
+
+  // Allocate for real/fourier dealiased and aliased grids.
+  for (mint i=0; i<2; i++) {
+    struct mugy_grid_chart *chart = i==0? grid->local : grid->global;
+    free(chart->real     );
+    free(chart->fourier  );
+    free(chart->realAl   );
+    free(chart->fourierAl);
+  }
+
+  free(grid->local );
+  free(grid->global);
+
+  free(grid);
+
 }
 

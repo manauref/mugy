@@ -190,61 +190,63 @@ void mugy_comms_distributeDOFs(struct mugy_comms *comms, struct mugy_grid *grid,
   for (int s=0; s<pop->local.numSpecies; s++) pop->local.numMomentsTot += pop->local.pars[s].numMoments;
 
   // Distribute the real-space and Fourier-space points. 
-  struct mugy_grid_ada *gridG = &grid->global;
-  struct mugy_grid_ada *gridL = &grid->local;
+  struct mugy_grid_chart *gridG = grid->global;
+  struct mugy_grid_chart *gridL = grid->local;
   for (mint d=0; d<nDim; d++) {
     mint rank_i = comms->sub1d[d].rank;
-    distribute1dDOFs(grid->mpiProcs[d], rank_i, gridG->deal.Nekx[d],
-                     &gridL->deal.Nekx[d], &gridL->deal.globalOff[d]);
-    distribute1dDOFs(grid->mpiProcs[d], rank_i, gridG->deal.dual.Nx[d],
-                     &gridL->deal.dual.Nx[d], &gridL->deal.dual.globalOff[d]);
-    distribute1dDOFs(grid->mpiProcs[d], rank_i, gridG->al.Nekx[d],
-                     &gridL->al.Nekx[d], &gridL->al.globalOff[d]);
-    distribute1dDOFs(grid->mpiProcs[d], rank_i, gridG->al.dual.Nx[d],
-                     &gridL->al.dual.Nx[d], &gridL->al.dual.globalOff[d]);
+    distribute1dDOFs(grid->mpiProcs[d], rank_i, gridG->fourier->Nx[d]  , &gridL->fourier->Nx[d]  , &gridL->fourier->globalOff[d]);
+    distribute1dDOFs(grid->mpiProcs[d], rank_i, gridG->real->Nx[d]     , &gridL->real->Nx[d]     , &gridL->real->globalOff[d]);
+    distribute1dDOFs(grid->mpiProcs[d], rank_i, gridG->fourierAl->Nx[d], &gridL->fourierAl->Nx[d], &gridL->fourierAl->globalOff[d]);
+    distribute1dDOFs(grid->mpiProcs[d], rank_i, gridG->realAl->Nx[d]   , &gridL->realAl->Nx[d]   , &gridL->realAl->globalOff[d]);
   }
-  gridL->deal.NekxTot      = prod_mint(gridL->deal.Nekx,nDim);
-  gridL->deal.dual.NxTot   = prod_mint(gridL->deal.dual.Nx,nDim);
-  gridL->deal.NekxyTot     = prod_mint(gridL->deal.Nekx,2);
-  gridL->deal.dual.NxyTot  = prod_mint(gridL->deal.dual.Nx,2);
-  gridL->al.NekxTot     = prod_mint(gridL->al.Nekx,nDim);
-  gridL->al.dual.NxTot  = prod_mint(gridL->al.dual.Nx,nDim);
-  gridL->al.NekxyTot    = prod_mint(gridL->al.Nekx,2);
-  gridL->al.dual.NxyTot = prod_mint(gridL->al.dual.Nx,2);
+  gridL->fourier->NxTot    = prod_mint(gridL->fourier->Nx,nDim);
+  gridL->fourier->NxyTot   = prod_mint(gridL->fourier->Nx,2);
+  gridL->real->NxTot       = prod_mint(gridL->real->Nx,nDim);
+  gridL->real->NxyTot      = prod_mint(gridL->real->Nx,2);
+  gridL->fourierAl->NxTot  = prod_mint(gridL->fourierAl->Nx,nDim);
+  gridL->fourierAl->NxyTot = prod_mint(gridL->fourierAl->Nx,2);
+  gridL->realAl->NxTot     = prod_mint(gridL->realAl->Nx,nDim);
+  gridL->realAl->NxyTot    = prod_mint(gridL->realAl->Nx,2);
 
   // Create local real-space and Fourier-space coordinate arrays.
-  gridL->deal.kx     = mugy_alloc_real_ho(sum_mint(gridL->deal.Nekx, nDim));
-  gridL->deal.dual.x = mugy_alloc_real_ho(sum_mint(gridL->deal.dual.Nx, nDim));
-  gridL->al.kx     = mugy_alloc_real_ho(sum_mint(gridL->al.Nekx, nDim));
-  gridL->al.dual.x = mugy_alloc_real_ho(sum_mint(gridL->al.dual.Nx, nDim));
+  gridL->fourier->x   = mugy_alloc_real_ho(sum_mint(gridL->fourier->Nx, nDim));
+  gridL->real->x      = mugy_alloc_real_ho(sum_mint(gridL->real->Nx, nDim));
+  gridL->fourierAl->x = mugy_alloc_real_ho(sum_mint(gridL->fourierAl->Nx, nDim));
+  gridL->realAl->x    = mugy_alloc_real_ho(sum_mint(gridL->realAl->Nx, nDim));
   for (mint d=0; d<nDim; d++) {
-    memcpy(getArray_real(gridL->deal.kx,gridL->deal.Nekx,d),
-           getArray_real(gridG->deal.kx,gridG->deal.Nekx,d)+gridL->deal.globalOff[d], gridL->deal.Nekx[d]*sizeof(real));
-    memcpy(getArray_real(gridL->deal.dual.x,gridL->deal.dual.Nx,d),
-           getArray_real(gridG->deal.dual.x,gridG->deal.dual.Nx,d)+gridL->deal.dual.globalOff[d], gridL->deal.dual.Nx[d]*sizeof(real));
-    memcpy(getArray_real(gridL->al.kx,gridL->al.Nekx,d),
-           getArray_real(gridG->al.kx,gridG->al.Nekx,d)+gridL->al.globalOff[d], gridL->al.Nekx[d]*sizeof(real));
-    memcpy(getArray_real(gridL->al.dual.x,gridL->al.dual.Nx,d),
-           getArray_real(gridG->al.dual.x,gridG->al.dual.Nx,d)+gridL->al.dual.globalOff[d], gridL->al.dual.Nx[d]*sizeof(real));
+    memcpy(getArray_real(gridL->fourier->x,gridL->fourier->Nx,d),
+           getArray_real(gridG->fourier->x,gridG->fourier->Nx,d)+gridL->fourier->globalOff[d], gridL->fourier->Nx[d]*sizeof(real));
+    memcpy(getArray_real(gridL->real->x,gridL->real->Nx,d),
+           getArray_real(gridG->real->x,gridG->real->Nx,d)+gridL->real->globalOff[d], gridL->real->Nx[d]*sizeof(real));
+    memcpy(getArray_real(gridL->fourierAl->x,gridL->fourierAl->Nx,d),
+           getArray_real(gridG->fourierAl->x,gridG->fourierAl->Nx,d)+gridL->fourierAl->globalOff[d], gridL->fourierAl->Nx[d]*sizeof(real));
+    memcpy(getArray_real(gridL->realAl->x,gridL->realAl->Nx,d),
+           getArray_real(gridG->realAl->x,gridG->realAl->Nx,d)+gridL->realAl->globalOff[d], gridL->realAl->Nx[d]*sizeof(real));
   }
 
-  // Copy global scalars into local grids.
+  // Copy global constants into local grids.
   for (mint d=0; d<nDim; d++) {
-    gridL->deal.kxMin[d]   = gridG->deal.kxMin[d];
-    gridL->al.kxMin[d]     = gridG->al.kxMin[d];
-    gridL->deal.dual.dx[d] = gridG->deal.dual.dx[d];
-    gridL->al.dual.dx[d]   = gridG->al.dual.dx[d];
+    gridL->fourier->dx[d]   = gridG->fourier->dx[d];
+    gridL->real->dx[d]      = gridG->real->dx[d];
+    gridL->fourierAl->dx[d] = gridG->fourierAl->dx[d];
+    gridL->realAl->dx[d]    = gridG->realAl->dx[d];
   }
 
   // Also convenient to keep dealiased kperpSq in memory:
-  gridL->deal.kperpSq = mugy_alloc_real_ho(gridL->deal.NekxyTot);
-  for (mint i=0; i<gridL->deal.Nekx[0]; i++) {
-    for (mint j=0; j<gridL->deal.Nekx[1]; j++) {
-      double kx = gridL->deal.kx[i];
-      double ky = gridL->deal.kx[gridL->deal.Nekx[0]+j];
-      gridL->deal.kperpSq[i*gridL->deal.Nekx[1]+j] = kx*kx + ky*ky;
+  gridL->fourier->xperpSq = mugy_alloc_real_ho(gridL->fourier->NxyTot);
+  for (mint i=0; i<gridL->fourier->Nx[0]; i++) {
+    for (mint j=0; j<gridL->fourier->Nx[1]; j++) {
+      double kx = gridL->fourier->x[i];
+      double ky = gridL->fourier->x[gridL->fourier->Nx[0]+j];
+      gridL->fourier->xperpSq[i*gridL->fourier->Nx[1]+j] = kx*kx + ky*ky;
     }
   }
+
+  // Set the type of each grid.
+  gridL->real->type      = MUGY_REAL_GRID;
+  gridL->fourier->type   = MUGY_FOURIER_GRID;
+  gridL->realAl->type    = MUGY_REAL_GRID;
+  gridL->fourierAl->type = MUGY_FOURIER_GRID;
 }
 
 void mugy_comms_terminate(struct mugy_comms *comms) {
