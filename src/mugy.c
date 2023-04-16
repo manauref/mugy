@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
   mugy_flr_init(pop, grid, field, ioMan);
 
   // Impose ICs.
-  set_initialConditions(pop, *grid, fftMan, ioMan);
+  set_initialConditions(pop, field, grid, fftMan, ioMan);
 
   // Write initial conditions.
   mugy_io_write_mugy_array(ioMan, "momk", NULL, *pop->local.momk);

@@ -24,14 +24,16 @@ void mugy_flr_init(struct mugy_population *pop, struct mugy_grid *grids, struct 
   struct mugy_pop *popL = &pop->local;
 
   // Compute the argument of the Bessel functions, b=(kperp*rho)^2.
-  real *bFLR = mugy_alloc_real_ho(pop->local.numSpecies * grid->NekxyTot);
+  struct mugy_array *bFLR = mugy_array_alloc(real_enum, popL->numSpecies * grid->NekxyTot, hostMem);
   for (mint linIdx=0; linIdx<grid->NekxyTot; linIdx++) {
     real kperp = sqrt(grid->kperpSq[linIdx]);
     for (mint s=0; s<popL->numSpecies; s++) {
       real muMass   = pop->global.pars[s].muMass;
       real tau      = pop->global.pars[s].tau;
       real kperprho = sqrt(tau)*kperp/muMass;
-      bFLR[s*grid->NekxyTot + linIdx] = pow(kperprho,2);
+
+      real *bFLR_p = mugy_array_get(bFLR, s*grid->NekxyTot + linIdx);
+      bFLR_p[0]    = pow(kperprho,2);
     }
   }
 
@@ -54,13 +56,15 @@ void mugy_flr_init(struct mugy_population *pop, struct mugy_grid *grids, struct 
   for (mint s=0; s<popL->numSpecies; s++) {
     for (mint linIdx=0; linIdx<grid->NekxyTot; linIdx++) {
       mint lin1 = s*grid->NekxyTot + linIdx;
-      real b = bFLR[lin1];
 
+      real *bFLR_p      = mugy_array_get(bFLR     , lin1);
       real *Gamma0_p    = mugy_array_get(Gamma0   , lin1);
       real *hatLap_p    = mugy_array_get(hatLap   , lin1);
       real *hathatLap_p = mugy_array_get(hathatLap, lin1);
       real *poissonDb_p = mugy_array_get(poissonDb, lin1);
       real *poissonSb_p = mugy_array_get(poissonSb, lin1);
+
+      real b = bFLR_p[0];
 
       Gamma0_p[0]    = mugy_bessel_I0_scaled(b);
       real GammaRat  = mugy_bessel_I1_scaled(b)/Gamma0_p[0];
@@ -80,75 +84,85 @@ void mugy_flr_init(struct mugy_population *pop, struct mugy_grid *grids, struct 
     }
   }
 
-    struct mugy_ad_file *fhr = mugy_io_create_population_perp_file(ioman, "pbFLRop", *grids, *pop, real_enum, fourier_enum, 3, 0);
-    mugy_io_write_mugy_array(NULL, "pbFLRop", fhr, popL->pbFLRop);
-    mugy_io_close_file(fhr);
+#ifdef USE_GPU
+  mugy_array_copy(popL->pbFLRop, popL->pbFLRop, host2device);
+#endif
 
-    struct mugy_ad_file *fhs = mugy_io_create_population_perp_file(ioman, "poissonDb", *grids, *pop, real_enum, fourier_enum, 1, 0);
-    mugy_io_write_mugy_array(NULL, "poissonDb", fhs, poissonDb);
-    mugy_io_close_file(fhs);
-    struct mugy_ad_file *fht = mugy_io_create_population_perp_file(ioman, "poissonSb", *grids, *pop, real_enum, fourier_enum, 1, 0);
-    mugy_io_write_mugy_array(NULL, "poissonSb", fht, poissonSb);
-    mugy_io_close_file(fht);
+//    struct mugy_ad_file *fhr = mugy_io_create_population_perp_file(ioman, "pbFLRop", *grids, *pop, real_enum, fourier_enum, 3, 0);
+//    mugy_io_write_mugy_array(NULL, "pbFLRop", fhr, popL->pbFLRop);
+//    mugy_io_close_file(fhr);
+//
+//    struct mugy_ad_file *fhs = mugy_io_create_population_perp_file(ioman, "poissonDb", *grids, *pop, real_enum, fourier_enum, 1, 0);
+//    mugy_io_write_mugy_array(NULL, "poissonDb", fhs, poissonDb);
+//    mugy_io_close_file(fhs);
+//    struct mugy_ad_file *fht = mugy_io_create_population_perp_file(ioman, "poissonSb", *grids, *pop, real_enum, fourier_enum, 1, 0);
+//    mugy_io_write_mugy_array(NULL, "poissonSb", fht, poissonSb);
+//    mugy_io_close_file(fht);
 
 
-//  mint elcIdx = 0;  // Assume electrons are first.
-//  // Reciprocal of the factor multiplying the potential in the field equation.
-//  fourier *rPoiPhikFac = mugy_alloc_fourier_ho(grid->NekxyTot);
-//  real delta0e = pop->global.pars[elcIdx].delta0;
-//  fourier iimag = 0. + 1.*I;
-//  for (mint i=0; i<grid->Nekx[0]; i++) {
-//    for (mint j=0; j<grid->Nekx[1]; j++) {
-//      mint linIdx = i*grid->Nekx[1]+j;
-//
-//      double ky = grid->kx[grid->Nekx[0]+j];
-//      rPoiPhikFac[linIdx] = pow(field->pars.lambdaD,2)*grid->kperpSq[linIdx]
-//                           +1.0-delta0e*iimag*ky;
-//      // Add the (1/tau)*(1-Gamma0Ion) contributions.
-//      for (mint s=elcIdx+1; s<pop->global.numSpecies; s++) {  // Assume electrons are first.
-//        real tau_i = pop->global.pars[s].tau;
-//        rPoiPhikFac[linIdx] += (1./tau_i)*grid->kperpSq[linIdx]; 
-//      }
-//
-//      if (REAL_MIN < cabs(rPoiPhikFac[linIdx]))
-//        rPoiPhikFac[linIdx] = 1./rPoiPhikFac[linIdx]; 
-//      else
-//        rPoiPhikFac[linIdx] = 0.;
-//    }
-//  }
-//
-//  // Pre-compute the factors multipying each moment in the Poisson equation.
-//  pop->local.poissonFac = mugy_array_alloc(fourier_enum, pop->local.numMomentsTot*grid->NekxyTot, onResource);
-//
-//  forall(lcky=1:Nekx(1),lckx=1:Nekx(2))
-//    denIonkPoiFac(lcky,lckx)  = rPoiPhikFac(lcky,lckx)
-//    tempIonkPoiFac(lcky,lckx) = (1./(tau*deltaPerpi*DbIon(lcky,lckx))) &
-//                               *hatLapAvgJ0D2Ion(lcky,lckx)*rPoiPhikFac(lcky,lckx)
-//    denElckPoiFac(lcky,lckx)  = 0.
-//    tempElckPoiFac(lcky,lckx) = 0.
-//  end forall
-//
-//  for (mint s=elcIdx+1; s<pop->local.numSpecies; s++) {
-//    fourier *denkPoiFac_p  = mugy_population_getMoment_fourier(grid, pop->local, s, denIdx, momk->ho);
-//    fourier *tempkPoiFac_p = mugy_population_getMoment_fourier(grid, pop->local, s, tempIdx, momk->ho);
-//
-//    real tau_i = pop->global.pars[s].tau;
-//    real deltaPerp_i = pop->global.pars[s].deltaPerp;
-//    for (mint linIdx=0; linIdx<NekxyTot; linIdx++) {
-//      denkPoiFac_p[0] = rPoiPhikFac[linIdx];
-//      denkPoiFac_p++;
-//
-//      tempkPoiFac_p[0] = (1./(tau_i*deltaPerp_i*DbOp.s[linIdx]))*hatLapAvgJ0D2.s[linIdx]*rPoiPhikFac[linIdx];
-//      tempkPoiFac_p++;
-//    };
-//  };
-//
-//  free(rPoiPhikFac);
+  mint elcIdx = 0;  // Assume electrons are first.
+  // Reciprocal of the factor multiplying the potential in the field equation.
+  struct mugy_array *rPoiPhikFac = mugy_array_alloc(fourier_enum, grid->NekxyTot, hostMem);
+  real delta0e = pop->global.pars[elcIdx].delta0;
+  fourier iimag = 0. + 1.*I;
+  for (mint linIdx=0; linIdx<grid->NekxyTot; linIdx++) {
+    mint idx[2];  real kx[2];
+    mugy_grid_lin2sub_fourier_perp(idx, linIdx, *grid);
+    mugy_grid_get_kx_perp(kx, idx, *grid);
+
+    double ky = kx[1];
+    fourier *rPoiPhikFac_p = mugy_array_get(rPoiPhikFac, linIdx);
+
+    rPoiPhikFac_p[0] = pow(field->pars.lambdaD,2)*grid->kperpSq[linIdx]+1.0-delta0e*iimag*ky;
+    // Add the (1/tau)*(1-Gamma0Ion) contributions.
+    for (mint s=elcIdx+1; s<pop->global.numSpecies; s++) {  // Assume electrons are first.
+      real tau_i = pop->global.pars[s].tau;
+      rPoiPhikFac_p[0] += (1./tau_i)*grid->kperpSq[linIdx]; 
+    }
+
+    if (REAL_MIN < cabs(rPoiPhikFac_p[0]))
+      rPoiPhikFac_p[0] = 1./rPoiPhikFac_p[0]; 
+    else
+      rPoiPhikFac_p[0] = 0.+0.*I;
+  }
+
+  // Pre-compute the factors multipying each moment in the Poisson equation.
+  popL->poissonFac = mugy_array_alloc(fourier_enum, popL->numMomentsTot*grid->NekxyTot, onResource);
+
+  for (mint s=elcIdx+1; s<popL->numSpecies; s++) {
+    fourier *denkPoiFac_p  = mugy_population_getMoment_fourier(*grid, *popL, s, denIdx, popL->poissonFac->ho);
+    fourier *tempkPoiFac_p = mugy_population_getMoment_fourier(*grid, *popL, s, tempIdx, popL->poissonFac->ho);
+
+    real tau_i       = popL->pars[s].tau;
+    real deltaPerp_i = popL->pars[s].deltaPerp;
+    for (mint linIdx=0; linIdx<grid->NekxyTot; linIdx++) {
+      fourier *rPoiPhikFac_p = mugy_array_get(rPoiPhikFac, linIdx);
+
+      mint lin1 = s*grid->NekxyTot + linIdx;
+      real *poissonDb_p = mugy_array_get(poissonDb, lin1);
+
+      mint lin3 = s*3*grid->NekxyTot + linIdx;
+      real *pbFLRop_p = mugy_array_get(popL->pbFLRop, lin3+1*grid->NekxyTot);; 
+      real hatLapAvgJ0D2 = pbFLRop_p[0];
+
+      denkPoiFac_p[0] = rPoiPhikFac_p[0];
+      denkPoiFac_p++;
+
+      tempkPoiFac_p[0] = (1./(tau_i*deltaPerp_i*poissonDb_p[0]))*hatLapAvgJ0D2*rPoiPhikFac_p[0];
+      tempkPoiFac_p++;
+    };
+  };
+
+#ifdef USE_GPU
+  mugy_array_copy(popL->poissonFac, popL->poissonFac, host2device);
+#endif
+
+  mugy_array_free(rPoiPhikFac, hostMem);
   mugy_array_free(poissonSb, hostMem);
   mugy_array_free(poissonDb, hostMem);
   mugy_array_free(hathatLap, hostMem);
   mugy_array_free(hatLap, hostMem);
   mugy_array_free(Gamma0, hostMem);
-  free(bFLR);
+  mugy_array_free(bFLR, hostMem);
 }
 

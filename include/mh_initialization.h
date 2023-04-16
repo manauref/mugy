@@ -26,5 +26,5 @@ void read_inputs(mint argc, char *argv[], struct mugy_ioSetup *ioSet, struct mug
 
 void device_init(struct mugy_comms *comms);
 
-void set_initialConditions(struct mugy_population *pop, struct mugy_grid grid,
+void set_initialConditions(struct mugy_population *pop, struct mugy_field *field, struct mugy_grid *grid,
   struct mugy_ffts *fftMan, struct mugy_ioManager *ioman);

@@ -57,8 +57,9 @@ void readFileSpeciesPar_mint(mint **var, FILE *fp, const mint sIdx, const mint n
 void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint numSpecies, const mint *numElements) {
   fscanf(fp, "%*s = ");
   // Skip species prior to sIdx (presumably already read).
+  char star_real_fmt[] = "%*";  strcat(star_real_fmt, fmt_real);
   for (mint s=0; s<sIdx; s++) {
-    for (mint i=0; i<numElements[s]; i++) fscanf(fp, "%*"fmt_real);
+    for (mint i=0; i<numElements[s]; i++) fscanf(fp, star_real_fmt);
   }
   // Read this species' parameter.
   if (numElements[sIdx] == 1) {
@@ -69,7 +70,7 @@ void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint n
   }
   // Skip species after sIdx (presumably will be read later).
   for (mint s=sIdx+1; s<numSpecies; s++) {
-    for (mint i=0; i<numElements[s]; i++) fscanf(fp, "%*"fmt_real);
+    for (mint i=0; i<numElements[s]; i++) fscanf(fp, star_real_fmt);
   }
 }
 
@@ -254,7 +255,7 @@ void device_init(struct mugy_comms *comms) {
   device_init_dev(comms);
 }
 
-void set_initialConditions(struct mugy_population *pop, struct mugy_grid grid,
+void set_initialConditions(struct mugy_population *pop, struct mugy_field *field, struct mugy_grid *grid,
   struct mugy_ffts *fftMan, struct mugy_ioManager *ioman) {
   // Impose the initial conditions on the moments and thoe potential.
 
@@ -265,7 +266,7 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_grid grid,
 
   if (initialOp == 0) {
     // Initialize in real space and transform to Fourier.
-    struct mugy_realGrid *gridL = &grid.local.deal.dual;
+    struct mugy_realGrid *gridL = &grid->local.deal.dual;
     struct mugy_array *momIC = mugy_population_alloc_realMoments(*gridL, pop->local, hostAndDeviceMem);
 
     for (mint s=0; s<pop->local.numSpecies; s++) {
@@ -281,8 +282,8 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_grid grid,
         mugy_grid_get_x(&x[0], xIdx, *gridL);
 
         // Initial density: a superposition of sines and cosines.
-        double kx = grid.local.deal.kxMin[0];
-        double ky = grid.local.deal.kxMin[1];
+        double kx = grid->local.deal.kxMin[0];
+        double ky = grid->local.deal.kxMin[1];
         den_p[0] += initA*sin(kx*x[0])*cos(ky*x[1]);
         den_p++;
         
@@ -300,7 +301,7 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_grid grid,
 
 //    //......................................................
 //    // Test FFT of a moments.
-//    struct mugy_array *momICk = mugy_population_alloc_fourierMoments(grid.local.deal, pop->local, hostAndDeviceMem);
+//    struct mugy_array *momICk = mugy_population_alloc_fourierMoments(grid->local.deal, pop->local, hostAndDeviceMem);
 //
 ////    mugy_fft_r2c(fftMan, momICk, momIC, mugy_fft_mom_xy, hostComp);
 ////    mugy_fft_c2r(fftMan, momIC, momICk, mugy_fft_mom_xy, hostComp);
@@ -308,7 +309,7 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_grid grid,
 //    mugy_fft_c2r(fftMan, momIC, momICk, mugy_fft_mom_xy, deviceComp);
 //    mugy_array_copy(momIC, momIC, device2host);
 //
-//    struct mugy_ad_file *fh = mugy_io_create_moments_file(ioman, "mom", grid, *pop, real_enum);
+//    struct mugy_ad_file *fh = mugy_io_create_moments_file(ioman, "mom", *grid, *pop, real_enum);
 //    mugy_io_write_mugy_array(NULL, "mom", fh, momIC);
 //    mugy_io_close_file(fh);
 //
@@ -317,8 +318,8 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_grid grid,
 //
 //    //......................................................
 //    // Test FFT of a single array
-//    struct mugy_array *fxy_r = mugy_array_alloc(real_enum, grid->NxTot, hostAndDeviceMem);
-//    struct mugy_array *fxy_k = mugy_array_alloc(fourier_enum, grid.local.deal.NekxTot, hostAndDeviceMem);
+//    struct mugy_array *fxy_r = mugy_array_alloc(real_enum, gridL->NxTot, hostAndDeviceMem);
+//    struct mugy_array *fxy_k = mugy_array_alloc(fourier_enum, grid->local.deal.NekxTot, hostAndDeviceMem);
 //
 //    // Assign real array to a linear combo of sines and cosines.
 //    real *fxy_rp = fxy_r->ho;
@@ -330,8 +331,8 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_grid grid,
 //      mugy_grid_get_x(&x[0], xIdx, *gridL);
 //
 //      fxy_rp[0] = 0.;
-//      double kx = grid.local.deal.kxMin[0];
-//      double ky = grid.local.deal.kxMin[1];
+//      double kx = grid->local.deal.kxMin[0];
+//      double ky = grid->local.deal.kxMin[1];
 //      fxy_rp[0] += initA*sin(kx*x[0])*cos(ky*x[1]);
 //      fxy_rp++;
 //    }
@@ -356,21 +357,22 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_grid grid,
 
   } else if (initialOp == 1) {
     // Initialize with a k-spce power law.
-    real *kxMin = &grid.local.deal.kxMin[0];
+    struct mugy_fourierGrid *gridL = &grid->local.deal;
+    real *kxMin = &gridL->kxMin[0];
 
     for (mint s=0; s<pop->local.numSpecies; s++) {
       real initA    = pop->local.pars[s].initA;
       real *initAux = &pop->local.pars[s].initAux[0];
 
       // Get density and temperature of species s.
-      fourier *den_p  = mugy_population_getMoment_fourier(grid.local.deal, pop->local, s, denIdx, momk->ho);
-      fourier *temp_p = mugy_population_getMoment_fourier(grid.local.deal, pop->local, s, tempIdx, momk->ho);
+      fourier *den_p  = mugy_population_getMoment_fourier(*gridL, pop->local, s, denIdx, momk->ho);
+      fourier *temp_p = mugy_population_getMoment_fourier(*gridL, pop->local, s, tempIdx, momk->ho);
 
-      for (mint linIdx=0; linIdx<grid.local.deal.NekxTot; linIdx++) {
+      for (mint linIdx=0; linIdx<gridL->NekxTot; linIdx++) {
         mint kxIdx[nDim];
-        mugy_grid_lin2sub_fourier(&kxIdx[0], linIdx, grid.local.deal);  // Convert linear index to multidimensional kx index.
+        mugy_grid_lin2sub_fourier(&kxIdx[0], linIdx, *gridL);  // Convert linear index to multidimensional kx index.
         real kx[nDim];
-        mugy_grid_get_kx(&kx[0], kxIdx, grid.local.deal);
+        mugy_grid_get_kx(&kx[0], kxIdx, *gridL);
   
         // Set density to a power-law in k-space.
         den_p[0] = initA*(pow((kxMin[0]+fabs(kx[0]))/kxMin[0],initAux[0]))
@@ -386,5 +388,12 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_grid grid,
     // Copy initialized moments from host to device.
     mugy_array_copy(momk, momk, host2device);
   }
+
+  // Solve the Poisson equation to compute phik.
+//  mugy_array_copy(momk, momk, device2host);
+  mugy_field_poisson_solve(field, pop, grid, 0);
+
+  mugy_array_copy(field->phik, field->phik, device2host);
+  mugy_io_write_mugy_array(ioman, "phik", NULL, field->phik);
 
 }

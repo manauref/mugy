@@ -10,9 +10,15 @@ extern "C" {
 #include "mh_array_dev.h"
 }
 #include "mh_fourier_dev.h"
+#include "mh_utilities_dev.h"
 
 // Starting linear index for each thread.
 #define LINIDX0 (blockIdx.x*blockDim.x+threadIdx.x)
+
+void mugy_array_zero_dev(struct mugy_array *arr) {
+  // Set all elements in the array to zero.
+  checkCudaErrors(cudaMemset(arr->dev, 0, arr->nelemsz));
+}
 
 __global__ void
 mugy_array_set_real_cu(real* out, mint nelem, real a, const real* inp)

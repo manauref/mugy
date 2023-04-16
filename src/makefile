@@ -80,7 +80,7 @@ LIBS =
 #[ Define the C source files.
 SRCS = data.c alloc.c array.c grid.c population.c field.c ffts.c initialization.c io_adios.c io_tools.c comms.c mugy.c utilities.c flr.c
 ifeq ($(USE_GPU),true)
-    SRCS_DEV = initialization_dev.cu alloc_dev.cu data_dev.cu array_dev.cu ffts_dev.cu
+    SRCS_DEV = initialization_dev.cu alloc_dev.cu data_dev.cu array_dev.cu ffts_dev.cu field_dev.cu
 else
     SRCS_DEV =
 endif

@@ -246,7 +246,7 @@ void mugy_io_setup_files(struct mugy_ioManager *ioman, struct mugy_grid grid, st
   //   km_ : fourier moments.
   // If more, nonstandard files wish to be added, just put the name in flist and
   // be sure to use the correct create/write functions.
-  char *flist[] = {"ra_phi","km_momk"};
+  char *flist[] = {"ka_phik","km_momk"};
 
   ioman->numfiles = sizeof(flist)/sizeof(flist[0]);
   ioman->files = (struct mugy_ad_file **)calloc(ioman->numfiles, sizeof(struct mugy_ad_file*));

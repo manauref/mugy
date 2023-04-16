@@ -1,8 +1,9 @@
 /* mugy: data_dev.cu
-
-   Functions to manipulate data on the device. For example:
-     - Copy between host and device.
-*/
+ *
+ * Functions to manipulate data on the device. For example:
+ *   - Copy between host and device.
+ *
+ */
 
 extern "C" {
 #include "mh_utilities_dev.h"

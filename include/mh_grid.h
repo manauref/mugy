@@ -63,5 +63,9 @@ void mugy_grid_lin2sub_fourier_perp(mint *kxI, mint lin, const struct mugy_fouri
 void mugy_grid_get_x(real *x, mint *xI, const struct mugy_realGrid grid);
 void mugy_grid_get_kx(real *kx, mint *kxI, const struct mugy_fourierGrid grid);
 
+// Obtain the kx=(kx,ky) coordinates given the multidimensional
+// kxI index. Assume the flat grid.kx array is organized as {kx,ky,kz}.
+void mugy_grid_get_kx_perp(real *kx, mint *kxI, const struct mugy_fourierGrid grid);
+
 // Deallocate memory used by grids.
 void mugy_grid_free(struct mugy_grid *grid);

@@ -34,6 +34,7 @@ then
   module load openmpi/cuda-11.1/gcc/4.1.1
   module load anaconda3/2020.11
   module load fftw/nvhpc-21.5/openmpi-4.1.1/3.3.9
+  module load gsl/2.6
   export MPI_DIR=$MPI_HOME
   export CCCOMPILER=$MPI_DIR/bin/mpicc
   export NVCCCOMPILER=$CUDA_HOME/bin/nvcc

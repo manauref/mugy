@@ -30,5 +30,9 @@ struct mugy_field *mugy_field_alloc();
 // Initialize the rest of the field arrays.
 void mugy_field_init(struct mugy_field *field, struct mugy_grid *grid, struct mugy_population *pop);
 
+// Solve the Poisson equation to obtain phik using the charge density
+// in the time-stepping index 'tstepIdx'
+void mugy_field_poisson_solve(struct mugy_field *field, struct mugy_population *pop, struct mugy_grid *grid, mint tstepIdx);
+
 // Free the field object.
 void mugy_field_free(struct mugy_field *field);

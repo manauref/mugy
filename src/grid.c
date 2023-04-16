@@ -203,6 +203,16 @@ void mugy_grid_get_kx(real *kx, mint *kxI, const struct mugy_fourierGrid grid) {
   }
 }
 
+void mugy_grid_get_kx_perp(real *kx, mint *kxI, const struct mugy_fourierGrid grid) {
+  // Obtain the kx=(kx,ky) coordinates given the multidimensional
+  // kxI index. Assume the flat grid.kx array is organized as {kx,ky,kz}.
+  real* kx_p = grid.kx;
+  for (mint d=0; d<2; d++) {
+    kx[d] = kx_p[kxI[d]]; 
+    kx_p += grid.Nekx[d];
+  }
+}
+
 void mugy_grid_free(struct mugy_grid *grid) {
   // Deallocate memory used by grids.
   free(grid->global.deal.dual.x);

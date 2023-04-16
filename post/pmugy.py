@@ -13,15 +13,16 @@
 #[   fClose
 #[   removeIOobject
 #[   attrInquire
-#[   varInquire
 #[   attrRead
+#[   attrHas
+#[   varInquire
 #[   varShape
 #[   adType2npType
 #[   varType
 #[   varRead
 #[   kGrid
 #[   xGrid
-#[   
+#[   calcFLR
 #[
 #[ ................................................................ ]#
 
@@ -71,6 +72,19 @@ class pmIO:
     return self.ad.RemoveIO(ioObName)
   #[ .......... end of removeIOobject method ........... ]#
 
+  #[ Get a dictionary of available attributes.
+  def attrAvailable(self, **kwargs):
+    ad_attr, openedFile = 0, False
+    if 'fileName' in kwargs:
+      ad_ioNm, ad_io, ad_eng = self.fOpen(kwargs['fileName'])
+      ad_attrs = ad_io.AvailableAttributes()
+    elif 'io' in kwargs:
+      ad_attrs = kwargs['io'].AvailableAttributes()
+    else:
+      sys.exit("attrAvailable requires 'fileName' or 'io' input.")
+    return ad_attrs, openedFile, ad_ioNm, ad_io, ad_eng
+  #[ .......... end of attrAvailable .......... ]#
+
   #[ Inquire an attribute.
   def attrInquire(self, attrName, **kwargs):
     ad_attr, openedFile = 0, False
@@ -83,6 +97,27 @@ class pmIO:
       sys.exit("attrInquire requires 'fileName' or 'io' input.")
     return ad_attr, openedFile, ad_ioNm, ad_io, ad_eng
   #[ .......... end of attrInquire method ...... ]#
+
+  #[ Check if an attribute exists in file.
+  def attrHas(self, attrName, **kwargs):
+    ad_attrs, openedFile, ad_ioNm, ad_io, ad_eng = self.attrAvailable(**kwargs)
+    hasAttr = attrName in ad_attrs.keys()
+    if openedFile:
+      self.fClose(ad_eng)
+      closed = self.ad.RemoveIO(ad_ioNm)
+    return hasAttr
+  #[ .......... end of attrHas .......... ]#  
+
+  #[ Read an attribute.
+  def attrRead(self, attrName, **kwargs):
+    #[ Establish file handle.
+    ad_attr, openedFile, ad_ioNm, ad_io, ad_eng = self.attrInquire(attrName, **kwargs)
+    val = ad_attr.Data()
+    if openedFile:
+      self.fClose(ad_eng)
+      closed = self.ad.RemoveIO(ad_ioNm)
+    return val
+  #[ .......... end of attrRead .............. ]#
 
   #[ Inquire a variable.
   def varInquire(self, varName, **kwargs):
@@ -97,17 +132,6 @@ class pmIO:
       sys.exit("varInquire requires 'fileName' or 'io' input.")
     return ad_var, openedFile, ad_ioNm, ad_io, ad_eng
   #[ .......... end of varInquire method ...... ]#
-
-  #[ Read an attribute.
-  def attrRead(self, attrName, **kwargs):
-    #[ Establish file handle.
-    ad_attr, openedFile, ad_ioNm, ad_io, ad_eng = self.attrInquire(attrName, **kwargs)
-    val = ad_attr.Data()
-    if openedFile:
-      self.fClose(ad_eng)
-      closed = self.ad.RemoveIO(ad_ioNm)
-    return val
-  #[ .......... end of attrRead .............. ]#
 
   #[ Get the shape of a variable.
   def varShape(self, varName, **kwargs):
@@ -201,10 +225,22 @@ class pmIO:
   #[ Generate the real space grid (note that for colorplots
   #[ matplotlib expects a nodal grid).
   def xGrid(self, **kwargs):
-    Nx  = self.attrRead('Nx', **kwargs)
-    dx  = self.attrRead('dx', **kwargs)
-    dim = np.size(Nx)
-    x   = [ np.array([(i-Nx[d]*0.5)*dx[0] for i in range(Nx[d])]) for d in range(dim) ]
+    realFileGrid = self.attrHas('Nx', **kwargs)
+    if realFileGrid:
+      Nx  = self.attrRead('Nx', **kwargs)
+      dx  = self.attrRead('dx', **kwargs)
+      dim = np.size(Nx)
+    else:
+      #[ Reconstruct real grid based on the Fourier grid in the file.
+      Nekx  = self.attrRead('Nekx', **kwargs)
+      kxMin = self.attrRead('kxMin', **kwargs)
+      Nkx = (Nekx+1)//2;  Nkx[1] = Nekx[1]; #[ Nekx[1] doesn't include negative ky's.
+      Nx  = 2*(Nkx-1)+1;
+      dim = np.size(Nx)
+      Lx = [ 2.*np.pi/kxMin[d] for d in range(dim)]
+      dx = [ Lx[d]/max(1.,Nx[d] - Nx[d] % 2) for d in range(dim)];
+
+    x = [ np.array([(i-Nx[d]*0.5)*dx[0] for i in range(Nx[d])]) for d in range(dim) ]
 
     if 'nodal' in kwargs:
       xN = [ np.concatenate(([x[d][0]-dx[d]/2.],
@@ -278,4 +314,26 @@ class pmIO:
       flrDict["Nb"]        = Nb
       flrDict["Sb"]        = Sb
     return flrDict
-  #[ ........... End of FLR functions ................... ]#
+  #[ ........... End of calcFLR ................... ]#
+
+  #[ Shift a variable defined on kx-ky space with the kx's
+  #[ going from 0 to the largest positive kx followed by the
+  #[ negative kx's in ascending order; to a space with kx=0
+  #[ in the center.
+  def kx0center(self, kxIn, varIn):
+    kx, var = np.copy(kxIn[0]), np.copy(varIn)
+    Nekx = np.size(kx[0])
+
+    #[ Find max positive kx.
+    Nkx = 0
+    for i in range(Nekx):
+      if kx[i] < 0.:
+        break;
+      else:
+        Nkx += 1
+
+    kxIn[0] = np.append(kx[Nkx:], kx[:Nkx]) 
+    varIn = np.roll(var, Nekx-Nkx, axis=0)
+
+    return kxIn, varIn
+  #[ ........... End of kx0center ................... ]#

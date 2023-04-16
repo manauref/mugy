@@ -89,9 +89,11 @@ void mugy_population_free(struct mugy_population *pop) {
   // Free moments vector.
   for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
     mugy_array_free(pop->local.momk[s], onResource);
+  free(pop->local.momk);
 
   // Free Poisson bracket FLR operators.
   mugy_array_free(pop->local.pbFLRop, onResource);
 
-  free(pop->local.momk);
+  // Free factors multiplying moments in Poisson equation.
+  mugy_array_free(pop->local.poissonFac, onResource);
 }

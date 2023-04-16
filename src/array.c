@@ -10,6 +10,7 @@
 #include "mh_fourier_ho.h"
 #include "mh_data.h"
 #include <stdlib.h>  // for malloc.
+#include <string.h>  // for memset.
 
 struct mugy_array *mugy_array_alloc(enum mugy_datatype type, mint numElements, enum resource_mem res) {
   // Allocate array on host, device, or both.
@@ -30,6 +31,19 @@ struct mugy_array *mugy_array_alloc(enum mugy_datatype type, mint numElements, e
     arr->dev = mugy_alloc(arr->nelem, arr->elemsz, deviceMem);  // Allocate on device.
 
   return arr;
+}
+
+void mugy_array_zero(struct mugy_array *arr, enum resource_mem res) {
+  // Set all elements in the array to zero.
+#ifdef USE_GPU
+  if (res == deviceMem) {
+    mugy_array_zero_dev(arr);
+    return;
+  } else if (res == hostAndDeviceMem) {
+    mugy_array_zero_dev(arr);
+  }
+#endif
+  memset(arr->ho, 0, arr->nelemsz);
 }
 
 void *mugy_array_copy(struct mugy_array *aout, struct mugy_array *ain, enum memcpy_dir_dev dir) {

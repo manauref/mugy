@@ -4,6 +4,8 @@
  *
  */
 #include "mh_field.h"
+#include "mh_field_dev.h"
+#include "mh_fourier_ho.h"
 #include <stdlib.h>  // for malloc.
 
 struct mugy_field *mugy_field_alloc() {
@@ -41,4 +43,34 @@ void mugy_field_free(struct mugy_field *field) {
 
   // Free the field object.
   free(field);
+}
+
+void mugy_field_poisson_solve(struct mugy_field *field, struct mugy_population *pop, struct mugy_grid *grid, mint tstepIdx) {
+  // Solve the Poisson equation to obtain phik using the charge density
+  // in the time-stepping index 'tstepIdx'
+  
+#ifdef USE_GPU
+  return mugy_field_poisson_solve_dev(field, pop, grid, tstepIdx);
+#endif
+
+  struct mugy_fourierGrid *gridL = &grid->local.deal;
+  struct mugy_pop         *popL  = &pop->local;
+  struct mugy_array       *phik  = field->phik;
+  struct mugy_array       *momk  = popL->momk[tstepIdx];
+
+  mugy_array_zero(phik, hostMem);
+
+  for (mint s=0; s<popL->numSpecies; s++) {
+    for (mint m=0; m<popL->pars[s].numMoments; m++) {
+      fourier *poissonFac_p = mugy_population_getMoment_fourier(*gridL, *popL, s, m, popL->poissonFac->ho);
+      fourier *momk_p       = mugy_population_getMoment_fourier(*gridL, *popL, s, m, momk->ho);
+      for (mint linIdx=0; linIdx<gridL->NekxTot; linIdx++) {
+        fourier *phik_p = mugy_array_get(phik, linIdx);
+
+	phik_p[0] += poissonFac_p[0]*momk_p[0];
+
+	poissonFac_p++;  momk_p++;
+      }
+    }
+  }
 }
