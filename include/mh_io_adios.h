@@ -49,7 +49,7 @@ struct mugy_ioManager {
 };
 
 // Start the IO interface.
-struct mugy_ioManager *mugy_io_init(struct mugy_comms comms); 
+struct mugy_ioManager *mugy_io_init(struct mugy_comms *comms); 
 
 // Create a file holding global real(Fourier)Arrays.
 struct mugy_ad_file *mugy_io_create_mugy_array_file(struct mugy_ioManager *ioman, char* fname,

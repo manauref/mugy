@@ -23,12 +23,12 @@ void ad_check_error(const int error, const char *message) {
   if (error) abortSimulation(message);
 }
 
-struct mugy_ioManager *mugy_io_init(struct mugy_comms comms) {
+struct mugy_ioManager *mugy_io_init(struct mugy_comms *comms) {
   // Allocate IO manager.
   struct mugy_ioManager *ioman = (struct mugy_ioManager *) malloc(sizeof(struct mugy_ioManager));
 
   // Initialize ADIOS IO.
-  ioman->ctx = adios2_init_mpi(comms.world.comm);
+  ioman->ctx = adios2_init_mpi(comms->world->comm);
   ad_check_handler(ad_check_handler, " ADIOS: Error initiating.");
 
   return ioman;

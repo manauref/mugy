@@ -14,7 +14,7 @@ void device_init_dev(struct mugy_comms *comms) {
   // Set the device of this MPI rank.
   int devCount = 0;
   checkCudaErrors(cudaGetDeviceCount(&devCount));
-  mint mpiRank = comms->world.rank;
+  mint mpiRank = comms->world->rank;
   mint devID = mpiRank % devCount;
   checkCudaErrors(cudaSetDevice(devID));
   printf("  My rank: %d | # of GPUs: %d | my GPU: %d\n", mpiRank, devCount, devID);

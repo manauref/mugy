@@ -18,7 +18,7 @@ struct mugy_comms_sub {
 };
 
 struct mugy_comms {
-  struct mugy_comms_sub world;
+  struct mugy_comms_sub *world;
   struct mugy_comms_sub *sub1d, *sub2d, *sub3d, *sub4d; // 1D, 2D, 3D, 4d subcomms.
 };
 

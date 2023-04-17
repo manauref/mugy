@@ -14,10 +14,10 @@ int main(int argc, char *argv[]) {
   // ............ INITIALIZATION ............ //
   struct mugy_comms *comms = mugy_comms_init(argc, argv);  // Initialize MPI interface.
 
-  r0printf("\n     --> Welcome to mugy <--    \n\n", comms->world.rank );
+  r0printf("\n     --> Welcome to mugy <--    \n\n", comms->world->rank );
 
   // Initialize IO interface.
-  struct mugy_ioManager *ioMan = mugy_io_init(*comms);
+  struct mugy_ioManager *ioMan = mugy_io_init(comms);
 
   // Allocate grid, population and field objects.
   struct mugy_grid *grid      = mugy_grid_alloc();
@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
   struct mugy_field *field    = mugy_field_alloc();
 
   // Read inputs (from command line arguments and input file).
-  read_inputs(argc, argv, &ioMan->setup, grid, &timePars, pop, field, comms->world.rank);
+  read_inputs(argc, argv, &ioMan->setup, grid, &timePars, pop, field, comms->world->rank);
 
 #ifdef USE_GPU
   // Initialize devices (GPUs) if any.
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
   mugy_comms_sub_init(comms, grid, pop);
 
   // Set the number of cells in Fourier space and aliased real space.
-  mugy_grid_init_global(grid, comms->world.rank);
+  mugy_grid_init_global(grid, comms->world->rank);
 
   // Decompose the x,y,z,s domains amongst MPI processes.
   mugy_comms_distributeDOFs(comms, grid, pop);
@@ -62,13 +62,13 @@ int main(int argc, char *argv[]) {
   // Write initial conditions.
   mugy_io_write_mugy_array(ioMan, "momk", NULL, pop->local->momk[0]);
 
-  MPI_Barrier(comms->world.comm); // Avoid starting time loop prematurely.
+  MPI_Barrier(comms->world->comm); // Avoid starting time loop prematurely.
   // ............ END OF INITIALIZATION ............ //
 
 
 
   // ............ DEALLOCATE / FINALIZE ............ //
-  MPI_Barrier(comms->world.comm); // Avoid premature deallocations.
+  MPI_Barrier(comms->world->comm); // Avoid premature deallocations.
   mugy_io_terminate(ioMan);  // Close IO interface BEFORE freeing arrays written in time loop.
   mugy_fft_terminate(fftMan);
   mugy_field_free(field);
