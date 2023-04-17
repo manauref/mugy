@@ -17,7 +17,7 @@ const real REAL_MIN = FLT_MIN;
 const real REAL_MIN = DBL_MIN;
 #endif
 
-void mugy_flr_init(struct mugy_population *pop, struct mugy_grid *grid, struct mugy_field *field, struct mugy_ioManager *ioman) {
+void mugy_flr_init(struct mugy_population *pop, struct mugy_grid *grid, struct mugy_field *field, struct mugy_io *ioman) {
   // Initialize the FLR factors, store them in population.
 
   struct mugy_grid_basic *gridL = grid->local->fourier;

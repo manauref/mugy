@@ -25,7 +25,7 @@
 #define MUGY_ADIOS_STRING adios2_type_string
 
 // Container for IO instructions
-struct mugy_ioSetup {
+struct mugy_io_pars {
   char *inputFile;           // Name of input file.
   char *outputDir;           // Address of output directory.
   char *restartDir;          // Address of restart directory.
@@ -41,37 +41,37 @@ struct mugy_ad_file {
   bool isVarReal;        // Indicate if var is real (fourier otherwise).
 };
 
-struct mugy_ioManager {
-  struct mugy_ioSetup setup;   // IO setup (input file instructions).
+struct mugy_io {
+  struct mugy_io_pars setup;   // IO setup (input file instructions).
   adios2_adios *ctx;      // ADIOS context used throughout our IO.
   struct mugy_ad_file **files; // Pointers to adios file handles.
   mint numfiles;          // Number of files.
 };
 
 // Start the IO interface.
-struct mugy_ioManager *mugy_io_init(struct mugy_comms *comms); 
+struct mugy_io *mugy_io_init(struct mugy_comms *comms); 
 
 // Create a file holding global real(Fourier)Arrays.
-struct mugy_ad_file *mugy_io_create_mugy_array_file(struct mugy_ioManager *ioman, char* fname,
+struct mugy_ad_file *mugy_io_create_mugy_array_file(struct mugy_io *ioman, char* fname,
   struct mugy_grid *grid, enum mugy_data_types dtype);
 
 // Create a file holding global real(Fourier) moments.
-struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, char* fname,
+struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_io *ioman, char* fname,
   struct mugy_grid *grid, struct mugy_population *pop, enum mugy_data_types dtype);
 
 // Create a file for a mugy_array holding ncomp quantities per species on an perpendicular plane.
-struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *ioman, char* fname,
+struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_io *ioman, char* fname,
   struct mugy_grid *grid, struct mugy_population *pop,
   enum mugy_data_types dtype, enum mugy_grid_types gridtype, mint ncomp, mint zIdx);
 
 // Create files for IO.
-void mugy_io_setup_files(struct mugy_ioManager *ioman, struct mugy_grid *grid, struct mugy_population *pop);
+void mugy_io_setup_files(struct mugy_io *ioman, struct mugy_grid *grid, struct mugy_population *pop);
 
 // Output real(Fourier)-space array.
-void mugy_io_write_mugy_array(struct mugy_ioManager *ioman, char* fname, struct mugy_ad_file *fh, struct mugy_array *arr);
+void mugy_io_write_mugy_array(struct mugy_io *ioman, char* fname, struct mugy_ad_file *fh, struct mugy_array *arr);
 
 // Close a file given its mugy file handle.
 void mugy_io_close_file(struct mugy_ad_file *fh);
 
 // Finalize ADIOS IO.
-void mugy_io_terminate(struct mugy_ioManager *ioman);
+void mugy_io_terminate(struct mugy_io *ioman);

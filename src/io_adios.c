@@ -23,9 +23,9 @@ void ad_check_error(const int error, const char *message) {
   if (error) abortSimulation(message);
 }
 
-struct mugy_ioManager *mugy_io_init(struct mugy_comms *comms) {
+struct mugy_io *mugy_io_init(struct mugy_comms *comms) {
   // Allocate IO manager.
-  struct mugy_ioManager *ioman = (struct mugy_ioManager *) malloc(sizeof(struct mugy_ioManager));
+  struct mugy_io *ioman = (struct mugy_io *) malloc(sizeof(struct mugy_io));
 
   // Initialize ADIOS IO.
   ioman->ctx = adios2_init_mpi(comms->world->comm);
@@ -34,7 +34,7 @@ struct mugy_ioManager *mugy_io_init(struct mugy_comms *comms) {
   return ioman;
 }
 
-struct mugy_ad_file *mugy_io_create_mugy_array_file(struct mugy_ioManager *ioman, char* fname,
+struct mugy_ad_file *mugy_io_create_mugy_array_file(struct mugy_io *ioman, char* fname,
   struct mugy_grid *grid, enum mugy_data_types dtype) {
   // Create a file that will hold a mugy array defined on the grid.
 
@@ -96,7 +96,7 @@ struct mugy_ad_file *mugy_io_create_mugy_array_file(struct mugy_ioManager *ioman
   return adf;
 }
 
-struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, char* fname,
+struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_io *ioman, char* fname,
   struct mugy_grid *grid, struct mugy_population *pop, enum mugy_data_types dtype) {
   // Create a file storing real-space moments.
 
@@ -166,7 +166,7 @@ struct mugy_ad_file *mugy_io_create_moments_file(struct mugy_ioManager *ioman, c
   return adf;
 }
 
-struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *ioman, char* fname,
+struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_io *ioman, char* fname,
   struct mugy_grid *grid, struct mugy_population *pop,
   enum mugy_data_types dtype, enum mugy_grid_types gridtype, mint ncomp, mint zIdx) {
   // Create a file for a mugy_array holding ncomp quantities per species on an perpendicular plane.
@@ -247,7 +247,7 @@ struct mugy_ad_file *mugy_io_create_population_perp_file(struct mugy_ioManager *
   return adf;
 }
 
-void mugy_io_setup_files(struct mugy_ioManager *ioman, struct mugy_grid *grid, struct mugy_population *pop) {
+void mugy_io_setup_files(struct mugy_io *ioman, struct mugy_grid *grid, struct mugy_population *pop) {
 
   // List files we intend to open/write/close.
   // For some default files we prepend the type of data with this key:
@@ -283,7 +283,7 @@ void mugy_io_setup_files(struct mugy_ioManager *ioman, struct mugy_grid *grid, s
 
 }
 
-struct mugy_ad_file *get_fileHandle(struct mugy_ioManager *ioman, char* fname) {
+struct mugy_ad_file *get_fileHandle(struct mugy_io *ioman, char* fname) {
   // Given the file name, return the handle to the file in the IO manger.
   int fIdx;
   for (mint i=0; i<ioman->numfiles; i++) {
@@ -294,7 +294,7 @@ struct mugy_ad_file *get_fileHandle(struct mugy_ioManager *ioman, char* fname) {
   return ioman->files[fIdx];
 }
 
-void mugy_io_write_mugy_array(struct mugy_ioManager *ioman, char* fname, struct mugy_ad_file *fin, struct mugy_array *arr) {
+void mugy_io_write_mugy_array(struct mugy_io *ioman, char* fname, struct mugy_ad_file *fin, struct mugy_array *arr) {
   // Write out real space array.
   adios2_error ioerr;
   struct mugy_ad_file *fh = fin == NULL ? get_fileHandle(ioman, fname) : fin;
@@ -308,7 +308,7 @@ void mugy_io_close_file(struct mugy_ad_file *fh) {
   ad_check_error(ioerr, " ADIOS: Error closing engine/file.");
 }
 
-void mugy_io_terminate(struct mugy_ioManager *ioman) {
+void mugy_io_terminate(struct mugy_io *ioman) {
   // Finalize ADIOS IO.
 
   // Close all files.

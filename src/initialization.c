@@ -74,7 +74,7 @@ void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint n
   }
 }
 
-void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_timeSetup *time,
+void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_time_pars *time,
                     struct mugy_population *pop, struct mugy_field *field, mint rank) {
   // Read input values from input file.
 
@@ -210,7 +210,7 @@ void read_inputFile(const char *fileNameIn, struct mugy_grid *grid, struct mugy_
 
 }
 
-void read_inputs(mint argc, char *argv[], struct mugy_ioSetup *ioSet, struct mugy_grid *grid, struct mugy_timeSetup *time,
+void read_inputs(mint argc, char *argv[], struct mugy_io_pars *iopars, struct mugy_grid *grid, struct mugy_time_pars *time,
                  struct mugy_population *pop, struct mugy_field *field, mint rank) {
   // Read inputs from command line arguments and input file.
 
@@ -223,23 +223,23 @@ void read_inputs(mint argc, char *argv[], struct mugy_ioSetup *ioSet, struct mug
     printf("\n --> Not enough inputs. Need input file and output directory as command line arguments.\n");
     abortSimulation(" TERMINATING ");
   } else {
-    ioSet->inputFile = argv[1];
-    ioSet->outputDir = argv[2];
-    ioSet->isRestart   = false;
-    ioSet->outToOldDir = false;
+    iopars->inputFile = argv[1];
+    iopars->outputDir = argv[2];
+    iopars->isRestart   = false;
+    iopars->outToOldDir = false;
     if (argc > 3) {  // Simulation is a restart of a previous one.
-      ioSet->restartDir = argv[3];
-      ioSet->isRestart  = true;
+      iopars->restartDir = argv[3];
+      iopars->isRestart  = true;
       // Output to the same directory as the previous run?
-      char *checkFile = malloc(strlen(ioSet->outputDir)+strlen("phik.bp"));
+      char *checkFile = malloc(strlen(iopars->outputDir)+strlen("phik.bp"));
       checkFile[0] = '\0';
-      strcat(strcat(checkFile,ioSet->outputDir),"phik.bp");
-      ioSet->outToOldDir = fileExists(checkFile);
+      strcat(strcat(checkFile,iopars->outputDir),"phik.bp");
+      iopars->outToOldDir = fileExists(checkFile);
       free(checkFile);
     }
   }
 
-  read_inputFile(ioSet->inputFile, grid, time, pop, field, rank);
+  read_inputFile(iopars->inputFile, grid, time, pop, field, rank);
 
   // Set the total number of moments.
   struct mugy_population_species *popG = pop->global;
@@ -254,7 +254,7 @@ void device_init(struct mugy_comms *comms) {
 }
 
 void set_initialConditions(struct mugy_population *pop, struct mugy_field *field, struct mugy_grid *grid,
-  struct mugy_ffts *fftMan, struct mugy_ioManager *ioman) {
+  struct mugy_ffts *fftMan, struct mugy_io *ioman) {
   // Impose the initial conditions on the moments and thoe potential.
 
   struct mugy_array *momk = pop->local->momk[0]; // Put ICs in first stepper field.

@@ -10,4 +10,4 @@
 #include "mh_field.h"
 #include "mh_io_adios.h"
 
-void mugy_flr_init(struct mugy_population *pop, struct mugy_grid *grids, struct mugy_field *field, struct mugy_ioManager *ioman);
+void mugy_flr_init(struct mugy_population *pop, struct mugy_grid *grids, struct mugy_field *field, struct mugy_io *ioman);

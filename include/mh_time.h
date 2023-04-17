@@ -7,7 +7,7 @@
 
 #include "mh_data.h"
 
-struct mugy_timeSetup {
+struct mugy_time_pars {
   real dt;               // Time step.
   real endTime;          // Absolute end time (from t=0 of first simulation).
   mint nFrames;          // Absolute frames to output (from t=0 of first simulation).
@@ -21,11 +21,15 @@ struct mugy_timeSetup {
   mint ark_ewtScaling;   // which error weight scaling to use.
 };
 
-struct mugy_timeState {
-  real simTime;
-  mint time;
+struct mugy_time {
+  struct mugy_time_pars pars;
+  real time;       // Simulation time.
   mint framesOut;
   mint hdAdjusts;
   mint dtAdjusts;
-  real dt;
+  real dt;         // Time step size.
 };
+
+struct mugy_time *mugy_time_alloc();
+
+void mugy_time_free(struct mugy_time *time);

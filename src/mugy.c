@@ -8,24 +8,22 @@
 
 int main(int argc, char *argv[]) {
 
-  struct mugy_timeSetup timePars;
-  struct mugy_timeState tState;
-
   // ............ INITIALIZATION ............ //
   struct mugy_comms *comms = mugy_comms_init(argc, argv);  // Initialize MPI interface.
 
   r0printf("\n     --> Welcome to mugy <--    \n\n", comms->world->rank );
 
   // Initialize IO interface.
-  struct mugy_ioManager *ioMan = mugy_io_init(comms);
+  struct mugy_io *ioMan = mugy_io_init(comms);
 
-  // Allocate grid, population and field objects.
+  // Allocate grid, population, field, time objects.
   struct mugy_grid *grid      = mugy_grid_alloc();
   struct mugy_population *pop = mugy_population_alloc();
   struct mugy_field *field    = mugy_field_alloc();
+  struct mugy_time *time      = mugy_time_alloc();
 
   // Read inputs (from command line arguments and input file).
-  read_inputs(argc, argv, &ioMan->setup, grid, &timePars, pop, field, comms->world->rank);
+  read_inputs(argc, argv, &ioMan->setup, grid, &time->pars, pop, field, comms->world->rank);
 
 #ifdef USE_GPU
   // Initialize devices (GPUs) if any.
@@ -71,6 +69,7 @@ int main(int argc, char *argv[]) {
   MPI_Barrier(comms->world->comm); // Avoid premature deallocations.
   mugy_io_terminate(ioMan);  // Close IO interface BEFORE freeing arrays written in time loop.
   mugy_fft_terminate(fftMan);
+  mugy_time_free(time);
   mugy_field_free(field);
   mugy_grid_free(grid);
   mugy_population_free(pop);

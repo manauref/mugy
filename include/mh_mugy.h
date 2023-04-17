@@ -43,5 +43,5 @@
 // FFT operators.
 #include "mh_ffts.h"
 
-// Time integration objections and functions.
-#include "mh_timestepping.h"
+// Time integration objects and functions.
+#include "mh_time.h"
