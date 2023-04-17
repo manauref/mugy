@@ -12,19 +12,19 @@
 
 #ifdef USE_SINGLE_PRECISION
 typedef float real;
-#define mpi_real MPI_FLOAT
-#define mpi_fourier MPI_C_COMPLEX
+#define MUGY_MPI_REAL MPI_FLOAT
+#define MUGY_MPI_FOURIER MPI_C_COMPLEX
 #define fmt_real "f"
 #else
 typedef double real;
-#define mpi_real MPI_DOUBLE
-#define mpi_fourier MPI_C_DOUBLE_COMPLEX
+#define MUGY_MPI_REAL MPI_DOUBLE
+#define MUGY_MPI_FOURIER MPI_C_DOUBLE_COMPLEX
 #define fmt_real "lf"
 #endif
 
 // Define our own int in case we wish to change to long.
 typedef int mint;
-#define mpi_mint MPI_INT
+#define MUGY_MPI_MINT MPI_INT
 #define fmt_mint "d"
 
 // Moment indices.
@@ -39,12 +39,12 @@ typedef int mint;
 #define ioRank 0
 
 // Flag indicating whether to use host or device memory, or both.
-enum resource_mem {hostMem, deviceMem, hostAndDeviceMem};
+enum mugy_resource_mem {MUGY_HOST_MEM, MUGY_DEVICE_MEM, MUGY_HOSTDEVICE_MEM};
 // Flags indicating whether to perform operation on host or device.
-enum resource_comp {defaultComp, hostComp, deviceComp};
+enum mugy_resource_calc {MUGY_HOST_CALC, MUGY_DEVICE_CALC};
 
 // Types of data used in mugy.
-enum mugy_datatype {mint_enum, real_enum, fourier_enum};
+enum mugy_data_types {MUGY_MINT, MUGY_REAL, MUGY_FOURIER};
 
 #define mugy_max(a,b)             \
 ({                           \
@@ -75,11 +75,11 @@ enum mugy_datatype {mint_enum, real_enum, fourier_enum};
 #define MUGY_CU_D __device__
 
 // Directions of memcopy in host/device memory.
-enum memcpy_dir_dev {
-  host2host     = cudaMemcpyHostToHost,
-  host2device   = cudaMemcpyHostToDevice,
-  device2host   = cudaMemcpyDeviceToHost,
-  device2device = cudaMemcpyDeviceToDevice,
+enum mugy_memcpy_dir {
+  MUGY_HOST2HOST     = cudaMemcpyHostToHost,
+  MUGY_HOST2DEVICE   = cudaMemcpyHostToDevice,
+  MUGY_DEVICE2HOST   = cudaMemcpyDeviceToHost,
+  MUGY_DEVICE2DEVICE = cudaMemcpyDeviceToDevice,
 };
 
 #define DEFAULT_NUM_THREADS_DEV 256
@@ -90,11 +90,11 @@ enum memcpy_dir_dev {
 #define MUGY_CU_D
 
 // Directions of memcopy in host/device memory.
-enum memcpy_dir_dev {
-  host2host    ,
-  host2device  ,
-  device2host  ,
-  device2device,
+enum mugy_memcpy_dir {
+  MUGY_HOST2HOST    ,
+  MUGY_HOST2DEVICE  ,
+  MUGY_DEVICE2HOST  ,
+  MUGY_DEVICE2DEVICE,
 };
 
 #define DEFAULT_NUM_THREADS_DEV 1

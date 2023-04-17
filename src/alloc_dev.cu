@@ -10,29 +10,23 @@ extern "C" {
 #include "mh_utilities_dev.h"
 }
 
-real* alloc_realArray_dev(int numElements) {
+real* mugy_alloc_real_dev(int numElements) {
   real *out_p;
   checkCudaErrors(cudaMalloc(&out_p, numElements*sizeof(real)));
   return out_p;
 }
-// MF 2023/03/29: Returning a void* because C doesn't know cuCumplex/cufourier the type.
-void* alloc_fourierArray_dev(mint numElements) {
-  cufourier *out_p;
-  checkCudaErrors(cudaMalloc(&out_p, numElements*sizeof(cufourier)));
+// MF 2023/03/29: Returning a void* because C doesn't know cuCumplex/mugy_cufourier_t the type.
+void* mugy_alloc_fourier_dev(mint numElements) {
+  mugy_cufourier_t *out_p;
+  checkCudaErrors(cudaMalloc(&out_p, numElements*sizeof(mugy_cufourier_t)));
   return out_p;
 }
-void *mugy_alloc_dev(mint numElements, size_t elemsz) {
+void* mugy_alloc_dev(mint numElements, size_t elemsz) {
   void *out_p;
   checkCudaErrors(cudaMalloc(&out_p, numElements*elemsz));
   return out_p;
 }
 
-void free_realArray_dev(real *arr) {
-  checkCudaErrors(cudaFree(arr));  // Free device memory.
-}
-void free_fourierArray_dev(void *arrk) {
-  checkCudaErrors(cudaFree((cufourier*) arrk));  // Free device memory.
-}
 void mugy_free_dev(void *arr) {
   checkCudaErrors(cudaFree(arr));  // Free device memory.
 }

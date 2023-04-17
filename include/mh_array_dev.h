@@ -7,5 +7,8 @@
 
 #include "mh_array.h"
 
+// Set all elements in the array to zero.
+void mugy_array_zero_dev(struct mugy_array *arr);
+
 // Scale an array by a factor 'fac'.
 void mugy_array_scale_dev(struct mugy_array *arr, real fac);

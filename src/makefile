@@ -58,16 +58,19 @@ else
     FFTW_LIB_FLAGS = -lfftw3_mpi -lfftw3 -lm
 endif
 
+#[ GSL is used to compute Bessel functions.
+GSL_LIB_FLAGS = -lgsl -lgslcblas
+
 #[ Define any compile-time flags.
 #CFLAGS = -Wall -std=c11 -lm $(ADIOS_FLAGS)
 #CFLAGS = -Wall -std=c11 -lm
 CFLAGS = $(CFLAGS_DEV) -Wall -std=c11 ${CCFLAGS}
 
 #[ Define any directories containing header files.
-INCLUDES = -I../include -I${MPI_INC} $(CUDA_INCL) ${ADIOS_INC} -I${FFTW_INC}
+INCLUDES = -I../include -I${MPI_INC} $(CUDA_INCL) ${ADIOS_INC} -I${FFTW_INC} -I${GSL_INC}
 
 #[ Define library paths.
-LFLAGS = -L../lib -L${MPI_LIB} $(CUDA_LIBS) ${ADIOS_LIB} -L${FFTW_LIB} $(FFTW_LIB_FLAGS)
+LFLAGS = -L../lib -L${MPI_LIB} $(CUDA_LIBS) ${ADIOS_LIB} -L${FFTW_LIB} $(FFTW_LIB_FLAGS) -L${GSL_LIB} $(GSL_LIB_FLAGS)
 
 #[ Define any libraries to link into executable:
 #[   if I want to link in libraries (libx.so or libx.a) I use the -llibname
@@ -75,9 +78,9 @@ LFLAGS = -L../lib -L${MPI_LIB} $(CUDA_LIBS) ${ADIOS_LIB} -L${FFTW_LIB} $(FFTW_LI
 LIBS = 
 
 #[ Define the C source files.
-SRCS = data.c alloc.c array.c grid.c population.c ffts.c initialization.c io_adios.c io_tools.c comms.c mugy.c utilities.c
+SRCS = data.c alloc.c array.c grid.c population.c field.c ffts.c initialization.c io_adios.c io_tools.c comms.c mugy.c utilities.c flr.c
 ifeq ($(USE_GPU),true)
-    SRCS_DEV = initialization_dev.cu alloc_dev.cu data_dev.cu array_dev.cu ffts_dev.cu
+    SRCS_DEV = initialization_dev.cu alloc_dev.cu data_dev.cu array_dev.cu ffts_dev.cu field_dev.cu
 else
     SRCS_DEV =
 endif

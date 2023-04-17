@@ -12,80 +12,104 @@
 struct mugy_population *mugy_population_alloc() {
   struct mugy_population *pop = (struct mugy_population *) malloc(sizeof(struct mugy_population));
 
-  // Set the moments pointer in the global population to NULL (we don't store global moments).
-  pop->global.momk = NULL;
+  // Allocate space for local and global populations.
+  pop->local  = (struct mugy_population_species *) malloc(sizeof(struct mugy_population_species));
+  pop->global = (struct mugy_population_species *) malloc(sizeof(struct mugy_population_species));
+
+  // Set pointers to large global arrays to NULL in global population (don't store them).
+  pop->global->momk = NULL;
+  pop->global->pbFLRop = NULL;
+  pop->global->poissonFac = NULL;
 
   return pop;
 }
 
 // Functions that allocate moment vectors.
-void alloc_realMoments(struct mugy_array *mom, const struct mugy_realGrid grid,
-  const struct mugy_pop pop, enum resource_mem res) {
-  mint nelem = pop.numMomentsTot*grid.NxTot;
-  mugy_array_alloc(mom, real_enum, nelem, res);
+struct mugy_array *mugy_population_alloc_realMoments(struct mugy_grid_basic *grid,
+  struct mugy_population_species *pop, enum mugy_resource_mem res) {
+
+  mint nelem = pop->numMomentsTot*grid->NxTot;
+  struct mugy_array *mom = mugy_array_alloc(MUGY_REAL, nelem, res);
+  return mom;
 }
-void alloc_fourierMoments(struct mugy_array *momk, const struct mugy_fourierGrid grid,
-  const struct mugy_pop pop, enum resource_mem res) {
-  mint nelem = pop.numMomentsTot*grid.NekxTot;
-  mugy_array_alloc(momk, fourier_enum, nelem, res);
+struct mugy_array *mugy_population_alloc_fourierMoments(struct mugy_grid_basic *grid,
+  struct mugy_population_species *pop, enum mugy_resource_mem res) {
+
+  mint nelem = pop->numMomentsTot*grid->NxTot;
+  struct mugy_array *momk = mugy_array_alloc(MUGY_FOURIER, nelem, res);
+  return momk;
 }
 
-void mugy_population_allocate_moments(struct mugy_population *pop, struct mugy_grid grid) {
-  // Allocate various fields needed.
+void mugy_population_alloc_local(struct mugy_population_species *popL, struct mugy_grid_chart *gridL) {
+  // Allocate various moments needed.
 #ifdef USE_GPU
-  enum resource_mem onResource = hostAndDeviceMem;
+  enum mugy_resource_mem onResource = MUGY_HOSTDEVICE_MEM;
 #else
-  enum resource_mem onResource = hostMem;
+  enum mugy_resource_mem onResource = MUGY_HOST_MEM;
 #endif
 
   // Allocate moments vector needed for time stepping.
-  pop->local.momk = (struct mugy_array*) calloc(TIME_STEPPER_NUM_FIELDS, sizeof(struct mugy_array));
+  popL->momk = (struct mugy_array**) calloc(TIME_STEPPER_NUM_FIELDS, sizeof(struct mugy_array *));
   for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
-    alloc_fourierMoments(&pop->local.momk[s], grid.local.deal, pop->local, onResource);
+    popL->momk[s] = mugy_population_alloc_fourierMoments(gridL->fourier, popL, onResource);
 
+  // Allocate space for the FLR operators inside Poisson brackets, 3 for
+  // each species: <J_0>=Gamma_0^{1/2}, 0.5*hatLap <J_0>, (1+0.5*hatLap+hathatLap) <J_0>.
+  popL->pbFLRop = mugy_array_alloc(MUGY_REAL, popL->numSpecies * 3 * gridL->fourier->NxyTot, onResource);
+
+  // Allocate space for factors multipying each moment in the Poisson equation.
+  popL->poissonFac = mugy_array_alloc(MUGY_FOURIER, popL->numMomentsTot*gridL->fourier->NxyTot, onResource);
 }
 
-real* getMoment_real(struct mugy_realGrid grid, struct mugy_pop pop, mint sIdx, mint momIdx, real *momIn) {
+real* mugy_population_getMoment_real(struct mugy_grid_basic *grid, struct mugy_population_species *pop, mint sIdx, mint momIdx, real *momIn) {
   // Return a pointer to the momIdx-th moment of the sIdx-th species in mom.
   real* ptrOut = momIn;
   mint momOff = 0;
-  for (mint s=0; s<sIdx; s++) momOff += pop.spar[s].numMoments;
-  return ptrOut+(momOff+momIdx)*grid.NxTot;
+  for (mint s=0; s<sIdx; s++) momOff += pop->pars[s].numMoments;
+  return ptrOut+(momOff+momIdx)*grid->NxTot;
 }
 
-void* getMoment_fourier(struct mugy_fourierGrid grid, struct mugy_pop pop, mint sIdx, mint momIdx, void *momkIn) {
+void* mugy_population_getMoment_fourier(struct mugy_grid_basic *grid, struct mugy_population_species *pop, mint sIdx, mint momIdx, void *momkIn) {
   // Return a pointer to the momIdx-th moment of the sIdx-th species in momk.
   fourier* ptrOut = (fourier *)momkIn;
   mint momOff = 0;
-  for (mint s=0; s<sIdx; s++) momOff += pop.spar[s].numMoments;
-  return ptrOut+(momOff+momIdx)*grid.NekxTot;
+  for (mint s=0; s<sIdx; s++) momOff += pop->pars[s].numMoments;
+  return ptrOut+(momOff+momIdx)*grid->NxTot;
 }
-
 
 void mugy_population_free(struct mugy_population *pop) {
   // Deallocate memory used in species struct.
   for (mint i=0; i<2; i++) {
-    struct mugy_pop *popp = i==0 ? &pop->global : &pop->local;
-    for (mint s=0; s<popp->numSpecies; s++) {
-      free(popp->spar[s].alpha);
-      free(popp->spar[s].nu);
-      free(popp->spar[s].hDiffOrder);
-      free(popp->spar[s].hDiff);
-      free(popp->spar[s].kDiffMin);
-      free(popp->spar[s].initAux);
+    struct mugy_population_species *spec = i==0 ? pop->global : pop->local;
+    for (mint s=0; s<spec->numSpecies; s++) {
+      free(spec->pars[s].alpha);
+      free(spec->pars[s].nu);
+      free(spec->pars[s].hDiffOrder);
+      free(spec->pars[s].hDiff);
+      free(spec->pars[s].kDiffMin);
+      free(spec->pars[s].initAux);
     }
-    free(popp->spar);
+    free(spec->pars);
   }
 
 #ifdef USE_GPU
-  enum resource_mem onResource = hostAndDeviceMem;
+  enum mugy_resource_mem onResource = MUGY_HOSTDEVICE_MEM;
 #else
-  enum resource_mem onResource = hostMem;
+  enum mugy_resource_mem onResource = MUGY_HOST_MEM;
 #endif
 
   // Free moments vector.
-  if (pop->local.momk) {
-    for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
-      mugy_array_free(&pop->local.momk[s], onResource);
-  }
+  for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
+    mugy_array_free(pop->local->momk[s], onResource);
+  free(pop->local->momk);
+
+  // Free Poisson bracket FLR operators.
+  mugy_array_free(pop->local->pbFLRop, onResource);
+
+  // Free factors multiplying moments in Poisson equation.
+  mugy_array_free(pop->local->poissonFac, onResource);
+
+  free(pop->local);
+  free(pop->global);
+  free(pop);
 }

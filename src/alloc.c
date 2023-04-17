@@ -22,13 +22,13 @@ char* alloc_charArray_ho(mint numElements) {
   if (out_p == NULL) abortSimulation(" alloc_charArray: calloc failed! Terminating...\n");
   return out_p;
 }
-real* alloc_realArray_ho(mint numElements) {
+real* mugy_alloc_real_ho(mint numElements) {
   real *out_p;
   out_p = (real *) calloc(numElements, sizeof(real));
   if (out_p == NULL) abortSimulation(" alloc_realArray: calloc failed! Terminating...\n");
   return out_p;
 }
-void *alloc_fourierArray_ho(mint numElements) {
+void *mugy_alloc_fourier_ho(mint numElements) {
   fourier *out_p;
   out_p = (fourier *) calloc(numElements, sizeof(fourier));
   if (out_p == NULL) abortSimulation(" alloc_fourierArray: calloc failed! Terminating...\n");
@@ -39,11 +39,11 @@ void *mugy_alloc_ho(mint numElements, size_t elemsz) {
   if (out_p == NULL) abortSimulation(" alloc_fourierArray: calloc failed! Terminating...\n");
   return out_p;
 }
-void *mugy_alloc(mint numElements, size_t elemsz, enum resource_mem res) {
+void *mugy_alloc(mint numElements, size_t elemsz, enum mugy_resource_mem res) {
   void *out_p;
-  if (res == hostMem)
+  if (res == MUGY_HOST_MEM)
     out_p = mugy_alloc_ho(numElements, elemsz);  // Allocate on host.
-  else if (res == deviceMem)
+  else if (res == MUGY_DEVICE_MEM)
     out_p = mugy_alloc_dev(numElements, elemsz);  // Allocate on device.
   else
     abortSimulation(" mugy_alloc: invalid resource! Terminating...\n");
@@ -54,10 +54,10 @@ void mugy_free_ho(void *arr) {
   free(arr);  // Deallocate on host.
 }
 
-void mugy_free(void *arr, enum resource_mem res) {
-  if (res == hostMem)
+void mugy_free(void *arr, enum mugy_resource_mem res) {
+  if (res == MUGY_HOST_MEM)
     mugy_free_ho(arr);  // Deallocate on host.
-  else if (res == deviceMem)
+  else if (res == MUGY_DEVICE_MEM)
     mugy_free_dev(arr);  // Deallocate on device.
   else
     abortSimulation(" mugy_free: invalid resource! Terminating...\n");

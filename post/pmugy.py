@@ -13,14 +13,16 @@
 #[   fClose
 #[   removeIOobject
 #[   attrInquire
+#[   attrRead
+#[   attrHas
 #[   varInquire
 #[   varShape
 #[   adType2npType
 #[   varType
 #[   varRead
-#[   
-#[   
-#[   
+#[   kGrid
+#[   xGrid
+#[   calcFLR
 #[
 #[ ................................................................ ]#
 
@@ -29,6 +31,7 @@ from mpi4py import MPI
 import numpy as np
 import adios2
 import sys
+import scipy.special as scsp  #[ For Bessel functions.
 
 class pmIO:
   def __init__(self, **kwargs):
@@ -69,6 +72,19 @@ class pmIO:
     return self.ad.RemoveIO(ioObName)
   #[ .......... end of removeIOobject method ........... ]#
 
+  #[ Get a dictionary of available attributes.
+  def attrAvailable(self, **kwargs):
+    ad_attr, openedFile = 0, False
+    if 'fileName' in kwargs:
+      ad_ioNm, ad_io, ad_eng = self.fOpen(kwargs['fileName'])
+      ad_attrs = ad_io.AvailableAttributes()
+    elif 'io' in kwargs:
+      ad_attrs = kwargs['io'].AvailableAttributes()
+    else:
+      sys.exit("attrAvailable requires 'fileName' or 'io' input.")
+    return ad_attrs, openedFile, ad_ioNm, ad_io, ad_eng
+  #[ .......... end of attrAvailable .......... ]#
+
   #[ Inquire an attribute.
   def attrInquire(self, attrName, **kwargs):
     ad_attr, openedFile = 0, False
@@ -81,6 +97,30 @@ class pmIO:
       sys.exit("attrInquire requires 'fileName' or 'io' input.")
     return ad_attr, openedFile, ad_ioNm, ad_io, ad_eng
   #[ .......... end of attrInquire method ...... ]#
+
+  #[ Check if an attribute exists in file.
+  def attrHas(self, attrName, **kwargs):
+    ad_attrs, openedFile, ad_ioNm, ad_io, ad_eng = self.attrAvailable(**kwargs)
+    hasAttr = attrName in ad_attrs.keys()
+    if openedFile:
+      self.fClose(ad_eng)
+      closed = self.ad.RemoveIO(ad_ioNm)
+    return hasAttr
+  #[ .......... end of attrHas .......... ]#  
+
+  #[ Read an attribute.
+  def attrRead(self, attrName, **kwargs):
+    #[ Establish file handle.
+    ad_attr, openedFile, ad_ioNm, ad_io, ad_eng = self.attrInquire(attrName, **kwargs)
+    if ad_attr.Type() == "string":
+      val = ad_attr.DataString()[0]
+    else:
+      val = ad_attr.Data()
+    if openedFile:
+      self.fClose(ad_eng)
+      closed = self.ad.RemoveIO(ad_ioNm)
+    return val
+  #[ .......... end of attrRead .............. ]#
 
   #[ Inquire a variable.
   def varInquire(self, varName, **kwargs):
@@ -95,17 +135,6 @@ class pmIO:
       sys.exit("varInquire requires 'fileName' or 'io' input.")
     return ad_var, openedFile, ad_ioNm, ad_io, ad_eng
   #[ .......... end of varInquire method ...... ]#
-
-  #[ Read an attribute.
-  def attrRead(self, attrName, **kwargs):
-    #[ Establish file handle.
-    ad_attr, openedFile, ad_ioNm, ad_io, ad_eng = self.attrInquire(attrName, **kwargs)
-    val = ad_attr.Data()
-    if openedFile:
-      self.fClose(ad_eng)
-      closed = self.ad.RemoveIO(ad_ioNm)
-    return val
-  #[ .......... end of attrRead .............. ]#
 
   #[ Get the shape of a variable.
   def varShape(self, varName, **kwargs):
@@ -172,14 +201,11 @@ class pmIO:
     return var
   #[ .......... end of varRead .............. ]#
 
-#[ Moment variables have the shape [numMoments x Nkz x Nkx x Nky ],
-#[ where numMoments is the total number of moments across all species).
-
   #[ Generate the Fourier space grid (note that for colorplots
   #[ matplotlib expects a nodal grid).
   def kGrid(self, **kwargs):
-    Nekx  = self.attrRead('Nekx', **kwargs)
-    kxMin = self.attrRead('kxMin', **kwargs)
+    Nekx  = self.attrRead('Nx', **kwargs)
+    kxMin = self.attrRead('dx', **kwargs)
     dim   = np.size(Nekx)
     Nkx   = (Nekx+1)//2;  Nkx[1] = Nekx[1]; #[ Nekx[1] doesn't include negative ky's.
     kx    = [ np.array([kxMin[d]*i for i in range(Nekx[d])]) for d in range(dim) ]
@@ -202,10 +228,22 @@ class pmIO:
   #[ Generate the real space grid (note that for colorplots
   #[ matplotlib expects a nodal grid).
   def xGrid(self, **kwargs):
-    Nx  = self.attrRead('Nx', **kwargs)
-    dx  = self.attrRead('dx', **kwargs)
-    dim = np.size(Nx)
-    x   = [ np.array([(i-Nx[d]*0.5)*dx[0] for i in range(Nx[d])]) for d in range(dim) ]
+    fileGridType = self.attrRead('grid_type', **kwargs)
+    if fileGridType == 'MUGY_REAL_GRID':
+      Nx  = self.attrRead('Nx', **kwargs)
+      dx  = self.attrRead('dx', **kwargs)
+      dim = np.size(Nx)
+    else:
+      #[ Reconstruct real grid based on the Fourier grid in the file.
+      Nekx  = self.attrRead('Nx', **kwargs)
+      kxMin = self.attrRead('dx', **kwargs)
+      Nkx = (Nekx+1)//2;  Nkx[1] = Nekx[1]; #[ Nekx[1] doesn't include negative ky's.
+      Nx  = 2*(Nkx-1)+1;
+      dim = np.size(Nx)
+      Lx = [ 2.*np.pi/kxMin[d] for d in range(dim)]
+      dx = [ Lx[d]/max(1.,Nx[d] - Nx[d] % 2) for d in range(dim)];
+
+    x = [ np.array([(i-Nx[d]*0.5)*dx[0] for i in range(Nx[d])]) for d in range(dim) ]
 
     if 'nodal' in kwargs:
       xN = [ np.concatenate(([x[d][0]-dx[d]/2.],
@@ -218,3 +256,87 @@ class pmIO:
     else:
       return x
   #[ .......... end of xGrid .............. ]#
+
+  #[ Calculate the FLR operators.
+  #[ 'tauIn'=Ti0/Ts0 and 'muIn'=sqrt(m_i/m_s), where
+  #[ Ti0/m_i are the temperature and mass of the reference ions,
+  #[ and Ts0/m_s are the temperature and mass of the species
+  #[ whose FLR operators are desired.
+  def calcFLR(self, kxIn, tauIn, muIn, **kwargs):
+    kxSq    = [np.power(kxIn[0],2), np.power(kxIn[1],2)]
+    kperpSq = np.zeros((np.size(kxIn[0]),np.size(kxIn[1])))
+    for i in range(np.size(kperpSq,0)):
+      for j in range(np.size(kperpSq,1)):
+        kperpSq[i,j] = np.add(kxSq[0][i],kxSq[1][j])
+    kperp = np.sqrt(kperpSq)
+  
+    krho = tauIn*kperp/muIn
+
+    b   = np.power(krho,2)
+    bSq = np.power(b,2)
+  
+    Gamma0 = scsp.ive(0,b)
+    Gamma1 = scsp.ive(1,b)
+    avgJ0  = np.sqrt(Gamma0)
+  
+    GammaRat  = Gamma1/Gamma0
+    hatLap    = b*(GammaRat-1.0)
+    hatLapSq  = np.power(hatLap,2)
+    hathatLap = b*(0.5*GammaRat-1.0)-0.25*bSq*(3.0+GammaRat)*(GammaRat-1.0)
+  
+    Db = 1.0+hathatLap-0.25*hatLapSq
+    Nb = 1.0+hathatLap-0.5*hatLapSq
+  
+    Sb = (avgJ0*Nb)/Db
+  
+    flrDict = {}
+    if 'only' in kwargs:
+      #[ Output only desired arrays (saves memory).
+      for iSt in kwargs['only']:
+        if iSt == "Gamma0":
+          flrDict["Gamma0"]    = Gamma0
+        elif iSt == "avgJ0":
+          flrDict["avgJ0"]     = avgJ0
+        elif iSt == "hatLap":
+          flrDict["hatLap"]    = hatLap
+        elif iSt == "hathatLap":
+          flrDict["hathatLap"] = hathatLap
+        elif iSt == "Db":
+          flrDict["Db"]        = Db
+        elif iSt == "Nb":
+          flrDict["Nb"]        = Nb
+        elif iSt == "Sb":
+          flrDict["Sb"]        = Sb
+    else:
+      #[ Output all FLR functions.
+      flrDict["Gamma0"]    = Gamma0
+      flrDict["avgJ0"]     = avgJ0
+      flrDict["hatLap"]    = hatLap
+      flrDict["hathatLap"] = hathatLap
+      flrDict["Db"]        = Db
+      flrDict["Nb"]        = Nb
+      flrDict["Sb"]        = Sb
+    return flrDict
+  #[ ........... End of calcFLR ................... ]#
+
+  #[ Shift a variable defined on kx-ky space with the kx's
+  #[ going from 0 to the largest positive kx followed by the
+  #[ negative kx's in ascending order; to a space with kx=0
+  #[ in the center.
+  def kx0center(self, kxIn, varIn):
+    kx, var = np.copy(kxIn[0]), np.copy(varIn)
+    Nekx = np.size(kx[0])
+
+    #[ Find max positive kx.
+    Nkx = 0
+    for i in range(Nekx):
+      if kx[i] < 0.:
+        break;
+      else:
+        Nkx += 1
+
+    kxIn[0] = np.append(kx[Nkx:], kx[:Nkx]) 
+    varIn = np.roll(var, Nekx-Nkx, axis=0)
+
+    return kxIn, varIn
+  #[ ........... End of kx0center ................... ]#

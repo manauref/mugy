@@ -10,15 +10,17 @@
 #include "mh_cufft_utils.h"
 
 #ifdef USE_SINGLE_PRECISION
-typedef cufftComplex mugy_cufft_fourier;
-const cudaDataType mugy_cufft_real_enum = CUDA_R_32F;
-const cudaDataType mugy_cufft_fourier_enum = CUDA_C_32F;
-const cudaDataType mugy_cufft_executiontype = CUDA_C_32F;
+typedef cufftComplex mugy_cufft_fourier_t;
+
+const cudaDataType MUGY_CUFFT_REAL = CUDA_R_32F;
+const cudaDataType MUGY_CUFFT_FOURIER = CUDA_C_32F;
+const cudaDataType MUGY_CUFFT_EXEC_FOURIER = CUDA_C_32F;
 #else
-typedef cufftDoubleComplex mugy_cufft_fourier;
-const cudaDataType mugy_cufft_real_enum = CUDA_R_64F;
-const cudaDataType mugy_cufft_fourier_enum = CUDA_C_64F;
-const cudaDataType mugy_cufft_executiontype = CUDA_C_64F;
+typedef cufftDoubleComplex mugy_cufft_fourier_t;
+
+const cudaDataType MUGY_CUFFT_REAL = CUDA_R_64F;
+const cudaDataType MUGY_CUFFT_FOURIER = CUDA_C_64F;
+const cudaDataType MUGY_CUFFT_EXEC_FOURIER = CUDA_C_64F;
 #endif
 
 typedef cufftHandle mugy_cufft_plan;
@@ -26,7 +28,7 @@ typedef cudaStream_t mugy_custream;
 
 // Info needed for a single FFT on the device.
 struct mugy_fft_dev {
-  mugy_cufft_fourier *kbuf;  // Fourier-space buffer (on device).
+  mugy_cufft_fourier_t *kbuf;  // Fourier-space buffer (on device).
   real *rbuf;                // Real-space buffer (on device).
   real normFac;              // Normalization.
   bool forwardNorm;          // Normalize in r2c (true) or c2r (false) FFT.
