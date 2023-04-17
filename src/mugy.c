@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
   r0printf("\n     --> Welcome to mugy <--    \n\n", comms->world->rank );
 
   // Initialize IO interface.
-  struct mugy_io *ioMan = mugy_io_init(comms);
+  struct mugy_io *io = mugy_io_init(comms);
 
   // Allocate grid, population, field, time objects.
   struct mugy_grid *grid      = mugy_grid_alloc();
@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
   struct mugy_time *time      = mugy_time_alloc();
 
   // Read inputs (from command line arguments and input file).
-  read_inputs(argc, argv, &ioMan->setup, grid, &time->pars, pop, field, comms->world->rank);
+  read_inputs(argc, argv, &io->setup, grid, &time->pars, pop, field, comms->world->rank);
 
 #ifdef USE_GPU
   // Initialize devices (GPUs) if any.
@@ -43,22 +43,22 @@ int main(int argc, char *argv[]) {
   mugy_population_alloc_local(pop->local, grid->local);
 
   // Initialize FFT infrastructure.
-  struct mugy_ffts *fftMan = mugy_fft_init(grid, pop->local, comms);
+  struct mugy_fft *fft = mugy_fft_init(grid, pop->local, comms);
 
   // Setup IO files.
-  mugy_io_setup_files(ioMan, grid, pop);
+  mugy_io_setup_files(io, grid, pop);
 
   // Initialize field object.
   mugy_field_init(field, grid, pop);
 
   // Initialize FLR and linear operators.
-  mugy_flr_init(pop, grid, field, ioMan);
+  mugy_flr_init(pop, grid, field, io);
 
   // Impose ICs.
-  set_initialConditions(pop, field, grid, fftMan, ioMan);
+  set_initialConditions(pop, field, grid, fft, io);
 
   // Write initial conditions.
-  mugy_io_write_mugy_array(ioMan, "momk", NULL, pop->local->momk[0]);
+  mugy_io_write_mugy_array(io, "momk", NULL, pop->local->momk[0]);
 
   MPI_Barrier(comms->world->comm); // Avoid starting time loop prematurely.
   // ............ END OF INITIALIZATION ............ //
@@ -67,8 +67,8 @@ int main(int argc, char *argv[]) {
 
   // ............ DEALLOCATE / FINALIZE ............ //
   MPI_Barrier(comms->world->comm); // Avoid premature deallocations.
-  mugy_io_terminate(ioMan);  // Close IO interface BEFORE freeing arrays written in time loop.
-  mugy_fft_terminate(fftMan);
+  mugy_io_terminate(io);  // Close IO interface BEFORE freeing arrays written in time loop.
+  mugy_fft_terminate(fft);
   mugy_time_free(time);
   mugy_field_free(field);
   mugy_grid_free(grid);

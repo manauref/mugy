@@ -254,7 +254,7 @@ void device_init(struct mugy_comms *comms) {
 }
 
 void set_initialConditions(struct mugy_population *pop, struct mugy_field *field, struct mugy_grid *grid,
-  struct mugy_ffts *fftMan, struct mugy_io *ioman) {
+  struct mugy_fft *fftMan, struct mugy_io *ioman) {
   // Impose the initial conditions on the moments and thoe potential.
 
   struct mugy_array *momk = pop->local->momk[0]; // Put ICs in first stepper field.

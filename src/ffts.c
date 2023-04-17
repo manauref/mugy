@@ -42,15 +42,15 @@ struct mugy_fft_fam_ho {
 };
 
 // Info needed for all FFTs in mugy.
-struct mugy_ffts {
+struct mugy_fft {
   struct mugy_fft_fam_ho *ho; 
   struct mugy_fft_fam_dev *dev;
 };
 
-struct mugy_ffts *mugy_fft_init(struct mugy_grid *grid, struct mugy_population_species *popL, struct mugy_comms *comms) {
+struct mugy_fft *mugy_fft_init(struct mugy_grid *grid, struct mugy_population_species *popL, struct mugy_comms *comms) {
 
   // Allocate space for the FFT manager.
-  struct mugy_ffts *ffts = (struct mugy_ffts *) malloc(sizeof(struct mugy_ffts));
+  struct mugy_fft *ffts = (struct mugy_fft *) malloc(sizeof(struct mugy_fft));
 
 #if USE_GPU
   // Initialize device FFTs.
@@ -127,7 +127,7 @@ struct mugy_ffts *mugy_fft_init(struct mugy_grid *grid, struct mugy_population_s
   return ffts;
 }
 
-void mugy_fft_c2r(struct mugy_ffts *ffts, struct mugy_array *fOut, struct mugy_array *fkIn, enum mugy_fft_type ttype, enum mugy_resource_calc res) {
+void mugy_fft_c2r(struct mugy_fft *ffts, struct mugy_array *fOut, struct mugy_array *fkIn, enum mugy_fft_type ttype, enum mugy_resource_calc res) {
 #if USE_GPU
   if (res == MUGY_DEVICE_CALC)
     return mugy_fft_c2r_dev(ffts->dev, fOut, fkIn, ttype);
@@ -155,7 +155,7 @@ void mugy_fft_c2r(struct mugy_ffts *ffts, struct mugy_array *fOut, struct mugy_a
     mugy_array_scale(fOut, cfft->normFac, MUGY_HOST_CALC);
 }
 
-void mugy_fft_r2c(struct mugy_ffts *ffts, struct mugy_array *fkOut, struct mugy_array *fIn, enum mugy_fft_type ttype, enum mugy_resource_calc res) {
+void mugy_fft_r2c(struct mugy_fft *ffts, struct mugy_array *fkOut, struct mugy_array *fIn, enum mugy_fft_type ttype, enum mugy_resource_calc res) {
 #if USE_GPU
   if (res == MUGY_DEVICE_CALC)
     return mugy_fft_r2c_dev(ffts->dev, fkOut, fIn, ttype);
@@ -183,7 +183,7 @@ void mugy_fft_r2c(struct mugy_ffts *ffts, struct mugy_array *fkOut, struct mugy_
     mugy_array_scale(fkOut, cfft->normFac, MUGY_HOST_CALC);
 }
 
-void mugy_fft_terminate(struct mugy_ffts *ffts) {
+void mugy_fft_terminate(struct mugy_fft *ffts) {
 #if USE_GPU
   mugy_fft_terminate_dev(ffts->dev);  // Free memory for device FFTs.
 #endif
