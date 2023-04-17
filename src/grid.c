@@ -47,7 +47,7 @@ void mugy_grid_init_global(struct mugy_grid *grid, mint rank) {
   for (mint d=0; d<nDim; d++) gridG->fourierAl->NxNonNeg[d] = gridG->realAl->Nx[d]/2+1;
   // Length of aliased arrays along kx and ky.
   for (mint d=0; d<nDim; d++) gridG->fourierAl->Nx[d] = gridG->fourierAl->NxNonNeg[d];
-  gridG->fourierAl->Nx[0] += gridG->fourierAl->NxNonNeg[0]-1;  // Add the negative kx's.
+  gridG->fourierAl->Nx[0] += gridG->realAl->Nx[0] - gridG->fourierAl->NxNonNeg[0];  // Add the negative kx's.
   gridG->fourierAl->NxTot  = prod_mint(gridG->fourierAl->Nx,nDim);
   gridG->fourierAl->NxyTot = prod_mint(gridG->fourierAl->Nx,2);
 

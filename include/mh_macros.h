@@ -6,6 +6,7 @@
 #pragma once
 
 #include "mh_userFLAGS.h"
+#include <float.h> // For FLT_MIN, DBL_MIN.
 
 // Number of dimensions in the code.
 #define nDim 3
@@ -15,11 +16,13 @@ typedef float real;
 #define MUGY_MPI_REAL MPI_FLOAT
 #define MUGY_MPI_FOURIER MPI_C_COMPLEX
 #define fmt_real "f"
+static const real MUGY_REAL_MIN = FLT_MIN;
 #else
 typedef double real;
 #define MUGY_MPI_REAL MPI_DOUBLE
 #define MUGY_MPI_FOURIER MPI_C_DOUBLE_COMPLEX
 #define fmt_real "lf"
+static const real MUGY_REAL_MIN = DBL_MIN;
 #endif
 
 // Define our own int in case we wish to change to long.

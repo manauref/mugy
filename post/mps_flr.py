@@ -89,47 +89,47 @@ for i in range(2):
   plt.setp( ax[i].get_xticklabels(), visible=False)
 plt.show()
 
-#[ ............ Poisson equation FLR operators ........... ]#
-
-specOff = 0
-if plotSpec == "ion":
-  specOff = 1
-
-#[ Read Db
-varShape = pm.varShape(varName, fileName=filePathName[1])
-varType  = pm.varType(varName, fileName=filePathName[1], numpy=True)
-varSelect = [[specOff+0,0,0], [1,varShape[1],varShape[2]]]
-Dbc = np.zeros([varShape[1],varShape[2]], dtype=varType)
-pm.varRead(varName, fileName=filePathName[1], select=varSelect, array=Dbc)
-
-#[ Read Sb
-varShape = pm.varShape(varName, fileName=filePathName[2])
-varType  = pm.varType(varName, fileName=filePathName[2], numpy=True)
-varSelect = [[specOff+0,0,0], [1,varShape[1],varShape[2]]]
-Sbc = np.zeros([varShape[1],varShape[2]], dtype=varType)
-pm.varRead(varName, fileName=filePathName[2], select=varSelect, array=Sbc)
-
-#[ Compute FLR functions with python.
-flrOps = pm.calcFLR(kx,tau[plotSpec],muMass[plotSpec],only=["Db","Sb"])
-
-Dbpy = flrOps["Db"]
-Sbpy = flrOps["Sb"]
-
-#[ Prepare figure.
-figProp = (6.4,4.8)
-axPos   = [[0.18, 0.540, 0.725, 0.385],
-           [0.18, 0.140, 0.725, 0.385]]
-fig     = plt.figure(figsize=figProp)
-ax      = [fig.add_axes(pos) for pos in axPos]
-
-ax[0].plot(kx[1], Dbc[0,:], linestyle='-')
-ax[0].plot(kx[1], Dbpy[0,:], linestyle='--')
-ax[1].plot(kx[1], Sbc[0,:], linestyle='-')
-ax[1].plot(kx[1], Sbpy[0,:], linestyle='--')
-
-ax[1].set_xlabel(r'$k_y\rho_s$', fontsize=xyLabelFontSize)
-ax[0].set_ylabel(r'$S_b$', fontsize=xyLabelFontSize)
-ax[1].set_ylabel(r'$D_b$', fontsize=xyLabelFontSize)
-ax[0].legend([r'mugy',r'Python'], fontsize=legendFontSize, frameon=False)
-plt.setp( ax[0].get_xticklabels(), visible=False)
-plt.show()
+##[ ............ Poisson equation FLR operators ........... ]#
+#
+#specOff = 0
+#if plotSpec == "ion":
+#  specOff = 1
+#
+##[ Read Db
+#varShape = pm.varShape(varName, fileName=filePathName[1])
+#varType  = pm.varType(varName, fileName=filePathName[1], numpy=True)
+#varSelect = [[specOff+0,0,0], [1,varShape[1],varShape[2]]]
+#Dbc = np.zeros([varShape[1],varShape[2]], dtype=varType)
+#pm.varRead(varName, fileName=filePathName[1], select=varSelect, array=Dbc)
+#
+##[ Read Sb
+#varShape = pm.varShape(varName, fileName=filePathName[2])
+#varType  = pm.varType(varName, fileName=filePathName[2], numpy=True)
+#varSelect = [[specOff+0,0,0], [1,varShape[1],varShape[2]]]
+#Sbc = np.zeros([varShape[1],varShape[2]], dtype=varType)
+#pm.varRead(varName, fileName=filePathName[2], select=varSelect, array=Sbc)
+#
+##[ Compute FLR functions with python.
+#flrOps = pm.calcFLR(kx,tau[plotSpec],muMass[plotSpec],only=["Db","Sb"])
+#
+#Dbpy = flrOps["Db"]
+#Sbpy = flrOps["Sb"]
+#
+##[ Prepare figure.
+#figProp = (6.4,4.8)
+#axPos   = [[0.18, 0.540, 0.725, 0.385],
+#           [0.18, 0.140, 0.725, 0.385]]
+#fig     = plt.figure(figsize=figProp)
+#ax      = [fig.add_axes(pos) for pos in axPos]
+#
+#ax[0].plot(kx[1], Dbc[0,:], linestyle='-')
+#ax[0].plot(kx[1], Dbpy[0,:], linestyle='--')
+#ax[1].plot(kx[1], Sbc[0,:], linestyle='-')
+#ax[1].plot(kx[1], Sbpy[0,:], linestyle='--')
+#
+#ax[1].set_xlabel(r'$k_y\rho_s$', fontsize=xyLabelFontSize)
+#ax[0].set_ylabel(r'$S_b$', fontsize=xyLabelFontSize)
+#ax[1].set_ylabel(r'$D_b$', fontsize=xyLabelFontSize)
+#ax[0].legend([r'mugy',r'Python'], fontsize=legendFontSize, frameon=False)
+#plt.setp( ax[0].get_xticklabels(), visible=False)
+#plt.show()

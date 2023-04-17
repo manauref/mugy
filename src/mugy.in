@@ -1,5 +1,5 @@
 &space
-NkxG     = 32 32 1
+NkxG     = 64 64 1
 kxMin    = 0.12566 0.12566 1.0
 mpiProcs = 1 1 1
 /

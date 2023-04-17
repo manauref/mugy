@@ -10,6 +10,7 @@
 #include "mh_array.h"
 #include "mh_grid.h"
 #include "mh_population.h"
+#include "mh_flr.h"
 
 struct mugy_field_pars {
   real lambdaD;  // Debye shielding parameter (normalized Debye length).
@@ -29,6 +30,10 @@ struct mugy_field *mugy_field_alloc();
 
 // Initialize the rest of the field arrays.
 void mugy_field_init(struct mugy_field *field, struct mugy_grid *grid, struct mugy_population *pop);
+
+// Pre-compute time independent operators multipying each
+// moment in Poisson equation. Store them in population.
+void mugy_field_constop_init(struct mugy_population *pop, struct mugy_field *field, struct mugy_grid *grid, struct mugy_flr *flr);
 
 // Solve the Poisson equation to obtain phik using the charge density
 // in the time-stepping index 'tstepIdx'
