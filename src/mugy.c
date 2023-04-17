@@ -41,8 +41,8 @@ int main(int argc, char *argv[]) {
   // Decompose the x,y,z,s domains amongst MPI processes.
   mugy_comms_distributeDOFs(comms, grid, pop);
 
-  // Allocate dynamic moments.
-  mugy_population_alloc_moments(pop, grid);
+  // Allocate local arrays.
+  mugy_population_alloc_local(pop->local, grid->local);
 
   // Initialize FFT infrastructure.
   struct mugy_ffts *fftMan = mugy_fft_init(grid, pop->local, comms);

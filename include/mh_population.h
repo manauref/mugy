@@ -66,7 +66,7 @@ struct mugy_array *mugy_population_alloc_realMoments(struct mugy_grid_basic *gri
 struct mugy_array *mugy_population_alloc_fourierMoments(struct mugy_grid_basic *grid,
   struct mugy_population_species *pop, enum mugy_resource_mem res);
 
-void mugy_population_alloc_moments(struct mugy_population *pop, struct mugy_grid *grid);
+void mugy_population_alloc_local(struct mugy_population_species *popL, struct mugy_grid_chart *gridL);
 
 // Return a pointer to the momIdx-th moment of the sIdx-th species in mom/momk.
 real* mugy_population_getMoment_real(struct mugy_grid_basic *grid,

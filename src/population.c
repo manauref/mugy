@@ -40,7 +40,7 @@ struct mugy_array *mugy_population_alloc_fourierMoments(struct mugy_grid_basic *
   return momk;
 }
 
-void mugy_population_alloc_moments(struct mugy_population *pop, struct mugy_grid *grid) {
+void mugy_population_alloc_local(struct mugy_population_species *popL, struct mugy_grid_chart *gridL) {
   // Allocate various moments needed.
 #ifdef USE_GPU
   enum mugy_resource_mem onResource = MUGY_HOSTDEVICE_MEM;
@@ -49,10 +49,16 @@ void mugy_population_alloc_moments(struct mugy_population *pop, struct mugy_grid
 #endif
 
   // Allocate moments vector needed for time stepping.
-  pop->local->momk = (struct mugy_array**) calloc(TIME_STEPPER_NUM_FIELDS, sizeof(struct mugy_array *));
+  popL->momk = (struct mugy_array**) calloc(TIME_STEPPER_NUM_FIELDS, sizeof(struct mugy_array *));
   for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
-    pop->local->momk[s] = mugy_population_alloc_fourierMoments(grid->local->fourier, pop->local, onResource);
+    popL->momk[s] = mugy_population_alloc_fourierMoments(gridL->fourier, popL, onResource);
 
+  // Allocate space for the FLR operators inside Poisson brackets, 3 for
+  // each species: <J_0>=Gamma_0^{1/2}, 0.5*hatLap <J_0>, (1+0.5*hatLap+hathatLap) <J_0>.
+  popL->pbFLRop = mugy_array_alloc(MUGY_REAL, popL->numSpecies * 3 * gridL->fourier->NxyTot, onResource);
+
+  // Allocate space for factors multipying each moment in the Poisson equation.
+  popL->poissonFac = mugy_array_alloc(MUGY_FOURIER, popL->numMomentsTot*gridL->fourier->NxyTot, onResource);
 }
 
 real* mugy_population_getMoment_real(struct mugy_grid_basic *grid, struct mugy_population_species *pop, mint sIdx, mint momIdx, real *momIn) {
