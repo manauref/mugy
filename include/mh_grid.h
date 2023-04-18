@@ -55,6 +55,9 @@ void mugy_grid_init_global(struct mugy_grid *grid, mint rank);
 mint mugy_grid_sub2lin_real(mint *xI, const struct mugy_grid_basic *grid);
 mint mugy_grid_sub2lin_fourier(mint *kxI, const struct mugy_grid_basic *grid);
 
+// Like mugy_grid_sub2lin_fourier but on a perpendicular plane only.
+mint mugy_grid_sub2lin_perp_fourier(mint *kxI, const struct mugy_grid_basic *grid);
+
 // nDim-dimensional subscript given the linear index in a real/Fourier grid.
 void mugy_grid_lin2sub_real(mint *xI, mint lin, const struct mugy_grid_basic *grid);
 void mugy_grid_lin2sub_fourier(mint *kxI, mint lin, const struct mugy_grid_basic *grid);

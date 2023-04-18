@@ -180,6 +180,15 @@ mint mugy_grid_sub2lin_fourier(mint *kxI, const struct mugy_grid_basic *grid) {
   return lin;
 }
 
+mint mugy_grid_sub2lin_perp_fourier(mint *kxI, const struct mugy_grid_basic *grid) {
+  // Given the 2D perp index (subscript) kxI return the linear index
+  // in a perp (kx-ky) Fourier grid. Assume row major order of (kx,ky) dimensions.
+  mint strides[2] = {grid->Nx[1],1};
+  mint lin;
+  for (mint d=0; d<2; d++) lin += kxI[d]*strides[d];
+  return lin;
+}
+
 void mugy_grid_lin2sub_real(mint *xI, mint lin, const struct mugy_grid_basic *grid) {
   // Given the linear index 'lin' in a real grid, return the nDim-dimensional
   // index (subscript) xI. We assume row major order for the (z,x,y) dimensions.

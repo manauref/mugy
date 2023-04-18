@@ -53,12 +53,18 @@ void mugy_population_alloc_local(struct mugy_population_species *popL, struct mu
   for (mint s=0; s<TIME_STEPPER_NUM_FIELDS; s++)
     popL->momk[s] = mugy_population_alloc_fourierMoments(gridL->fourier, popL, onResource);
 
-  // Allocate space for the FLR operators inside Poisson brackets, 3 for
-  // each species: <J_0>=Gamma_0^{1/2}, 0.5*hatLap <J_0>, (1+0.5*hatLap+hathatLap) <J_0>.
-  popL->pbFLRop = mugy_array_alloc(MUGY_REAL, popL->numSpecies * 3 * gridL->fourier->NxyTot, onResource);
+  // Allocate space for linear operators.
+  popL->linOpPhi = mugy_array_alloc(MUGY_FOURIER, popL->numMomentsTot*gridL->fourier->NxTot, onResource);
+  mint numOps = 0;
+  for (mint s=0; s<popL->numSpecies; s++) numOps += popL->pars[s].numMoments * popL->pars[s].numMoments;
+  popL->linOpMom = mugy_array_alloc(MUGY_FOURIER, numOps*gridL->fourier->NxTot, onResource);
 
   // Allocate space for factors multipying each moment in the Poisson equation.
   popL->poissonFac = mugy_array_alloc(MUGY_FOURIER, popL->numMomentsTot*gridL->fourier->NxyTot, onResource);
+
+  // Allocate space for the FLR operators inside Poisson brackets, 3 for
+  // each species: <J_0>=Gamma_0^{1/2}, 0.5*hatLap <J_0>, (1+0.5*hatLap+hathatLap) <J_0>.
+  popL->pbFLRop = mugy_array_alloc(MUGY_REAL, popL->numSpecies * 3 * gridL->fourier->NxyTot, onResource);
 }
 
 real* mugy_population_getMoment_real(struct mugy_grid_basic *grid, struct mugy_population_species *pop, mint sIdx, mint momIdx, real *momIn) {
@@ -103,11 +109,15 @@ void mugy_population_free(struct mugy_population *pop) {
     mugy_array_free(pop->local->momk[s], onResource);
   free(pop->local->momk);
 
-  // Free Poisson bracket FLR operators.
-  mugy_array_free(pop->local->pbFLRop, onResource);
+  // Free linear operators.
+  mugy_array_free(pop->local->linOpPhi, onResource);
+  mugy_array_free(pop->local->linOpMom, onResource);
 
   // Free factors multiplying moments in Poisson equation.
   mugy_array_free(pop->local->poissonFac, onResource);
+
+  // Free Poisson bracket FLR operators.
+  mugy_array_free(pop->local->pbFLRop, onResource);
 
   free(pop->local);
   free(pop->global);

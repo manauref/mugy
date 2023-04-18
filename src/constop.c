@@ -5,6 +5,7 @@
  */
 #include "mh_constop.h"
 #include "mh_flr.h"
+#include "mh_linear.h"
 #include "mh_nonlinear.h"
 #include <math.h>
 
@@ -16,6 +17,9 @@ void mugy_constop_init(struct mugy_population *pop, struct mugy_grid *grid, stru
 
   // Calculate the factors multiplying each moment in the Poisson equation.
   mugy_field_constop_init(pop, field, grid, flr);
+
+  // Pre-compute the time independent linear operators in each equation.
+  mugy_linear_constop_init(pop, grid, flr);
 
   // Precompute the FLR operators multipliying the potential inside Poisson brackets.
   mugy_nonlinear_constop_init(pop, grid, flr);

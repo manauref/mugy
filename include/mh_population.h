@@ -40,8 +40,10 @@ struct mugy_population_species {
   struct mugy_population_species_pars *pars;  // Pointer to array of species parameters.
   mint numMomentsTot;    // Total number of moments across all species.
   struct mugy_array **momk;  // Moments in Fourier space. Possibly multiple copies (e.g. for time stepper).
-  struct mugy_array *pbFLRop;  // Poisson bracket FLR operators for each species.
   struct mugy_array *poissonFac;  // Factors multiplying each moment in Poissson equation.
+  struct mugy_array *linOpPhi;  // Linear operator acting on the potential.
+  struct mugy_array *linOpMom;  // Linear operator acting on the moments.
+  struct mugy_array *pbFLRop;  // Poisson bracket FLR operators for each species.
 };
 
 struct mugy_population {
