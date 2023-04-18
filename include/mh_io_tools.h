@@ -17,3 +17,7 @@ void arrPrint_real(const real *arr, mint numElements, const char *preStr, const 
 // Only let a single rank print.
 void arrPrintS_mint(const mint *arr, mint numElements, const char *preStr, const char *postStr, mint rank);
 void arrPrintS_real(const real *arr, mint numElements, const char *preStr, const char *postStr, mint rank);
+
+// Print a string followed by a single value and another string.
+void valPrintS_mint(mint val, const char *preStr, const char *postStr, mint rank);
+void valPrintS_real(real val, const char *preStr, const char *postStr, mint rank);

@@ -22,6 +22,8 @@ int main(int argc, char *argv[]) {
   struct mugy_field *field    = mugy_field_alloc();
   struct mugy_time *time      = mugy_time_alloc();
 
+  mugy_time_wcstamp(&time->wcs.init);  // Start timing initialization.
+
   // Read inputs (from command line arguments and input file).
   read_inputs(argc, argv, &io->setup, grid, &time->pars, pop, field, comms->world->rank);
 
@@ -61,11 +63,21 @@ int main(int argc, char *argv[]) {
   mugy_io_write_mugy_array(io, "momk", NULL, pop->local->momk[0]);
 
   MPI_Barrier(comms->world->comm); // Avoid starting time loop prematurely.
+
+  double tm_init = mugy_time_elapsed_sec(time->wcs.init);  // Finish timing initialization.
+  valPrintS_real(tm_init, "\n Time spent on initialization: ", " s\n", comms->world->rank); 
   // ............ END OF INITIALIZATION ............ //
 
 
+  // ............ TIME LOOP ............ //
+  mugy_time_wcstamp(&time->wcs.timeloop);  // Start timing time loop.
+  double tm_tloop = mugy_time_elapsed_sec(time->wcs.timeloop);  // Finish timing time loop.
+  valPrintS_real(tm_tloop, "\n Time spent on time loop: ", " s\n", comms->world->rank); 
+  // ............ END OF TIME LOOP ............ //
+
 
   // ............ DEALLOCATE / FINALIZE ............ //
+  mugy_time_wcstamp(&time->wcs.fin);  // Start timing termination.
   MPI_Barrier(comms->world->comm); // Avoid premature deallocations.
   mugy_io_terminate(io);  // Close IO interface BEFORE freeing arrays written in time loop.
   mugy_fft_terminate(fft);
@@ -73,7 +85,13 @@ int main(int argc, char *argv[]) {
   mugy_field_free(field);
   mugy_grid_free(grid);
   mugy_population_free(pop);
+
+  // Need to put this before subcommunicators get deallocated.
+  double tm_fin = mugy_time_elapsed_sec(time->wcs.fin);  // Finish timing termination.
+  valPrintS_real(tm_fin, "\n Time spent on termination: ", " s\n", comms->world->rank); 
+
   mugy_comms_terminate(comms);  // Finalize communications.
   // ............ END OF DEALLOCATE / FINALIZE ............ //
+
   return 0;
 }
