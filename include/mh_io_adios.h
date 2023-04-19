@@ -34,11 +34,15 @@ struct mugy_io_pars {
 };
 
 struct mugy_ad_file {
-  char *fname;           // File name.
-  adios2_io *io;         // IO component
-  adios2_variable *var;  // Variable (we may define more later).
-  adios2_engine *eng;    // Engine (responsible for reading/writing).
-  bool isVarReal;        // Indicate if var is real (fourier otherwise).
+  char *fname;              // File name.
+  adios2_io *io;            // IO component
+  adios2_variable *var;     // Variable (we may define more later).
+  adios2_variable *time;    // Current simulation time.
+  adios2_variable *steps;   // Number of time steps so far.
+  adios2_variable *frames;  // Frames written so far.
+  adios2_variable *dt;      // Current time step size.
+  adios2_engine *eng;       // Engine (responsible for reading/writing).
+  bool isVarReal;           // Indicate if var is real (fourier otherwise).
 };
 
 struct mugy_io {

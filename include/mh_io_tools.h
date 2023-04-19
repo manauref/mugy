@@ -21,3 +21,4 @@ void arrPrintS_real(const real *arr, mint numElements, const char *preStr, const
 // Print a string followed by a single value and another string.
 void valPrintS_mint(mint val, const char *preStr, const char *postStr, mint rank);
 void valPrintS_real(real val, const char *preStr, const char *postStr, mint rank);
+void valPrintS_char(char *val, const char *preStr, const char *postStr, mint rank);

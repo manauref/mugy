@@ -62,6 +62,9 @@ int main(int argc, char *argv[]) {
   // Write initial conditions.
   mugy_io_write_mugy_array(io, "momk", NULL, pop->local->momk[0]);
 
+  // Initialize time stepping infrastructure.
+  mugy_time_init(time, comms->world->rank);
+
   MPI_Barrier(comms->world->comm); // Avoid starting time loop prematurely.
 
   double tm_init = mugy_time_elapsed_sec(time->wcs.init);  // Finish timing initialization.
@@ -71,6 +74,38 @@ int main(int argc, char *argv[]) {
 
   // ............ TIME LOOP ............ //
   mugy_time_wcstamp(&time->wcs.timeloop);  // Start timing time loop.
+  valPrintS_char(mugy_time_datetime(), "\n Entering time loop on ", "\n", comms->world->rank); 
+
+  bool continue_stepping = true;
+  while (continue_stepping) {
+
+    time->dt = time->dt_next;
+
+    time->steps   += 1;         // Time steps taken.
+    time->simTime += time->dt;  // Current simulation time.
+
+    double tOutNext = ((double) (time->framesOut+1))*time->tRateOutput;
+    if ( (fabs(time->simTime - tOutNext) <= time->ttol) ||
+         (fabs(time->simTime - tOutNext) < fabs(time->simTime+time->dt_next - tOutNext)) ) {
+//      isNaNorInf(pop, field, grid);    // Check if solutions diverged.
+
+      time->framesOut = time->framesOut+1;
+
+//      mugy_io_write_dynamic_diagnostics(pop, field, grid);    // Append evolving quantities to output files.
+//
+//      mugy_io_write_restart();     // Write file used for restarts.
+    }
+
+    if (fabs(time->simTime-time->pars.endTime) <= time->ttol) {
+      // Time loop completed. Punch out.
+      continue_stepping = false;
+      break;
+    } else if (time->simTime+time->dt_next > time->pars.endTime) {
+      // The end is less than a time step away. Take a smaller time step.
+      time->dt_next = time->pars.endTime - time->simTime;
+    }
+  }
+
   double tm_tloop = mugy_time_elapsed_sec(time->wcs.timeloop);  // Finish timing time loop.
   valPrintS_real(tm_tloop, "\n Time spent on time loop: ", " s\n", comms->world->rank); 
   // ............ END OF TIME LOOP ............ //

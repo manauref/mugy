@@ -295,12 +295,24 @@ struct mugy_ad_file *get_fileHandle(struct mugy_io *ioman, char* fname) {
 }
 
 void mugy_io_write_mugy_array(struct mugy_io *ioman, char* fname, struct mugy_ad_file *fin, struct mugy_array *arr) {
-  // Write out real space array.
+  // Write out a mugy array.
   adios2_error ioerr;
   struct mugy_ad_file *fh = fin == NULL ? get_fileHandle(ioman, fname) : fin;
   if (arr->ho) ioerr = adios2_put(fh->eng, fh->var, arr->ho, adios2_mode_deferred);
   ad_check_error(ioerr, " ADIOS: Error in putting mugy array.");
 }
+
+//void mugy_io_write_evolving_mugy_array(struct mugy_io *ioman, char* fname,
+//  struct mugy_ad_file *fin, struct mugy_array *arr, struct mugy_time *time) {
+//  // Write out a mugy array that evolves in time.
+//  adios2_error ioerr;
+//  struct mugy_ad_file *fh = fin == NULL ? get_fileHandle(ioman, fname) : fin;
+//#if USE_GPU
+//  mugy_array_copy(arr, arr, MUGY_DEVICE2HOST);
+//#endif
+//  ioerr = adios2_put(fh->eng, fh->var, arr->ho, adios2_mode_deferred);
+//  ad_check_error(ioerr, " ADIOS: Error in putting mugy array.");
+//}
 
 void mugy_io_close_file(struct mugy_ad_file *fh) {
   // Close a file given its mugy file handle.

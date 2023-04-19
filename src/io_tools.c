@@ -15,13 +15,13 @@ void r0printf(char *str, mint rank) {
 
 // Print out elements in an array consecutively, separated by a space.
 void arrPrintAll_mint(const mint *arr, mint numElements, const char *preStr, const char *postStr) {
-  mint maxCharacters = 9999;
+  const mint maxCharacters = 9999;
   char strOut[maxCharacters];
   arr2str_mint(strOut, arr, numElements, preStr, postStr);
   printf(strOut);
 }
 void arrPrintAll_real(const real *arr, mint numElements, const char *preStr, const char *postStr) {
-  mint maxCharacters = 9999;
+  const mint maxCharacters = 9999;
   char strOut[maxCharacters];
   arr2str_real(strOut, arr, numElements, preStr, postStr);
   printf(strOut);
@@ -45,4 +45,12 @@ void valPrintS_real(real val, const char *preStr, const char *postStr, mint rank
   const real arr[] = {val};
   if (rank == ioRank) arrPrintAll_real(arr, 1, preStr, postStr);
 }
-
+void valPrintS_char(char *val, const char *preStr, const char *postStr, mint rank) {
+  // Print a string followed by a single real value and another string.
+  if (rank == ioRank) {
+    char strOut[strlen(val)+strlen(preStr)+strlen(postStr)+1];
+    strcpy(strOut, preStr);
+    strcat(strcat(strOut,val),postStr);
+    printf(strOut);
+  }
+}

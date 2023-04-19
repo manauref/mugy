@@ -4,7 +4,9 @@
  *
  */
 #include "mh_time.h"
+#include "mh_io_tools.h"
 #include <stdlib.h>  // for malloc.
+#include <stdio.h>  // for sprintf.
 
 struct mugy_time *mugy_time_alloc() {
   // Allocate the time object.
@@ -40,6 +42,33 @@ double mugy_time_elapsed_sec(struct timespec prev) {
   struct timespec curr;
   mugy_time_wcstamp(&curr);
   return mugy_time_sec(mugy_time_diff(prev, curr));
+}
+
+char *mugy_time_datetime() {
+  // Obtain a string with the current date and time.
+  time_t t = time(NULL);
+  struct tm tm = *localtime(&t);
+  static char out[17];
+  sprintf(out, "%d-%02d-%02d %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+  return out;
+}
+
+void mugy_time_init(struct mugy_time *time, mint world_rank) {
+  // Initialize time stepping.
+  time->dt      = time->pars.dt;
+  time->dt_prev = time->dt;
+  time->dt_init = time->dt;
+  time->dt_next = time->dt;
+  time->dt_max  = time->dt*100.;  // Maximum allowed time step.
+  time->ttol    = time->dt*1.e-2;
+
+  time->simTime   = 0.;
+  time->framesOut = 0;
+
+  // Time rate at which to output, adjust hyperdiffusion and adjust time step.
+  time->tRateOutput = time->pars.endTime/((double) time->pars.nFrames);
+
+  valPrintS_real(time->dt, "\n Initial time step: dt =", "\n", world_rank);
 }
 
 void mugy_time_free(struct mugy_time *time) {

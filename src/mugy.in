@@ -5,9 +5,9 @@ mpiProcs = 1 1 1
 /
 
 &time
-dt      = 1.0e-3
-endTime = 1000.0
-nFrames = 1000
+dt      = 1.0e-4
+endTime = 2.0e-3
+nFrames = 4
 ark_kySplit      = 0
 ark_fastTableExp = 8
 ark_fastTableImp = -1

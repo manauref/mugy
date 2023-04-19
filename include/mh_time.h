@@ -34,11 +34,16 @@ struct mugy_time_wcstamps {
 struct mugy_time {
   struct mugy_time_pars pars;
   struct mugy_time_wcstamps wcs;
-  real time;       // Simulation time.
-  mint framesOut;
-  mint hdAdjusts;
-  mint dtAdjusts;
-  real dt;         // Time step size.
+  double simTime;    // Simulation time.
+  double dt;         // Time step size.
+  long steps;      // Number of steps.
+  long framesOut;  // Number of frames.
+  long hdAdjusts;
+  long dtAdjusts;
+  // We need several other time steps; previous, initial, next and max.
+  double dt_prev, dt_init, dt_next, dt_max;
+  double ttol;  // Tolerance used to trigger actions in time loop.
+  double tRateOutput;  // Time rate at which to output.
 };
 
 struct mugy_time *mugy_time_alloc();
@@ -51,6 +56,11 @@ double mugy_time_sec(struct timespec wcstamp);
 struct timespec mugy_time_diff(struct timespec start, struct timespec end);
 // Return the time elapsed since the a previous wall-clock stamp (prev).
 double mugy_time_elapsed_sec(struct timespec prev);
+// Obtain a string with the current date and time.
+char *mugy_time_datetime();
+
+// Initialize time stepping.
+void mugy_time_init(struct mugy_time *time, mint world_rank);
 
 // Free memory associated with time object.
 void mugy_time_free(struct mugy_time *time);
