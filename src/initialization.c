@@ -391,7 +391,4 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_field *field
 //  mugy_array_copy(momk, momk, MUGY_DEVICE2HOST);
   mugy_field_poisson_solve(field, pop, grid, 0);
 
-  mugy_array_copy(field->phik, field->phik, MUGY_DEVICE2HOST);
-  mugy_io_write_mugy_array(ioman, "phik", NULL, field->phik);
-
 }

@@ -15,7 +15,7 @@
 
 #define MUGY_GENERATE_ENUM(ENUM) ENUM,
 enum mugy_grid_types {
-    MUGY_FOREACH_GRIDTYPE(MUGY_GENERATE_ENUM)
+  MUGY_FOREACH_GRIDTYPE(MUGY_GENERATE_ENUM)
 };
 
 struct mugy_grid_basic {

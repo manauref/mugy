@@ -59,11 +59,11 @@ int main(int argc, char *argv[]) {
   // Impose ICs.
   set_initialConditions(pop, field, grid, fft, io);
 
-  // Write initial conditions.
-  mugy_io_write_mugy_array(io, "momk", NULL, pop->local->momk[0]);
-
   // Initialize time stepping infrastructure.
   mugy_time_init(time, comms->world->rank);
+
+  // Write initial conditions.
+  mugy_io_write_frame(io, pop, field, 0, time->framesOut, time->simTime); 
 
   MPI_Barrier(comms->world->comm); // Avoid starting time loop prematurely.
 
@@ -91,9 +91,11 @@ int main(int argc, char *argv[]) {
 
       time->framesOut = time->framesOut+1;
 
-//      mugy_io_write_dynamic_diagnostics(pop, field, grid);    // Append evolving quantities to output files.
-//
-//      mugy_io_write_restart();     // Write file used for restarts.
+      // Append evolving quantities to output files.
+      mugy_io_write_frame(io, pop, field, 0, time->framesOut, time->simTime); 
+
+      // Write file used for restarts.
+      mugy_io_write_restart(io, pop, field, time, 0);
     }
 
     if (fabs(time->simTime-time->pars.endTime) <= time->ttol) {
@@ -106,6 +108,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  valPrintS_char(mugy_time_datetime(), "\n Exiting time loop on ", "\n", comms->world->rank); 
   double tm_tloop = mugy_time_elapsed_sec(time->wcs.timeloop);  // Finish timing time loop.
   valPrintS_real(tm_tloop, "\n Time spent on time loop: ", " s\n", comms->world->rank); 
   // ............ END OF TIME LOOP ............ //
