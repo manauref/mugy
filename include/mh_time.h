@@ -6,7 +6,8 @@
 #pragma once
 
 #include "mh_data.h"
-#include <time.h>
+#include <time.h>  // for timespec.
+#include <stdbool.h>  // for bool.
 
 // Time-related parameters read from input file.
 struct mugy_time_pars {
@@ -42,8 +43,10 @@ struct mugy_time {
   long dtAdjusts;
   // We need several other time steps; previous, initial, next and max.
   double dt_prev, dt_init, dt_next, dt_max;
-  double ttol;  // Tolerance used to trigger actions in time loop.
-  double tRateOutput;  // Time rate at which to output.
+  double ttol;          // Tolerance used to trigger actions in time loop.
+  double tRateOutput;   // Time rate at which to output data.
+  double tRateLogEntry; // Time rate at which to log screen message ((decimal) % of endTime).
+  mint logEntries;      // Number of messages printed to log/screen.
 };
 
 struct mugy_time *mugy_time_alloc();
@@ -60,7 +63,7 @@ double mugy_time_elapsed_sec(struct timespec prev);
 char *mugy_time_datetime();
 
 // Initialize time stepping.
-void mugy_time_init(struct mugy_time *time, mint world_rank);
+void mugy_time_init(struct mugy_time *time, mint world_rank, bool isRestart);
 
 // Free memory associated with time object.
 void mugy_time_free(struct mugy_time *time);

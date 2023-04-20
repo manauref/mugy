@@ -60,10 +60,10 @@ int main(int argc, char *argv[]) {
   set_initialConditions(pop, field, grid, fft, io);
 
   // Initialize time stepping infrastructure.
-  mugy_time_init(time, comms->world->rank);
+  mugy_time_init(time, comms->world->rank, io->setup.isRestart);
 
   // Write initial conditions.
-  mugy_io_write_frame(io, pop, field, 0, time->framesOut, time->simTime); 
+  mugy_io_write_frame(io, pop, field, time, 0); 
 
   MPI_Barrier(comms->world->comm); // Avoid starting time loop prematurely.
 
@@ -81,23 +81,41 @@ int main(int argc, char *argv[]) {
 
     time->dt = time->dt_next;
 
+    // Step the solution forward in time.
+//    mugy_advance(pop, field, grid, fft);
+
     time->steps   += 1;         // Time steps taken.
     time->simTime += time->dt;  // Current simulation time.
 
-    double tOutNext = ((double) (time->framesOut+1))*time->tRateOutput;
+    double tOutNext;
+    // IO data.
+    tOutNext = ((double) (time->framesOut+1))*time->tRateOutput;
     if ( (fabs(time->simTime - tOutNext) <= time->ttol) ||
          (fabs(time->simTime - tOutNext) < fabs(time->simTime+time->dt_next - tOutNext)) ) {
-//      isNaNorInf(pop, field, grid);    // Check if solutions diverged.
+
+      bool phi_isfinite = mugy_reduce_array_isfinite(field->phik);
+      if (!phi_isfinite) abortSimulation(" Potential phik is not finite. Termianting...\n");
 
       time->framesOut = time->framesOut+1;
 
       // Append evolving quantities to output files.
-      mugy_io_write_frame(io, pop, field, 0, time->framesOut, time->simTime); 
+      mugy_io_write_frame(io, pop, field, time, 0); 
 
       // Write file used for restarts.
       mugy_io_write_restart(io, pop, field, time, 0);
     }
 
+    // Write a message to screen.
+    tOutNext = ((double)(time->logEntries+1))*time->tRateLogEntry;
+    if ( (fabs(time->simTime - tOutNext) <= time->ttol) ||
+         (fabs(time->simTime - tOutNext) < fabs(time->simTime+time->dt_next - tOutNext)) ) {
+      if (comms->world->rank == ioRank)
+	printf(" Completed %9ld steps on %s | dt= %11.5e | frames= %5ld | simTime= %11.5e\n",
+          time->steps, mugy_time_datetime(), time->dt, time->framesOut, time->simTime);
+      time->logEntries = time->logEntries + 1;    // Number of messages to log/screen.
+    }
+
+    // Decide next step.
     if (fabs(time->simTime-time->pars.endTime) <= time->ttol) {
       // Time loop completed. Punch out.
       continue_stepping = false;
@@ -108,7 +126,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  valPrintS_char(mugy_time_datetime(), "\n Exiting time loop on ", "\n", comms->world->rank); 
+  valPrintS_char(mugy_time_datetime(), " Exiting time loop on ", "\n", comms->world->rank); 
   double tm_tloop = mugy_time_elapsed_sec(time->wcs.timeloop);  // Finish timing time loop.
   valPrintS_real(tm_tloop, "\n Time spent on time loop: ", " s\n", comms->world->rank); 
   // ............ END OF TIME LOOP ............ //

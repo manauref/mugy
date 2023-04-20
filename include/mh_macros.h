@@ -17,12 +17,14 @@ typedef float real;
 #define MUGY_MPI_FOURIER MPI_C_COMPLEX
 #define fmt_real "f"
 static const real MUGY_REAL_MIN = FLT_MIN;
+static const real MUGY_REAL_MAX = FLT_MAX;
 #else
 typedef double real;
 #define MUGY_MPI_REAL MPI_DOUBLE
 #define MUGY_MPI_FOURIER MPI_C_DOUBLE_COMPLEX
 #define fmt_real "lf"
 static const real MUGY_REAL_MIN = DBL_MIN;
+static const real MUGY_REAL_MAX = DBL_MAX;
 #endif
 
 // Define our own int in case we wish to change to long.

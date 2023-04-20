@@ -395,11 +395,11 @@ void mugy_io_write_mugy_array_step(struct mugy_io *ioman, char* fname, struct mu
 }
 
 void mugy_io_write_frame(struct mugy_io *ioman, struct mugy_population *pop,
-  struct mugy_field *field, mint stepIdx, mint frame, double time) {
+  struct mugy_field *field, struct mugy_time *time, mint stepIdx) {
   // Write out a frame of all dynamical quantities of interest.
 
-  mugy_io_write_mugy_array_step(ioman, "momk", NULL, pop->local->momk[stepIdx], frame, time);
-  mugy_io_write_mugy_array_step(ioman, "phik", NULL, field->phik, frame, time);
+  mugy_io_write_mugy_array_step(ioman, "momk", NULL, pop->local->momk[stepIdx], time->framesOut, time->simTime);
+  mugy_io_write_mugy_array_step(ioman, "phik", NULL, field->phik, time->framesOut, time->simTime);
 
 } 
 

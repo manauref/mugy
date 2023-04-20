@@ -7,6 +7,7 @@
 
 #include "mh_macros.h"
 #include <stddef.h>
+#include <stdbool.h>
 
 // Structure storing an array on host, device, or both.
 struct mugy_array {
@@ -16,6 +17,8 @@ struct mugy_array {
   size_t nelemsz; // nelem*elemsz;
   void *ho;    // Pointer to host memory.
   void *dev;   // Pointer to device memory.
+  // Device memory to store the result of some reductions.
+  void *bool_ho, *bool_dev;
 };
 
 // Functions that allocate real/Fourier arrays on host, device or both.
@@ -42,3 +45,6 @@ void *mugy_array_copy(struct mugy_array *aout, struct mugy_array *ain, enum mugy
 
 // Scale an array by a factor 'fac'.
 void mugy_array_scale(struct mugy_array *arr, real fac, enum mugy_resource_calc res);
+
+// Check that none of the elements are inf or NaN.
+bool mugy_array_isfinite(struct mugy_array *arr, enum mugy_resource_calc res);

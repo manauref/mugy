@@ -45,3 +45,6 @@
 
 // Time integration objects and functions.
 #include "mh_time.h"
+
+// Reductions.
+#include "mh_reduce.h"

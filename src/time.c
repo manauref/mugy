@@ -7,6 +7,7 @@
 #include "mh_io_utilities.h"
 #include <stdlib.h>  // for malloc.
 #include <stdio.h>  // for sprintf.
+#include <math.h>  // for round.
 
 struct mugy_time *mugy_time_alloc() {
   // Allocate the time object.
@@ -53,7 +54,7 @@ char *mugy_time_datetime() {
   return out;
 }
 
-void mugy_time_init(struct mugy_time *time, mint world_rank) {
+void mugy_time_init(struct mugy_time *time, mint world_rank, bool isRestart) {
   // Initialize time stepping.
   time->dt      = time->pars.dt;
   time->dt_prev = time->dt;
@@ -65,10 +66,19 @@ void mugy_time_init(struct mugy_time *time, mint world_rank) {
   time->simTime   = 0.;
   time->framesOut = 0;
 
+  valPrintS_real(time->dt, "\n Initial time step: dt =", "\n", world_rank);
+
   // Time rate at which to output, adjust hyperdiffusion and adjust time step.
   time->tRateOutput = time->pars.endTime/((double) time->pars.nFrames);
 
-  valPrintS_real(time->dt, "\n Initial time step: dt =", "\n", world_rank);
+  // Set the time rate at which to enter messages in the log and
+  // determine the number of entries in log files/screen so far.
+  time->tRateLogEntry = 1.e-2*time->pars.endTime;
+  if (isRestart)
+    time->logEntries = round(time->simTime/time->tRateLogEntry);
+  else
+    time->logEntries = 0;
+
 }
 
 void mugy_time_free(struct mugy_time *time) {

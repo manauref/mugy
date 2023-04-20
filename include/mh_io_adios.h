@@ -88,7 +88,7 @@ void mugy_io_write_mugy_array_step(struct mugy_io *ioman, char* fname, struct mu
 
 // Write out a frame of all dynamical quantities of interest.
 void mugy_io_write_frame(struct mugy_io *ioman, struct mugy_population *pop,
-  struct mugy_field *field, mint stepIdx, mint frame, double time);
+  struct mugy_field *field, struct mugy_time *time, mint stepIdx);
 
 // Write out the file used to restart a simulation.
 void mugy_io_write_restart(struct mugy_io *ioman, struct mugy_population *pop,

@@ -11,6 +11,7 @@
 #include "mh_data.h"
 #include <stdlib.h>  // for malloc.
 #include <string.h>  // for memset.
+#include <math.h>  // for isfinite.
 
 struct mugy_array *mugy_array_alloc(enum mugy_data_types type, mint numElements, enum mugy_resource_mem res) {
   // Allocate array on host, device, or both.
@@ -24,11 +25,17 @@ struct mugy_array *mugy_array_alloc(enum mugy_data_types type, mint numElements,
   else if (arr->type == MUGY_FOURIER) arr->elemsz = sizeof(fourier);
   arr->nelemsz = arr->nelem*arr->elemsz;
 
-  if ((res == MUGY_HOST_MEM) || (res == MUGY_HOSTDEVICE_MEM))
-    arr->ho = mugy_alloc(arr->nelem, arr->elemsz, MUGY_HOST_MEM);  // Allocate on host.
+  if ((res == MUGY_HOST_MEM) || (res == MUGY_HOSTDEVICE_MEM)) {
+    // Allocate on host.
+    arr->ho = mugy_alloc(arr->nelem, arr->elemsz, MUGY_HOST_MEM);
+    arr->bool_ho = mugy_alloc(1, sizeof(bool), MUGY_HOST_MEM);
+  }
 
-  if ((res == MUGY_DEVICE_MEM) || (res == MUGY_HOSTDEVICE_MEM))
-    arr->dev = mugy_alloc(arr->nelem, arr->elemsz, MUGY_DEVICE_MEM);  // Allocate on device.
+  if ((res == MUGY_DEVICE_MEM) || (res == MUGY_HOSTDEVICE_MEM)) {
+    // Allocate on device.
+    arr->dev = mugy_alloc(arr->nelem, arr->elemsz, MUGY_DEVICE_MEM);
+    arr->bool_dev = mugy_alloc(1, sizeof(bool), MUGY_DEVICE_MEM);
+  }
 
   return arr;
 }
@@ -60,8 +67,8 @@ void *mugy_array_copy(struct mugy_array *aout, struct mugy_array *ain, enum mugy
   return mugy_memcpy(aout->ho, ain->ho, ain->nelemsz, MUGY_HOST2HOST);
 }
 
-// Scale array by a constant 'fac'.
 void mugy_array_scale(struct mugy_array *arr, real fac, enum mugy_resource_calc res) {
+  // Scale array by a constant 'fac'.
 #ifdef USE_GPU
   if (res == MUGY_DEVICE_CALC)
     return mugy_array_scale_dev(arr, fac);
@@ -73,11 +80,35 @@ void mugy_array_scale(struct mugy_array *arr, real fac, enum mugy_resource_calc 
   }
 }
 
+bool mugy_array_isfinite(struct mugy_array *arr, enum mugy_resource_calc res) {
+  // Check that none of the elements are inf or NaN.
+#ifdef USE_GPU
+  if (res == MUGY_DEVICE_CALC)
+    return mugy_array_isfinite_dev(arr);
+#endif
+
+  real *ap = arr->ho;
+
+  bool isvalid = true;
+  for (mint linIdx=0; linIdx<arr->nelem; linIdx++) {
+    isvalid = isfinite(ap[0]);
+    if (!isvalid) break;
+    ap++;
+  }
+  return isvalid;
+}
+
 // Free memory associated with arrays on host, device or both.
 void mugy_array_free(struct mugy_array *arr, enum mugy_resource_mem res) {
-  if ((res == MUGY_HOST_MEM) || (res == MUGY_HOSTDEVICE_MEM))
-    mugy_free(arr->ho, MUGY_HOST_MEM);  // Free host memory.
+  if ((res == MUGY_HOST_MEM) || (res == MUGY_HOSTDEVICE_MEM)) {
+    // Free host memory.
+    mugy_free(arr->ho, MUGY_HOST_MEM);
+    mugy_free(arr->bool_ho, MUGY_HOST_MEM);
+  }
 
-  if ((res == MUGY_DEVICE_MEM) || (res == MUGY_HOSTDEVICE_MEM))
-    mugy_free(arr->dev, MUGY_DEVICE_MEM);  // Free device memory.
+  if ((res == MUGY_DEVICE_MEM) || (res == MUGY_HOSTDEVICE_MEM)) {
+    // Free device memory.
+    mugy_free(arr->dev, MUGY_DEVICE_MEM);
+    mugy_free(arr->bool_dev, MUGY_DEVICE_MEM);
+  }
 }
