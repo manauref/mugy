@@ -1,7 +1,9 @@
 #[ ......................................................... #]
+#[ mugy postprocessing script:
 #[
 #[ Plot a fourier array, either in Fourier space or in
-#[ real space by FFTing it.
+#[ real space by FFTing it. We assume the mugy data file
+#[ contains a single array/frame.
 #[
 #[
 #[ ......................................................... #]

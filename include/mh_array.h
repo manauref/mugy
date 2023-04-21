@@ -18,7 +18,7 @@ struct mugy_array {
   void *ho;    // Pointer to host memory.
   void *dev;   // Pointer to device memory.
   // Device memory to store the result of some reductions.
-  void *bool_ho, *bool_dev;
+  void *binflag_ho, *binflag_dev;
 };
 
 // Functions that allocate real/Fourier arrays on host, device or both.
@@ -42,6 +42,21 @@ void mugy_array_free(struct mugy_array *arr, enum mugy_resource_mem res);
 
 // Copy arrays betwen host and device, or within host or device.
 void *mugy_array_copy(struct mugy_array *aout, struct mugy_array *ain, enum mugy_memcpy_dir dir);
+
+// Increment array out by array x.
+void mugy_array_increment(struct mugy_array *out, struct mugy_array *x, enum mugy_resource_calc res);
+
+// Assign array out with a*x.
+void mugy_array_ax_assign(struct mugy_array *out, real a, struct mugy_array *x, enum mugy_resource_calc res);
+
+// Assign array out with a*x+y.
+void mugy_array_axpy_assign(struct mugy_array *out, real a, struct mugy_array *x, struct mugy_array *y, enum mugy_resource_calc res);
+
+// Increment array out with a*x.
+void mugy_array_ax_increment(struct mugy_array *out, real a, struct mugy_array *x, enum mugy_resource_calc res);
+
+// Increment array out with a*x+y.
+void mugy_array_axpy_increment(struct mugy_array *out, real a, struct mugy_array *x, struct mugy_array *y, enum mugy_resource_calc res);
 
 // Scale an array by a factor 'fac'.
 void mugy_array_scale(struct mugy_array *arr, real fac, enum mugy_resource_calc res);

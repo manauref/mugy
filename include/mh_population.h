@@ -44,6 +44,7 @@ struct mugy_population_species {
   struct mugy_array *linOpPhi;  // Linear operator acting on the potential.
   struct mugy_array *linOpMom;  // Linear operator acting on the moments.
   struct mugy_array *pbFLRop;  // Poisson bracket FLR operators for each species.
+  struct mugy_array *phikFLR;  // Potential phik acted on by the FLR operators in pbFLRop.
 };
 
 struct mugy_population {

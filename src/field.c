@@ -8,6 +8,7 @@
 #include "mh_fourier_ho.h"
 #include <stdlib.h>  // for malloc.
 #include <math.h>  // for pow.
+#include <stdio.h>
 
 struct mugy_field *mugy_field_alloc() {
   // Allocate the field object.

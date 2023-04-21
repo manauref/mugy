@@ -1,13 +1,13 @@
 &space
-NkxG     = 64 64 1
+NkxG     = 40 40 1
 kxMin    = 0.12566 0.12566 1.0
 mpiProcs = 1 1 1
 /
 
 &time
 dt      = 1.0e-4
-endTime = 2.0e-3
-nFrames = 4
+endTime = 1.0e-3
+nFrames = 1
 ark_kySplit      = 0
 ark_fastTableExp = 8
 ark_fastTableImp = -1
@@ -26,19 +26,19 @@ qCharge    = -1.0 1.0
 muMass     = 60.59 1.0
 tau        = 1.0 1.0
 omSt       = 1.0 1.0
-omd        = 0.4545 -0.4545
+omd        = 0. -0.
 delta      = 2.0 2.0
 deltaPerp  = 1.0 1.0
-eta        = 3.105 3.105
+eta        = 49.68 49.68
 alpha      = 0.0 0.0 0.035 0.0
 nu         = 0.0 0.0 0.0001 0.0
-delta0     = 0.0 0.0
-hDiffOrder = 4 4 4 4 4 4
-hDiff      = 10.0 10.0 0.0 10.0 10.0 0.0
+delta0     = 0.35 0.0
+hDiffOrder = 16 16 16 16 16 16
+hDiff      = .04 .04 .04 .04 .04 .04
 kDiffMin   = 0.0 0.0 0.0 0.0 0.0 0.0
 initialOp  = 1 1
-initAux    = -3 -3 -3 -3 -3 -3
-initA      = 2.5e-2 2.5e-2
+initAux    = -1 -1 -1 -1 -1 -1
+initA      = 2.5e-5 2.5e-5
 noiseA     = 1e-14 1e-14
 /
 

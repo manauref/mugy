@@ -18,7 +18,7 @@ mint sum_mint(const mint *arrIn, const mint numElements) {
 }
 
 mint closest_power_of_two(const mint aIn) {
-  /* Find the closest power of 2. */
+  // Find the closest power of 2.
   mint lc = 0;
   while ((pow(2,lc) < aIn) && (lc < 1000000)) {lc += 1;}
   mint prev_power_of_two = pow(2, lc-1);
@@ -29,7 +29,7 @@ mint closest_power_of_two(const mint aIn) {
   if (prevDist < nextDist) {
     return mugy_max(1,prev_power_of_two);
   } else {
-    return mugy_min(1,next_power_of_two);
+    return mugy_max(1,next_power_of_two);
   }
 }
 

@@ -1,5 +1,5 @@
 #[ ......................................................... #]
-#[ mugy postprocessing script
+#[ mugy postprocessing script:
 #[
 #[ Plot the FLR functions computed with mugy in C and/or Python.
 #[

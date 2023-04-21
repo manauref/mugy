@@ -57,9 +57,13 @@ void readFileSpeciesPar_mint(mint **var, FILE *fp, const mint sIdx, const mint n
 void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint numSpecies, const mint *numElements) {
   fscanf(fp, "%*s = ");
   // Skip species prior to sIdx (presumably already read).
-  char star_real_fmt[] = "%*";  strcat(star_real_fmt, fmt_real);
+#if USE_SINGLE_PRECISION
+  char star_fmt_real[] = "%*f";
+#else
+  char star_fmt_real[] = "%*lf";
+#endif
   for (mint s=0; s<sIdx; s++) {
-    for (mint i=0; i<numElements[s]; i++) fscanf(fp, star_real_fmt);
+    for (mint i=0; i<numElements[s]; i++) fscanf(fp, star_fmt_real);
   }
   // Read this species' parameter.
   if (numElements[sIdx] == 1) {
@@ -70,7 +74,7 @@ void readFileSpeciesPar_real(real **var, FILE *fp, const mint sIdx, const mint n
   }
   // Skip species after sIdx (presumably will be read later).
   for (mint s=sIdx+1; s<numSpecies; s++) {
-    for (mint i=0; i<numElements[s]; i++) fscanf(fp, star_real_fmt);
+    for (mint i=0; i<numElements[s]; i++) fscanf(fp, star_fmt_real);
   }
 }
 
@@ -373,8 +377,11 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_field *field
         mugy_grid_get_kx(&kx[0], kxIdx, gridL);
   
         // Set density to a power-law in k-space.
-        den_p[0] = initA*(pow((kxMin[0]+fabs(kx[0]))/kxMin[0],initAux[0]))
-                        *(pow((kxMin[1]+fabs(kx[1]))/kxMin[1],initAux[1]));
+        if ((fabs(kx[0]) < MUGY_REAL_MIN) && (fabs(kx[1]) < MUGY_REAL_MIN))
+          den_p[0] = 0. + 0.*I;
+        else
+          den_p[0] = initA*(pow((kxMin[0]+fabs(kx[0]))/kxMin[0],initAux[0]))
+                          *(pow((kxMin[1]+fabs(kx[1]))/kxMin[1],initAux[1]));
         den_p++;
   
         // Set the initial temperature (fluctuations) to zero.
@@ -388,7 +395,6 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_field *field
   }
 
   // Solve the Poisson equation to compute phik.
-//  mugy_array_copy(momk, momk, MUGY_DEVICE2HOST);
   mugy_field_poisson_solve(field, pop, grid, 0);
 
 }

@@ -20,9 +20,12 @@
 #[   adType2npType
 #[   varType
 #[   varRead
+#[   varReadSteps
 #[   kGrid
 #[   xGrid
 #[   calcFLR
+#[   kx0centerGrid
+#[   kx0centerVar
 #[
 #[ ................................................................ ]#
 
@@ -184,6 +187,7 @@ class pmIO:
     if 'select' in kwargs:
       #[ 'select' argument must be a two-list list of starts and counts.
       ad_var.SetSelection([kwargs['select'][0], kwargs['select'][1]])
+      shape = kwargs['select'][1]
     else:
       shape = ad_var.Shape()
       ad_var.SetSelection([[0 for i in range(len(shape))], shape])
@@ -191,8 +195,7 @@ class pmIO:
     #[ Read variable.
     var = kwargs.get('array',0)
     if not ('array' in kwargs):
-      inSize = ad_var.SelectionSize()
-      var = np.zeros(inSize, dtype=self.adType2npType(ad_var.Type()))
+      var = np.zeros(shape, dtype=self.adType2npType(ad_var.Type()))
 
     ad_eng.Get(ad_var, var, adios2.Mode.Sync)
     if openedFile:
@@ -200,6 +203,41 @@ class pmIO:
       self.removeIOobject(ad_ioNm)
     return var
   #[ .......... end of varRead .............. ]#
+
+  #[ Read a number of steps of a named variable.
+  def varReadSteps(self, varName, **kwargs):
+    if 'io' in kwargs:
+      if not ('eng' in kwargs):
+        sys.exit("varRead: is providing 'io' must also provide 'eng'.")
+    ad_var, openedFile, ad_ioNm, ad_io, ad_eng = self.varInquire(varName, **kwargs)
+
+    #[ Establish data selection shape.
+    if 'select' in kwargs:
+      #[ 'select' argument must be a two-list list of starts and counts.
+      ad_var.SetSelection([kwargs['select'][0], kwargs['select'][1]])
+      shape = kwargs['select'][1]
+    else:
+      shape = ad_var.Shape()
+      ad_var.SetSelection([[0 for i in range(len(shape))], shape])
+    #[ Select the desired steps.
+    if 'selectSteps' in kwargs:
+      #[ 'selectSteps' argument must be a two-list list of start and count.
+      ad_var.SetStepSelection([kwargs['selectSteps'][0], kwargs['selectSteps'][1]])
+    else:
+      steps = ad_var.Steps()
+      ad_var.SetStepSelection([0, steps])
+
+    #[ Read variable.
+    var = kwargs.get('array',0)
+    if not ('array' in kwargs):
+      var = np.zeros([steps]+shape, dtype=self.adType2npType(ad_var.Type()))
+
+    ad_eng.Get(ad_var, var, adios2.Mode.Sync)
+    if openedFile:
+      self.fClose(ad_eng)
+      self.removeIOobject(ad_ioNm)
+    return var
+  #[ .......... end of varReadSteps .............. ]#
 
   #[ Generate the Fourier space grid (note that for colorplots
   #[ matplotlib expects a nodal grid).
@@ -319,12 +357,13 @@ class pmIO:
     return flrDict
   #[ ........... End of calcFLR ................... ]#
 
-  #[ Shift a variable defined on kx-ky space with the kx's
-  #[ going from 0 to the largest positive kx followed by the
-  #[ negative kx's in ascending order; to a space with kx=0
-  #[ in the center.
-  def kx0center(self, kxIn, varIn):
-    kx, var = np.copy(kxIn[0]), np.copy(varIn)
+  #[ Shift grid with the kx's going from 0 to the largest
+  #[ positive kx followed by the negative kx's in
+  #[ ascending order, to a space with kx=0 in the center.
+  #[ Also return the number elements a variable needs to be
+  #[ rolled by in order to center it at kx=0 as well.
+  def kx0centerGrid(self, kxIn):
+    kx = np.copy(kxIn[0])
     Nekx = np.size(kx[0])
 
     #[ Find max positive kx.
@@ -335,8 +374,19 @@ class pmIO:
       else:
         Nkx += 1
 
-    kxIn[0] = np.append(kx[Nkx:], kx[:Nkx]) 
-    varIn = np.roll(var, Nekx-Nkx, axis=0)
+    return np.append(kx[Nkx:], kx[:Nkx]), Nekx-Nkx 
+  #[ ........... End of kx0centerGrid ................... ]#
 
-    return kxIn, varIn
-  #[ ........... End of kx0center ................... ]#
+  #[ Shift a variable defined on kx-ky space with the kx's
+  #[ going from 0 to the largest positive kx followed by the
+  #[ negative kx's in ascending order; to a space with kx=0
+  #[ in the center.
+  def kx0centerVar(self, varIn, **kwargs):
+    if 'kx' in kwargs:
+      _, nroll = self.kx0centerGrid(kwargs['kx'])
+    elif 'rollnum' in kwargs:
+      nroll = kwargs['rollnum']
+    else:
+      sys.exit("kx0centerVar: must provide either 'kx' or 'rollnum' arguments.")
+    return np.roll(var, rollnum, axis=0)
+  #[ ........... End of kx0centerVar ................... ]#

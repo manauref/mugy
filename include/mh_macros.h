@@ -51,6 +51,9 @@ enum mugy_resource_calc {MUGY_HOST_CALC, MUGY_DEVICE_CALC};
 // Types of data used in mugy.
 enum mugy_data_types {MUGY_MINT, MUGY_REAL, MUGY_FOURIER};
 
+// Types of basic operations.
+enum mugy_op_types { MUGY_OP_ASSIGN, MUGY_OP_INCREMENT };
+
 #define mugy_max(a,b)             \
 ({                           \
     __typeof__ (a) _a = (a); \
@@ -67,7 +70,7 @@ enum mugy_data_types {MUGY_MINT, MUGY_REAL, MUGY_FOURIER};
 
 // Number of fields needed for time stepping.
 #if (TIME_STEPPER == 4)
-#define TIME_STEPPER_NUM_FIELDS 4
+#define TIME_STEPPER_NUM_FIELDS 3
 #endif
 
 

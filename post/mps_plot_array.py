@@ -1,4 +1,5 @@
 #[ ......................................................... #]
+#[ mugy postprocessing script:
 #[
 #[ Plot a frame of a pmugy dataset.
 #[

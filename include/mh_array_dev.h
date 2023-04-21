@@ -10,6 +10,18 @@
 // Set all elements in the array to zero.
 void mugy_array_zero_dev(struct mugy_array *arr);
 
+// Increment array out by array x.
+void mugy_array_increment_dev(struct mugy_array *out, struct mugy_array *x);
+
+// Assign array out with a*x.
+void mugy_array_ax_assign_dev(struct mugy_array *out, real a, struct mugy_array *x);
+
+// Assign array out with a*x+y.
+void mugy_array_axpy_assign_dev(struct mugy_array *out, real a, struct mugy_array *x, struct mugy_array *y);
+
+// Increment array out with a*x+y.
+void mugy_array_axpy_increment_dev(struct mugy_array *out, real a, struct mugy_array *x, struct mugy_array *y);
+
 // Scale an array by a factor 'fac'.
 void mugy_array_scale_dev(struct mugy_array *arr, real fac);
 

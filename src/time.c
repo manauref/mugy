@@ -5,6 +5,7 @@
  */
 #include "mh_time.h"
 #include "mh_io_utilities.h"
+#include "mh_dydt.h"
 #include <stdlib.h>  // for malloc.
 #include <stdio.h>  // for sprintf.
 #include <math.h>  // for round.
@@ -80,6 +81,84 @@ void mugy_time_init(struct mugy_time *time, mint world_rank, bool isRestart) {
     time->logEntries = 0;
 
 }
+
+void mugy_time_step_euler(mint outIdx, mint inIdx, mint dotIdx,
+  enum mugy_op_types op, double time, double dt, struct mugy_population *pop) {
+  // Take an Euler step of size dt.
+  // Assume that:
+  //   - The time-rate-of-change is in the step index momk[dotIdx].
+  //   - The current state is in step index momk[inIdx].
+  //   - The new state will be placed in in step index momk[outIdx].
+  struct mugy_array *momIn  = pop->local->momk[inIdx];
+  struct mugy_array *momOut = pop->local->momk[outIdx];
+  struct mugy_array *momDot = pop->local->momk[dotIdx];
+
+#ifdef USE_GPU
+  enum mugy_resource_calc onResource = MUGY_DEVICE_CALC;
+#else
+  enum mugy_resource_calc onResource = MUGY_HOST_CALC;
+#endif
+
+  if (op == MUGY_OP_ASSIGN)
+    mugy_array_axpy_assign(momOut, dt, momDot, momIn, onResource);
+  else if (op == MUGY_OP_INCREMENT)
+    mugy_array_axpy_increment(momOut, dt, momDot, momIn, onResource);
+}
+
+void mugy_time_step_rk4(double time, double dt, struct mugy_population *pop,
+  struct mugy_field *field, struct mugy_grid *grid, struct mugy_fft *fft) {
+  // Step the solution forward by one time step of size dt
+  // using 4th-order Runge Kutta.
+  
+#ifdef USE_GPU
+  enum mugy_resource_calc onResource = MUGY_DEVICE_CALC;
+#else
+  enum mugy_resource_calc onResource = MUGY_HOST_CALC;
+#endif
+
+  // The following is a convoluted way of doing RK4 so that only 3 storage locations.
+  // MF 2023/04/19: this may not be the official way of doing low-storage RK4,
+  //                it is simply something I devised by looking at the Butcher tableau.
+  double tnew = time;
+  mugy_dydt(1, 0, tnew, pop, field, grid, fft);
+  mugy_time_step_euler(1, 0, 0.5*dt, 1, MUGY_OP_ASSIGN   , tnew, pop);
+  mugy_field_poisson_solve(field, pop, grid, 1);
+
+  tnew = time+0.5*dt;
+  mugy_dydt(2, 1, tnew, pop, field, grid, fft);
+  mugy_time_step_euler(1, 0,     dt, 2, MUGY_OP_INCREMENT, tnew, pop);
+  mugy_time_step_euler(2, 0, 0.5*dt, 2, MUGY_OP_ASSIGN   , tnew, pop);
+  mugy_field_poisson_solve(field, pop, grid, 2);
+
+  tnew = time+0.5*dt;
+  mugy_dydt(2, 2, tnew, pop, field, grid, fft);
+  mugy_time_step_euler(2, 0,     dt, 2, MUGY_OP_ASSIGN   , tnew, pop);
+  mugy_field_poisson_solve(field, pop, grid, 2);
+  mugy_array_increment(pop->local->momk[1], pop->local->momk[2], onResource);
+
+  tnew = time+dt;
+  mugy_dydt(2, 2, tnew, pop, field, grid, fft);
+  mugy_time_step_euler(1, 1, 0.5*dt, 2, MUGY_OP_ASSIGN   , tnew, pop);
+
+  mugy_array_ax_assign(pop->local->momk[0], 1./3., pop->local->momk[1], onResource);
+  mugy_field_poisson_solve(field, pop, grid, 0);
+
+//  double tnew = time;
+//  mugy_dydt(1, 0, tnew, pop, field, grid, fft);
+//  mugy_time_step_euler(1, 0, dt, 1, MUGY_OP_ASSIGN   , tnew, pop);
+//  mugy_field_poisson_solve(field, pop, grid, 1);  // Solve Poisson to get phik.
+//  mugy_array_ax_assign(pop->local->momk[0], 1., pop->local->momk[1], onResource);
+};
+
+void mugy_time_advance(double time, double dt, struct mugy_population *pop,
+  struct mugy_field *field, struct mugy_grid *grid, struct mugy_fft *fft) {
+  // Step the solution forward by one time step of size dt.
+  
+#if TIME_STEPPER==4
+  // Step with 4th-order Runget Kutta.
+  mugy_time_step_rk4(time, dt, pop, field, grid, fft);
+#endif
+};
 
 void mugy_time_free(struct mugy_time *time) {
   // Free memory associated with time object.

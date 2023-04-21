@@ -37,9 +37,11 @@ void mugy_linear_constop_init(struct mugy_population *pop, struct mugy_grid *gri
       fourier iOmSt =        -tau*iimag*omSt*ky;
       
       denkOp_p[0] = (1./tau)*((1.+eta*0.5*hatLap_p[0])*iOmSt-(2.+0.5*hatLap_p[0])*iOmd);
+      denkOp_p++;
 
       tempkOp_p[0] = deltaPerp*(((1.+eta)*(1.+0.5*hatLap_p[0])
                     +eta*hathatLap_p[0])*iOmSt-charge*(3.+1.5*hatLap_p[0]+hathatLap_p[0])*iOmd);
+      tempkOp_p++;
     }
   }
 
@@ -67,11 +69,11 @@ void mugy_linear_constop_init(struct mugy_population *pop, struct mugy_grid *gri
       fourier iOmd  = -charge*tau*iimag*omd*ky;
       fourier iOmSt =        -tau*iimag*omSt*ky;
       
-      // IMPORTANT: Notice the column-major order of these operators.
-      fourier *den_den_p   = mugy_array_get(popL->linOpMom, linIdx+sOff+0*gridL->NxTot);
-      fourier *temp_den_p  = mugy_array_get(popL->linOpMom, linIdx+sOff+1*gridL->NxTot);
-      fourier *den_temp_p  = mugy_array_get(popL->linOpMom, linIdx+sOff+2*gridL->NxTot);
-      fourier *temp_temp_p = mugy_array_get(popL->linOpMom, linIdx+sOff+3*gridL->NxTot);
+      // Use a row-major order for these operators for now.
+      fourier *den_den_p   = mugy_array_get(popL->linOpMom, sOff+0*gridL->NxTot+linIdx);
+      fourier *den_temp_p  = mugy_array_get(popL->linOpMom, sOff+1*gridL->NxTot+linIdx);
+      fourier *temp_den_p  = mugy_array_get(popL->linOpMom, sOff+2*gridL->NxTot+linIdx);
+      fourier *temp_temp_p = mugy_array_get(popL->linOpMom, sOff+3*gridL->NxTot+linIdx);
 
       den_den_p[0]  = -(1./tau)*iOmd*tau*delta-alpha[0]-nu[0]*kperpSq;
       den_temp_p[0] = -(1./tau)*iOmd;

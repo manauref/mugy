@@ -65,6 +65,9 @@ void mugy_population_alloc_local(struct mugy_population_species *popL, struct mu
   // Allocate space for the FLR operators inside Poisson brackets, 3 for
   // each species: <J_0>=Gamma_0^{1/2}, 0.5*hatLap <J_0>, (1+0.5*hatLap+hathatLap) <J_0>.
   popL->pbFLRop = mugy_array_alloc(MUGY_REAL, popL->numSpecies * 3 * gridL->fourier->NxyTot, onResource);
+
+  // Allocate space for potentials operated on by pbFLRop;
+  popL->phikFLR = mugy_array_alloc(MUGY_FOURIER, popL->numSpecies * 3 * gridL->fourier->NxTot, onResource);
 }
 
 real* mugy_population_getMoment_real(struct mugy_grid_basic *grid, struct mugy_population_species *pop, mint sIdx, mint momIdx, real *momIn) {
@@ -118,6 +121,9 @@ void mugy_population_free(struct mugy_population *pop) {
 
   // Free Poisson bracket FLR operators.
   mugy_array_free(pop->local->pbFLRop, onResource);
+
+  // Free vector of potentials gyro-operated.
+  mugy_array_free(pop->local->phikFLR, onResource);
 
   free(pop->local);
   free(pop->global);

@@ -5,7 +5,11 @@
  */
 #pragma once
 
-#include "mh_data.h"
+#include "mh_macros.h"
+#include "mh_population.h"
+#include "mh_field.h"
+#include "mh_grid.h"
+#include "mh_ffts.h"
 #include <time.h>  // for timespec.
 #include <stdbool.h>  // for bool.
 
@@ -64,6 +68,19 @@ char *mugy_time_datetime();
 
 // Initialize time stepping.
 void mugy_time_init(struct mugy_time *time, mint world_rank, bool isRestart);
+
+// Take an Euler step of size dt.
+void mugy_time_step_euler(mint outIdx, mint inIdx, mint dotIdx,
+  enum mugy_op_types op, double time, double dt, struct mugy_population *pop);
+
+// Step the solution forward by one time step of size dt
+// using 4th-order Runge Kutta.
+void mugy_time_step_rk4(double time, double dt, struct mugy_population *pop,
+  struct mugy_field *field, struct mugy_grid *grid, struct mugy_fft *fft);
+
+// Step the solution forward by one time step of size dt.
+void mugy_time_advance(double time, double dt, struct mugy_population *pop,
+  struct mugy_field *field, struct mugy_grid *grid, struct mugy_fft *fft);
 
 // Free memory associated with time object.
 void mugy_time_free(struct mugy_time *time);

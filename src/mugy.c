@@ -82,19 +82,19 @@ int main(int argc, char *argv[]) {
     time->dt = time->dt_next;
 
     // Step the solution forward in time.
-//    mugy_advance(pop, field, grid, fft);
+    mugy_time_advance(time->simTime, time->dt, pop, field, grid, fft);
 
     time->steps   += 1;         // Time steps taken.
     time->simTime += time->dt;  // Current simulation time.
 
     double tOutNext;
-    // IO data.
+    // Write out a data frame.
     tOutNext = ((double) (time->framesOut+1))*time->tRateOutput;
     if ( (fabs(time->simTime - tOutNext) <= time->ttol) ||
          (fabs(time->simTime - tOutNext) < fabs(time->simTime+time->dt_next - tOutNext)) ) {
 
       bool phi_isfinite = mugy_reduce_array_isfinite(field->phik);
-      if (!phi_isfinite) abortSimulation(" Potential phik is not finite. Termianting...\n");
+      if (!phi_isfinite) abortSimulation(" Potential phik is not finite. Terminating...\n");
 
       time->framesOut = time->framesOut+1;
 
