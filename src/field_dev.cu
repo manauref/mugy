@@ -14,11 +14,11 @@ extern "C" {
 // Starting linear index for each thread.
 #define LINIDX0 (blockIdx.x*blockDim.x+threadIdx.x)
 
-MUGY_CU_D void* getMomentk(void *momkIn, mint sIdx, mint momIdx, mint xIdx, mint NxTot, mint numMoments) {
-  // Return a pointer to the momIdx-th moment of the sIdx-th species at the xIdx-th grid lication in momk.
+MUGY_CU_D static inline void* mugy_population_getMomentk_cu(void *momIn, mint sIdx, mint momIdx, mint xIdx, mint NxTot, mint numMoments) {
+  // Return a pointer to the momIdx-th moment of the sIdx-th species at the xIdx-th grid location in mom.
   mint momOff = 0;
   for (mint s=0; s<sIdx; s++) momOff += numMoments;
-  return (mugy_cufourier_t *)momkIn + (momOff+momIdx)*NxTot+xIdx;
+  return (mugy_cufourier_t *)momIn + (momOff+momIdx)*NxTot+xIdx;
 }
 
 __global__ void mugy_field_poisson_solve_cu(mugy_cufourier_t *phik, const mugy_cufourier_t *momk,
@@ -29,8 +29,8 @@ __global__ void mugy_field_poisson_solve_cu(mugy_cufourier_t *phik, const mugy_c
     phik_p[0] = mugy_make_cuComplex(0., 0.);
     for (mint s=0; s<numMoments; s++) {
       for (mint m=0; m<numMoments; m++) {
-        const mugy_cufourier_t *poissonFac_p = (const mugy_cufourier_t *)getMomentk((void*)poissonFac, s, m, linIdx, NxTot, numMoments);
-        const mugy_cufourier_t *momk_p       = (const mugy_cufourier_t *)getMomentk((void*)momk      , s, m, linIdx, NxTot, numMoments);
+        const mugy_cufourier_t *poissonFac_p = (const mugy_cufourier_t *)mugy_population_getMomentk_cu((void*)poissonFac, s, m, linIdx, NxTot, numMoments);
+        const mugy_cufourier_t *momk_p       = (const mugy_cufourier_t *)mugy_population_getMomentk_cu((void*)momk      , s, m, linIdx, NxTot, numMoments);
 
         phik_p[0] = mugy_cuCadd(phik_p[0], mugy_cuCmul(poissonFac_p[0],momk_p[0]));
       }

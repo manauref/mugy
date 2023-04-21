@@ -14,11 +14,11 @@ extern "C" {
 // Starting linear index for each thread.
 #define LINIDX0 (blockIdx.x*blockDim.x+threadIdx.x)
 
-MUGY_CU_D static inline void* mugy_population_getMomentk_cu(void *momkIn, mint sIdx, mint momIdx, mint xIdx, mint NekxTot, mint numMoments) {
-  // Return a pointer to the momIdx-th moment of the sIdx-th species at the xIdx-th grid lication in momk.
+MUGY_CU_D static inline void* mugy_population_getMomentk_cu(void *momIn, mint sIdx, mint momIdx, mint xIdx, mint NxTot, mint numMoments) {
+  // Return a pointer to the momIdx-th moment of the sIdx-th species at the xIdx-th grid location in mom.
   mint momOff = 0;
   for (mint s=0; s<sIdx; s++) momOff += numMoments;
-  return (mugy_cufourier_t *)momkIn + (momOff+momIdx)*NekxTot+xIdx;
+  return (mugy_cufourier_t *)momIn + (momOff+momIdx)*NxTot+xIdx;
 }
 
 MUGY_CU_D static inline void* mugy_array_getk_cu(void *arr, mint linIdx) {
