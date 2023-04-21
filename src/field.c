@@ -66,8 +66,8 @@ void mugy_field_constop_init(struct mugy_population *pop, struct mugy_field *fie
   }
 
   for (mint s=elcIdx+1; s<popL->numSpecies; s++) {
-    fourier *denkPoiFac_p  = mugy_population_getMoment_fourier(gridL, popL, s, denIdx, popL->poissonFac->ho);
-    fourier *tempkPoiFac_p = mugy_population_getMoment_fourier(gridL, popL, s, tempIdx, popL->poissonFac->ho);
+    fourier *denkPoiFac_p  = mugy_population_getMoment(gridL, popL, popL->poissonFac, s, denIdx);
+    fourier *tempkPoiFac_p = mugy_population_getMoment(gridL, popL, popL->poissonFac, s, tempIdx);
 
     real tau_i       = popL->pars[s].tau;
     real deltaPerp_i = popL->pars[s].deltaPerp;
@@ -117,8 +117,8 @@ void mugy_field_poisson_solve(struct mugy_field *field, struct mugy_population *
 
   for (mint s=0; s<popL->numSpecies; s++) {
     for (mint m=0; m<popL->pars[s].numMoments; m++) {
-      fourier *poissonFac_p = mugy_population_getMoment_fourier(gridL, popL, s, m, popL->poissonFac->ho);
-      fourier *momk_p       = mugy_population_getMoment_fourier(gridL, popL, s, m, momk->ho);
+      fourier *poissonFac_p = mugy_population_getMoment(gridL, popL, popL->poissonFac, s, m);
+      fourier *momk_p       = mugy_population_getMoment(gridL, popL, momk            , s, m);
       for (mint linIdx=0; linIdx<gridL->NxTot; linIdx++) {
         fourier *phik_p = mugy_array_get(phik, linIdx);
 

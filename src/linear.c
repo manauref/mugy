@@ -20,8 +20,8 @@ void mugy_linear_constop_init(struct mugy_population *pop, struct mugy_grid *gri
     real tau    = popL->pars[s].tau;      real omSt      = popL->pars[s].omSt;
     real eta    = popL->pars[s].eta;      real deltaPerp = popL->pars[s].deltaPerp;
 
-    fourier *denkOp_p  = mugy_population_getMoment_fourier(gridL, popL, s, denIdx, popL->linOpPhi->ho);
-    fourier *tempkOp_p = mugy_population_getMoment_fourier(gridL, popL, s, tempIdx, popL->linOpPhi->ho);
+    fourier *denkOp_p  = mugy_population_getMoment(gridL, popL, popL->linOpPhi, s, denIdx);
+    fourier *tempkOp_p = mugy_population_getMoment(gridL, popL, popL->linOpPhi, s, tempIdx);
 
     for (mint linIdx=0; linIdx<gridL->NxTot; linIdx++) {
       mint idx[nDim];  real kx[nDim];

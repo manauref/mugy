@@ -66,17 +66,17 @@ void mugy_dydt_linear(mint outIdx, mint inIdx, double time, struct mugy_populati
     for (mint m=0; m<numMom; m++) {
       // Add contributions to the time rate of change of the m-th moment.
       for (unsigned long linIdx=0; linIdx<NxTot; linIdx++) {
-        fourier *momkDot_p = mugy_population_getMoment_fourier(gridL, popL, s, m, momkDot->ho);
+        fourier *momkDot_p = mugy_population_getMoment(gridL, popL, momkDot, s, m);
 
         // Linear operator acting on the n-th moment. 
         for (mint n=0; n<m; n++) {
-          fourier *momk_p     = mugy_population_getMoment_fourier(gridL, popL, s, n, momk->ho);
+          fourier *momk_p     = mugy_population_getMoment(gridL, popL, momk, s, n);
           fourier *linOpMom_p = mugy_array_get(popL->linOpMom, sOff+(m*numMom+n)*NxTot+linIdx);
           momkDot_p[0] += linOpMom_p[0]*momk_p[0];
         }
         
         // Linear operator acting on the potential. 
-        fourier *linOpPhi_p = mugy_population_getMoment_fourier(gridL, popL, s, m, popL->linOpPhi->ho);
+        fourier *linOpPhi_p = mugy_population_getMoment(gridL, popL, popL->linOpPhi, s, m);
         unsigned long lin3 = s*3*gridL->NxTot + linIdx;
         fourier *phikGyroAvg_p = mugy_array_get(popL->phikFLR, lin3);
         momkDot_p[0] += linOpPhi_p[0]*phikGyroAvg_p[0];

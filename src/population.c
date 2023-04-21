@@ -70,20 +70,12 @@ void mugy_population_alloc_local(struct mugy_population_species *popL, struct mu
   popL->phikFLR = mugy_array_alloc(MUGY_FOURIER, popL->numSpecies * 3 * gridL->fourier->NxTot, onResource);
 }
 
-real* mugy_population_getMoment_real(struct mugy_grid_basic *grid, struct mugy_population_species *pop, mint sIdx, mint momIdx, real *momIn) {
-  // Return a pointer to the momIdx-th moment of the sIdx-th species in mom.
-  real* ptrOut = momIn;
+void* mugy_population_getMoment(struct mugy_grid_basic *grid, struct mugy_population_species *pop,
+  struct mugy_array *arr, mint sIdx, mint momIdx) {
+  // Return a pointer to the momIdx-th moment of the sIdx-th species in array 'arr'.
   mint momOff = 0;
   for (mint s=0; s<sIdx; s++) momOff += pop->pars[s].numMoments;
-  return ptrOut+(momOff+momIdx)*grid->NxTot;
-}
-
-void* mugy_population_getMoment_fourier(struct mugy_grid_basic *grid, struct mugy_population_species *pop, mint sIdx, mint momIdx, void *momkIn) {
-  // Return a pointer to the momIdx-th moment of the sIdx-th species in momk.
-  fourier* ptrOut = (fourier *)momkIn;
-  mint momOff = 0;
-  for (mint s=0; s<sIdx; s++) momOff += pop->pars[s].numMoments;
-  return ptrOut+(momOff+momIdx)*grid->NxTot;
+  return ((char *)arr->ho) + (momOff+momIdx)*grid->NxTot * arr->elemsz;
 }
 
 void mugy_population_free(struct mugy_population *pop) {

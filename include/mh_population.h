@@ -71,11 +71,9 @@ struct mugy_array *mugy_population_alloc_fourierMoments(struct mugy_grid_basic *
 
 void mugy_population_alloc_local(struct mugy_population_species *popL, struct mugy_grid_chart *gridL);
 
-// Return a pointer to the momIdx-th moment of the sIdx-th species in mom/momk.
-real* mugy_population_getMoment_real(struct mugy_grid_basic *grid,
-  struct mugy_population_species *pop, mint sIdx, mint momIdx, real *momIn);
-void* mugy_population_getMoment_fourier(struct mugy_grid_basic *grid,
-  struct mugy_population_species *pop, mint sIdx, mint momIdx, void *momkIn);
+// Return a pointer to the momIdx-th moment of the sIdx-th species in array 'arr'.
+void* mugy_population_getMoment(struct mugy_grid_basic *grid, struct mugy_population_species *pop,
+  struct mugy_array *arr, mint sIdx, mint momIdx);
 
 void mugy_population_free(struct mugy_population *pop);
 

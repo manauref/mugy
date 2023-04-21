@@ -274,8 +274,8 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_field *field
     for (mint s=0; s<pop->local->numSpecies; s++) {
       real initA = pop->local->pars[s].initA;
 
-      real *den_p  = mugy_population_getMoment_real(gridL, pop->local, s, denIdx, momIC->ho);  // Get density of species s.
-      real *temp_p = mugy_population_getMoment_real(gridL, pop->local, s, tempIdx, momIC->ho);  // Get temperature of species s.
+      real *den_p  = mugy_population_getMoment(gridL, pop->local, momIC, s, denIdx);  // Get density of species s.
+      real *temp_p = mugy_population_getMoment(gridL, pop->local, momIC, s, tempIdx);  // Get temperature of species s.
 
       for (mint linIdx=0; linIdx<gridL->NxTot; linIdx++) {
         mint xIdx[nDim];
@@ -367,8 +367,8 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_field *field
       real *initAux = &pop->local->pars[s].initAux[0];
 
       // Get density and temperature of species s.
-      fourier *den_p  = mugy_population_getMoment_fourier(gridL, pop->local, s, denIdx, momk->ho);
-      fourier *temp_p = mugy_population_getMoment_fourier(gridL, pop->local, s, tempIdx, momk->ho);
+      fourier *den_p  = mugy_population_getMoment(gridL, pop->local, momk, s, denIdx);
+      fourier *temp_p = mugy_population_getMoment(gridL, pop->local, momk, s, tempIdx);
 
       for (mint linIdx=0; linIdx<gridL->NxTot; linIdx++) {
         mint kxIdx[nDim];
