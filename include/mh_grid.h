@@ -51,27 +51,14 @@ struct mugy_grid *mugy_grid_alloc();
 // Initialize the global grids.
 void mugy_grid_init_global(struct mugy_grid *grid, mint rank);
 
-// Linear index given the nDim-dimensional subscript in a real/Fourier grid.
-mint mugy_grid_sub2lin_real(mint *xI, const struct mugy_grid_basic *grid);
-mint mugy_grid_sub2lin_fourier(mint *kxI, const struct mugy_grid_basic *grid);
+// Linear index given the dimIn-dimensional subscript in a grid.
+unsigned long mugy_grid_sub2lin(mint *xI, const struct mugy_grid_basic *grid, mint dimIn);
 
-// Like mugy_grid_sub2lin_fourier but on a perpendicular plane only.
-mint mugy_grid_sub2lin_perp_fourier(mint *kxI, const struct mugy_grid_basic *grid);
+// Given the linear index 'lin', return the dimIn-dimensional index (subscript) xI.
+void mugy_grid_lin2sub(mint *xI, unsigned long lin, const struct mugy_grid_basic *grid, mint dimIn);
 
-// nDim-dimensional subscript given the linear index in a real/Fourier grid.
-void mugy_grid_lin2sub_real(mint *xI, mint lin, const struct mugy_grid_basic *grid);
-void mugy_grid_lin2sub_fourier(mint *kxI, mint lin, const struct mugy_grid_basic *grid);
-
-// Like mugy_grid_lin2sub_fourier but on a perpendicular plane only.
-void mugy_grid_lin2sub_fourier_perp(mint *kxI, mint lin, const struct mugy_grid_basic *grid);
-
-// (x,y,z)/(kx,ky,kz) coordinates given the multidimensional xI/kxI index.
-void mugy_grid_get_x(real *x, mint *xI, const struct mugy_grid_basic *grid);
-void mugy_grid_get_kx(real *kx, mint *kxI, const struct mugy_grid_basic *grid);
-
-// Obtain the kx=(kx,ky) coordinates given the multidimensional
-// kxI index. Assume the flat grid.kx array is organized as {kx,ky,kz}.
-void mugy_grid_get_kx_perp(real *kx, mint *kxI, const struct mugy_grid_basic *grid);
+// Obtain the coordinates given the dimIn-dimensional xI index.
+void mugy_grid_get_x(real *x, mint *xI, const struct mugy_grid_basic *grid, mint dimIn);
 
 // Deallocate memory used by grids.
 void mugy_grid_free(struct mugy_grid *grid);

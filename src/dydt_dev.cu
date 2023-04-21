@@ -41,9 +41,9 @@ __global__ void mugy_dydt_phikFLR_cu(mugy_cufourier_t *phikFLR, const mugy_cufou
 
       // Convert the 3D linIdx to a 2D (perp) linIdx to index FLR ops.
 //      mint idx[nDim], idxperp[2];
-//      mugy_grid_lin2sub_fourier(idx, linIdx, gridL);
+//      mugy_grid_lin2sub(idx, linIdx, gridL, nDim);
 //      for (mint d=0; d<2; d++) idxperp[d] = idx[d];
-//      unsigned long linIdxperp = mugy_grid_sub2lin_perp_fourier(idxperp, gridL);
+//      unsigned long linIdxperp = mugy_grid_sub2lin(idxperp, gridL, 2);
 //
 //      unsigned long lin3perp = s*3*NxyTot + linIdxperp;
 //      const real *flrOp0_p = (const real *)mugy_array_get_cu((void*)pbFLRop, lin3perp+0*NxyTot);

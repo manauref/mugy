@@ -279,9 +279,9 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_field *field
 
       for (mint linIdx=0; linIdx<gridL->NxTot; linIdx++) {
         mint xIdx[nDim];
-        mugy_grid_lin2sub_real(&xIdx[0], linIdx, gridL);  // Convert linear index to multidimensional x index.
+        mugy_grid_lin2sub(xIdx, linIdx, gridL, nDim);  // Convert linear index to multidimensional x index.
         real x[nDim];
-        mugy_grid_get_x(&x[0], xIdx, gridL);
+        mugy_grid_get_x(x, xIdx, gridL, nDim);
 
         // Initial density: a superposition of sines and cosines.
         double kx = grid->local->fourier->dx[0];
@@ -328,9 +328,9 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_field *field
 //    for (mint linIdx=0; linIdx<gridL->NxTot; linIdx++) {
 //      real initA = pop->local->pars[0].initA;
 //      mint xIdx[nDim];
-//      mugy_grid_lin2sub_real(&xIdx[0], linIdx, gridL);  // Convert linear index to multidimensional x index.
+//      mugy_grid_lin2sub(xIdx[0], linIdx, gridL, nDim);  // Convert linear index to multidimensional x index.
 //      real x[nDim];
-//      mugy_grid_get_x(&x[0], xIdx, gridL);
+//      mugy_grid_get_x(x, xIdx, gridL, nDim);
 //
 //      fxy_rp[0] = 0.;
 //      double kx = grid->local->fourier->dx[0];
@@ -372,9 +372,9 @@ void set_initialConditions(struct mugy_population *pop, struct mugy_field *field
 
       for (mint linIdx=0; linIdx<gridL->NxTot; linIdx++) {
         mint kxIdx[nDim];
-        mugy_grid_lin2sub_fourier(&kxIdx[0], linIdx, gridL);  // Convert linear index to multidimensional kx index.
+        mugy_grid_lin2sub(kxIdx, linIdx, gridL, nDim);  // Convert linear index to multidimensional kx index.
         real kx[nDim];
-        mugy_grid_get_kx(&kx[0], kxIdx, gridL);
+        mugy_grid_get_x(kx, kxIdx, gridL, nDim);
   
         // Set density to a power-law in k-space.
         if ((fabs(kx[0]) < MUGY_REAL_MIN) && (fabs(kx[1]) < MUGY_REAL_MIN))

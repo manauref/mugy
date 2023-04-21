@@ -25,8 +25,8 @@ void mugy_linear_constop_init(struct mugy_population *pop, struct mugy_grid *gri
 
     for (mint linIdx=0; linIdx<gridL->NxTot; linIdx++) {
       mint idx[nDim];  real kx[nDim];
-      mugy_grid_lin2sub_fourier(idx, linIdx, gridL);
-      mugy_grid_get_kx(kx, idx, gridL);
+      mugy_grid_lin2sub(idx, linIdx, gridL, nDim);
+      mugy_grid_get_x(kx, idx, gridL, nDim);
 
       mint lin1 = s*gridL->NxyTot + linIdx;
       real *hatLap_p    = mugy_array_get(flr->hatLap   , lin1);
@@ -56,13 +56,13 @@ void mugy_linear_constop_init(struct mugy_population *pop, struct mugy_grid *gri
   
     for (mint linIdx=0; linIdx<gridL->NxTot; linIdx++) {
       mint idx[nDim];  real kx[nDim];
-      mugy_grid_lin2sub_fourier(idx, linIdx, gridL);
-      mugy_grid_get_kx(kx, idx, gridL);
+      mugy_grid_lin2sub(idx, linIdx, gridL, nDim);
+      mugy_grid_get_x(kx, idx, gridL, nDim);
 
       // Convert the 3D linIdx to a 2D (perp) linIdx to index into xperpSq.
       mint idxperp[2];
       for (mint d=0; d<2; d++) idxperp[d] = idx[d];
-      mint linIdxperp = mugy_grid_sub2lin_perp_fourier(idxperp, gridL);
+      mint linIdxperp = mugy_grid_sub2lin(idxperp, gridL, 2);
       real kperpSq = gridL->xperpSq[linIdxperp];
 
       double ky = kx[1];

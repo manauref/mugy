@@ -46,8 +46,8 @@ void mugy_field_constop_init(struct mugy_population *pop, struct mugy_field *fie
   fourier iimag = 0. + 1.*I;
   for (mint linIdx=0; linIdx<gridL->NxyTot; linIdx++) {
     mint idx[2];  real kx[2];
-    mugy_grid_lin2sub_fourier_perp(idx, linIdx, gridL);
-    mugy_grid_get_kx_perp(kx, idx, gridL);
+    mugy_grid_lin2sub(idx, linIdx, gridL, 2);
+    mugy_grid_get_x(kx, idx, gridL, 2);
 
     double ky = kx[1];
     fourier *rPoiPhikFac_p = mugy_array_get(rPoiPhikFac, linIdx);

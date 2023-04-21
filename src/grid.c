@@ -162,90 +162,32 @@ void mugy_grid_init_global(struct mugy_grid *grid, mint rank) {
 
 }
 
-mint mugy_grid_sub2lin_real(mint *xI, const struct mugy_grid_basic *grid) {
-  // Given the nDim-dimensional index (subscript) xI return the linear index
-  // in a real grid. We assume row major order for the (z,x,y) dimensions.
+unsigned long mugy_grid_sub2lin(mint *xI, const struct mugy_grid_basic *grid, mint dimIn) {
+  // Given the dimIn-dimensional index (subscript) xI return the linear index.
+  // We assume row major order for the (z,x,y) dimensions.
   mint strides[nDim] = {grid->Nx[1],1,grid->NxyTot};
   mint lin;
-  for (mint d=0; d<nDim; d++) lin += xI[d]*strides[d];
+  for (mint d=0; d<dimIn; d++) lin += xI[d]*strides[d];
   return lin;
 }
 
-mint mugy_grid_sub2lin_fourier(mint *kxI, const struct mugy_grid_basic *grid) {
-  // Given the nDim-dimensional index (subscript) kxI return the linear index
-  // in a Fourier grid. We assume row major order for the (kz,kx,ky) dimensions.
+void mugy_grid_lin2sub(mint *xI, unsigned long lin, const struct mugy_grid_basic *grid, mint dimIn) {
+  // Given the linear index 'lin', return the dimIn-dimensional index (subscript) xI.
+  // We assume row major order for the (z,x,y) dimensions.
   mint strides[nDim] = {grid->Nx[1],1,grid->NxyTot};
-  mint lin;
-  for (mint d=0; d<nDim; d++) lin += kxI[d]*strides[d];
-  return lin;
-}
-
-mint mugy_grid_sub2lin_perp_fourier(mint *kxI, const struct mugy_grid_basic *grid) {
-  // Given the 2D perp index (subscript) kxI return the linear index
-  // in a perp (kx-ky) Fourier grid. Assume row major order of (kx,ky) dimensions.
-  mint strides[2] = {grid->Nx[1],1};
-  mint lin;
-  for (mint d=0; d<2; d++) lin += kxI[d]*strides[d];
-  return lin;
-}
-
-void mugy_grid_lin2sub_real(mint *xI, mint lin, const struct mugy_grid_basic *grid) {
-  // Given the linear index 'lin' in a real grid, return the nDim-dimensional
-  // index (subscript) xI. We assume row major order for the (z,x,y) dimensions.
-  mint strides[nDim] = {grid->Nx[1],1,grid->NxyTot};
-  for (mint d=0; d<nDim; d++) {
+  for (mint d=0; d<dimIn; d++) {
     xI[d] = lin/strides[d];
     lin -= xI[d]*strides[d];
   }
 }
 
-void mugy_grid_lin2sub_fourier(mint *kxI, mint lin, const struct mugy_grid_basic *grid) {
-  // Given the linear index 'lin' in a Fourier grid, return the nDim-dimensional
-  // index (subscript) kxI. We assume row major order for the (kz,kx,ky) dimensions.
-  mint strides[nDim] = {grid->Nx[1],1,grid->NxyTot};
-  for (mint d=0; d<nDim; d++) {
-    kxI[d] = lin/strides[d];
-    lin -= kxI[d]*strides[d];
-  }
-}
-
-void mugy_grid_lin2sub_fourier_perp(mint *kxI, mint lin, const struct mugy_grid_basic *grid) {
-  // Given the linear index 'lin' in a perpendicular (kx-ky) Fourier grid, return the
-  // 2-dimensional index (subscript) kxI. We assume row major order for the (kx,ky) dimensions.
-  mint strides[2] = {grid->Nx[1],1};
-  for (mint d=0; d<2; d++) {
-    kxI[d] = lin/strides[d];
-    lin -= kxI[d]*strides[d];
-  }
-}
-
-void mugy_grid_get_x(real *x, mint *xI, const struct mugy_grid_basic *grid) {
-  // Obtain the x=(x,y,z) coordinates given the multidimensional
-  // xI index. Assume the flat grid.x array is organized as {x,y,z}.
+void mugy_grid_get_x(real *x, mint *xI, const struct mugy_grid_basic *grid, mint dimIn) {
+  // Obtain the coordinates given the dimIn-dimensional xI index.
+  // Assume the flat grid.x array is organized as {x,y,z}.
   real* x_p = grid->x;
-  for (mint d=0; d<nDim; d++) {
+  for (mint d=0; d<dimIn; d++) {
     x[d] = x_p[xI[d]]; 
     x_p += grid->Nx[d];
-  }
-}
-
-void mugy_grid_get_kx(real *kx, mint *kxI, const struct mugy_grid_basic *grid) {
-  // Obtain the kx=(kx,ky,kz) coordinates given the multidimensional
-  // kxI index. Assume the flat grid.kx array is organized as {kx,ky,kz}.
-  real* kx_p = grid->x;
-  for (mint d=0; d<nDim; d++) {
-    kx[d] = kx_p[kxI[d]]; 
-    kx_p += grid->Nx[d];
-  }
-}
-
-void mugy_grid_get_kx_perp(real *kx, mint *kxI, const struct mugy_grid_basic *grid) {
-  // Obtain the kx=(kx,ky) coordinates given the multidimensional
-  // kxI index. Assume the flat grid->x array is organized as {kx,ky,kz}.
-  real* kx_p = grid->x;
-  for (mint d=0; d<2; d++) {
-    kx[d] = kx_p[kxI[d]]; 
-    kx_p += grid->Nx[d];
   }
 }
 

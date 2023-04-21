@@ -29,9 +29,9 @@ void mugy_dydt_phikFLR(struct mugy_population *pop, struct mugy_field *field, st
 
       // Convert the 3D linIdx to a 2D (perp) linIdx to index FLR ops.
       mint idx[nDim], idxperp[2];
-      mugy_grid_lin2sub_fourier(idx, linIdx, gridL);
+      mugy_grid_lin2sub(idx, linIdx, gridL, nDim);
       for (mint d=0; d<2; d++) idxperp[d] = idx[d];
-      unsigned long linIdxperp = mugy_grid_sub2lin_perp_fourier(idxperp, gridL);
+      unsigned long linIdxperp = mugy_grid_sub2lin(idxperp, gridL, 2);
 
       unsigned long lin3perp = s*3*gridL->NxyTot + linIdxperp;
       real *flrOp0_p = mugy_array_get(popL->pbFLRop, lin3perp+0*gridL->NxyTot);
@@ -91,9 +91,10 @@ void mugy_dydt(mint outIdx, mint inIdx, double time, struct mugy_population *pop
   struct mugy_field *field, struct mugy_grid *grid, struct mugy_fft *fft) {
   // Compute the time rate of change dy/dt, where y is the vector of moments.
 
-#if USE_GPU
-  return mugy_dydt_dev(outIdx, inIdx, time, pop, field, grid, fft);
-#endif
+//if USE_GPU
+// return mugy_dydt_dev(outIdx, inIdx, time, pop, field, grid, fft);
+//endif
+mugy_array_copy(pop->local->momk[inIdx],pop->local->momk[inIdx],MUGY_DEVICE2HOST);
 
   struct mugy_population_species *popL = pop->local;
   struct mugy_array *momkDot = popL->momk[outIdx];
@@ -104,4 +105,6 @@ void mugy_dydt(mint outIdx, mint inIdx, double time, struct mugy_population *pop
 
   // Apply linear terms.
   mugy_dydt_linear(outIdx, inIdx, time, pop, field, grid); 
+
+mugy_array_copy(popL->momk[outIdx],popL->momk[outIdx],MUGY_DEVICE2HOST);
 }
