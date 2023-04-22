@@ -18,7 +18,7 @@ struct mugy_array {
   void *ho;    // Pointer to host memory.
   void *dev;   // Pointer to device memory.
   // Device memory to store the result of some reductions.
-  void *binflag_ho, *binflag_dev;
+  mint *binflag_ho, *binflag_dev;
 };
 
 // Functions that allocate real/Fourier arrays on host, device or both.

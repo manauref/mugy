@@ -112,31 +112,33 @@ void mugy_array_scale_dev(struct mugy_array *arr, real fac) {
     mugy_array_ax_assign_fourier_cu<<<nblocks, nthreads>>>((mugy_cufourier_t *)arr->dev, arr->nelem, fac, (const mugy_cufourier_t *)arr->dev);
 }
 
-__global__ void mugy_array_isfinite_real_cu(mint *out, real* in, mint nelem) {
+__global__ void mugy_array_isnotfinite_real_cu(mint *out, real* in, mint nelem) {
   bool validval = true;
   for (unsigned long linc = LINIDX0; linc < nelem; linc += blockDim.x*gridDim.x) {
     validval = isfinite(in[linc]);
     if (!validval) break;
   }
-  if (!validval) atomicExch(out, 0);
+  if (!validval) atomicExch(out, 1);
 }
-__global__ void mugy_array_isfinite_fourier_cu(mint *out, mugy_cufourier_t* in, mint nelem) {
+__global__ void mugy_array_isnotfinite_fourier_cu(mint *out, mugy_cufourier_t* in, mint nelem) {
   bool validval = true;
   for (unsigned long linc = LINIDX0; linc < nelem; linc += blockDim.x*gridDim.x) {
     validval = isfinite(mugy_cuCreal(in[linc])) && isfinite(mugy_cuCimag(in[linc]));
     if (!validval) break;
   }
-  if (!validval) atomicExch(out, 0);
+  if (!validval) atomicExch(out, 1);
 }
 bool mugy_array_isfinite_dev(struct mugy_array *arr) {
   // Check that none of the elements are inf or NaN.
+  checkCudaErrors(cudaMemset(arr->binflag_dev, 0, sizeof(mint)));
+
   mint nthreads = DEFAULT_NUM_THREADS_DEV;
   mint nblocks  = mugy_div_up_mint(arr->nelem, nthreads);
   if (arr->type == MUGY_REAL)
-    mugy_array_isfinite_real_cu<<<nblocks, nthreads>>>((mint *)arr->binflag_dev, (real *)arr->dev, arr->nelem);
+    mugy_array_isnotfinite_real_cu<<<nblocks, nthreads>>>((mint *)arr->binflag_dev, (real *)arr->dev, arr->nelem);
   else if (arr->type == MUGY_FOURIER)
-    mugy_array_isfinite_fourier_cu<<<nblocks, nthreads>>>((mint *)arr->binflag_dev, (mugy_cufourier_t *)arr->dev, arr->nelem);
+    mugy_array_isnotfinite_fourier_cu<<<nblocks, nthreads>>>((mint *)arr->binflag_dev, (mugy_cufourier_t *)arr->dev, arr->nelem);
 
   mugy_memcpy_dev(arr->binflag_ho, arr->binflag_dev, sizeof(mint), MUGY_DEVICE2HOST);
-  return ((mint*)arr->binflag_ho)[0]==1;
+  return arr->binflag_ho[0]==0;
 }
